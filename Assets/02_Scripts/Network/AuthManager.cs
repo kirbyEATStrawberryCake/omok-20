@@ -15,13 +15,13 @@ public class AuthManager : MonoBehaviour
     /// <param name="onSuccess">회원가입 성공 시 실행할 액션</param>
     /// <param name="onFail">회원가입 실패 시 실행할 액션</param>
     public void SignUp(string username, string password, string nickname,
-        Action onSuccess, Action<int> onFail)
+        Action onSuccess, Action<AuthResponseType> onFail)
     {
         StartCoroutine(SignUpCoroutine(username, password, nickname, onSuccess, onFail));
     }
 
     private IEnumerator SignUpCoroutine(string username, string password, string nickname,
-        Action onSuccess, Action<int> onFail)
+        Action onSuccess, Action<AuthResponseType> onFail)
     {
         SignUpRequest requestData = new(username, password, nickname);
 
@@ -43,7 +43,7 @@ public class AuthManager : MonoBehaviour
                         onSuccess?.Invoke();
                         break;
                     case AuthResponseType.DUPLICATED_USERNAME:
-                        onFail?.Invoke((int)response.data.result);
+                        onFail?.Invoke(response.data.result);
                         break;
                 }
             }
