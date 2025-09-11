@@ -1,5 +1,7 @@
 #region
 
+using System;
+
 /// <summary>
 /// 유저 식별 정보 저장용 클래스
 /// </summary>
@@ -36,7 +38,68 @@ public class Rank
 
 #endregion
 
+#region 수신 타입
+
+public enum AuthResponseType
+{
+    SUCCESS,
+    INVALID_USERNAME,
+    INVALID_PASSWORD,
+    DUPLICATED_USERNAME,
+    NOT_LOGGED_IN
+}
+
+#endregion
+
+#region 회원가입, 로그인
+
+/// <summary>
+/// 회원가입 요청
+/// </summary>
+[System.Serializable]
+public class SignUpRequest
+{
+    public string username;
+    public string password;
+    public string nickname;
+
+    public SignUpRequest(string username, string password, string nickname)
+    {
+        this.username = username;
+        this.password = password;
+        this.nickname = nickname;
+    }
+}
+
+/// <summary>
+/// 로그인 요청
+/// </summary>
+[System.Serializable]
+public class SignInRequest
+{
+    public string username;
+    public string password;
+
+    public SignInRequest(string username, string password)
+    {
+        this.username = username;
+        this.password = password;
+    }
+}
+
+/// <summary>
+/// 인증 응답
+/// </summary>
+[System.Serializable]
+public class AuthResponse
+{
+    public AuthResponseType result;
+}
+
+#endregion
+
 #region 급수 및 승급 포인트
+
 /// <summary>
 /// 점수 갱신 클래스
 /// </summary>
@@ -54,7 +117,7 @@ public class SetRank
 public class GetPoints
 {
     public Identity identity;
-    public int points;  // 승급 포인트
+    public int points; // 승급 포인트
 }
 
 /// <summary>
@@ -64,7 +127,7 @@ public class GetPoints
 public class GetGrade
 {
     public Identity identity;
-    public int grade;   // 등급
+    public int grade; // 등급
 }
 
 #endregion
@@ -88,7 +151,7 @@ public class GameResultResponse
 {
     public string message;
     public string gameResult; // 송신한 게임 결과
-    public Record record; 
+    public Record record;
     public Rank rank;
 }
 
