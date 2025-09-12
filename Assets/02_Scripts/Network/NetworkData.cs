@@ -49,6 +49,49 @@ public enum AuthResponseType
     NOT_LOGGED_IN
 }
 
+public enum PointsResponseType
+{
+    SUCCESS,
+    CANNOT_FOUND_USER,
+    INVALID_GAME_RESULT,
+    NOT_LOGGED_IN
+}
+
+public enum StatsResponseType
+{
+    SUCCESS,
+    CANNOT_FOUND_USER,
+    INVALID_GAME_RESULT,
+    NOT_LOGGED_IN
+}
+
+/// <summary>
+/// 인증 응답
+/// </summary>
+[System.Serializable]
+public class AuthResponse
+{
+    public AuthResponseType result;
+}
+
+/// <summary>
+/// 인증 응답
+/// </summary>
+[System.Serializable]
+public class PointsResponse
+{
+    public PointsResponseType result;
+}
+
+/// <summary>
+/// 인증 응답
+/// </summary>
+[System.Serializable]
+public class StatsResponse
+{
+    public StatsResponseType result;
+}
+
 #endregion
 
 #region 회원가입, 로그인
@@ -85,15 +128,6 @@ public class SignInRequest
         this.username = username;
         this.password = password;
     }
-}
-
-/// <summary>
-/// 인증 응답
-/// </summary>
-[System.Serializable]
-public class AuthResponse
-{
-    public AuthResponseType result;
 }
 
 #endregion
@@ -141,6 +175,11 @@ public class GetGrade
 public class GameResultRequest
 {
     public string gameResult; // "win" 또는 "lose"
+
+    public GameResultRequest(string gameResult)
+    {
+        this.gameResult = gameResult;
+    }
 }
 
 /// <summary>

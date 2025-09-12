@@ -99,7 +99,8 @@ public class NetworkManager : Singleton<NetworkManager>
     /// <summary>
     /// 공통 GET 요청 메서드
     /// </summary>
-    public IEnumerator SendGetRequest<TResponse>(string endpoint, Action<NetworkResponse<TResponse>> onComplete)
+    public IEnumerator SendGetRequest<TResponse, TSuccess>(string endpoint,
+        Action<NetworkResponse<TResponse>> onComplete, Action<TSuccess> onSuccess)
         where TResponse : class
     {
         using UnityWebRequest www = UnityWebRequest.Get(ServerURL + endpoint);
@@ -112,14 +113,24 @@ public class NetworkManager : Singleton<NetworkManager>
         {
             // 네트워크 연결 실패
             response.connectionResult = NetworkConnectionResult.NetworkError;
+            onComplete?.Invoke(response);
         }
         else
         {
             // 서버와 통신 성공
             response.connectionResult = NetworkConnectionResult.Success;
-            response.data = JsonUtility.FromJson<TResponse>(www.downloadHandler.text);
+            if (www.responseCode == 200)
+            {
+                // 데이터 수신 성공
+                var result = JsonUtility.FromJson<TSuccess>(www.downloadHandler.text);
+                onSuccess?.Invoke(result);
+            }
+            else
+            {
+                // 데이터 수신 실패
+                response.data = JsonUtility.FromJson<TResponse>(www.downloadHandler.text);
+                onComplete?.Invoke(response);
+            }
         }
-
-        onComplete?.Invoke(response);
     }
 }
