@@ -58,13 +58,13 @@ public class AuthManager : MonoBehaviour
     /// <param name="password">비밀번호</param>
     /// <param name="onSuccess">로그인 성공 시 실행할 액션</param>
     /// <param name="onFail">로그인 실패 시 실행할 액션</param>
-    public void SignIn(string username, string password, Action onSuccess, Action<int> onFail)
+    public void SignIn(string username, string password, Action onSuccess, Action<AuthResponseType> onFail)
     {
         StartCoroutine(SignInCoroutine(username, password, onSuccess, onFail));
     }
 
     private IEnumerator SignInCoroutine(string username, string password,
-        Action onSuccess, Action<int> onFail)
+        Action onSuccess, Action<AuthResponseType> onFail)
     {
         SignInRequest requestData = new(username, password);
 
@@ -87,7 +87,7 @@ public class AuthManager : MonoBehaviour
                         break;
                     case AuthResponseType.INVALID_PASSWORD:
                     case AuthResponseType.INVALID_USERNAME:
-                        onFail?.Invoke((int)response.data.result);
+                        onFail?.Invoke(response.data.result);
                         break;
                 }
             }
@@ -100,12 +100,12 @@ public class AuthManager : MonoBehaviour
     /// </summary>
     /// <param name="onSuccess">로그아웃 성공 시 실행할 액션</param>
     /// <param name="onFail">로그아웃 성공 시 실행할 액션</param>
-    public void SignOut(Action onSuccess, Action<int> onFail)
+    public void SignOut(Action onSuccess, Action<AuthResponseType> onFail)
     {
         StartCoroutine(SignOutCoroutine(onSuccess, onFail));
     }
 
-    private IEnumerator SignOutCoroutine(Action onSuccess, Action<int> onFail)
+    private IEnumerator SignOutCoroutine(Action onSuccess, Action<AuthResponseType> onFail)
     {
         yield return networkManager.PostRequest<AuthResponse>(
             "/auth/signout",
@@ -124,7 +124,7 @@ public class AuthManager : MonoBehaviour
                         onSuccess?.Invoke();
                         break;
                     case AuthResponseType.NOT_LOGGED_IN:
-                        onFail?.Invoke((int)response.data.result);
+                        onFail?.Invoke(response.data.result);
                         break;
                 }
             }
