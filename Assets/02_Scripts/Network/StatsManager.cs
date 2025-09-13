@@ -6,6 +6,12 @@ public class StatsManager : MonoBehaviour
 {
     private NetworkManager networkManager => NetworkManager.Instance;
 
+    /// <summary>
+    /// 게임 결과 업데이트
+    /// </summary>
+    /// <param name="isWin">승리 여부</param>
+    /// <param name="onSuccess">게임 결과 업데이트 성공 시 실행할 액션</param>
+    /// <param name="onFail">게임 결과 업데이트 실패 시 실행할 액션</param>
     public void UpdateGameResult(bool isWin, Action onSuccess, Action<StatsResponseType> onFail)
     {
         StartCoroutine(UpdateGameResultCoroutine(isWin, onSuccess, onFail));
@@ -16,7 +22,7 @@ public class StatsManager : MonoBehaviour
         string requestData = isWin ? "win" : "lose";
         GameResultRequest gameResult = new(requestData);
         yield return networkManager.PostRequest<GameResultRequest, StatsResponse>(
-            "stats/updateGameResult",
+            "/stats/updateGameResult",
             gameResult,
             (response) =>
             {
@@ -41,6 +47,11 @@ public class StatsManager : MonoBehaviour
             });
     }
 
+    /// <summary>
+    /// 사용자 전적 가져오기
+    /// </summary>
+    /// <param name="onSuccess">사용자 전적 가져오기 성공 시 실행할 액션</param>
+    /// <param name="onFail">사용자 전적 가져오기 실패 시 실행할 액션</param>
     public void GetRecord(Action<GetRecord> onSuccess, Action<StatsResponseType> onFail)
     {
         StartCoroutine(GetRecordCoroutine(onSuccess, onFail));
@@ -67,6 +78,11 @@ public class StatsManager : MonoBehaviour
             (result) => { onSuccess?.Invoke(result); });
     }
 
+    /// <summary>
+    /// 전체 유저 랭킹 가져오기
+    /// </summary>
+    /// <param name="onSuccess">전체 유저 랭킹 가져오기 성공 시 실행할 액션</param>
+    /// <param name="onFail">전체 유저 랭킹 가져오기 실패 시 실행할 액션</param>
     public void GetRanking(Action<GetRanking> onSuccess, Action<StatsResponseType> onFail)
     {
         StartCoroutine(GetRankingCoroutine(onSuccess, onFail));
