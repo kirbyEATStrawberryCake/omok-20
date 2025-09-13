@@ -62,7 +62,7 @@ public class SignUpTest : MonoBehaviour
                 () =>
                 {
                     CleanInputFields();
-                    messageTest.ClearMessage(1);
+                    messageTest.ClearAllMessage();
                     messageTest.SetMessage(2, "### 회원가입 성공 ! ###", Color.green);
                     Debug.Log("<color=green>### 회원가입 성공 ! ###</color>");
                 },

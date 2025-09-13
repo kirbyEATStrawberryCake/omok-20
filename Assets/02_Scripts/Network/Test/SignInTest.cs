@@ -41,7 +41,7 @@ public class SignInTest : MonoBehaviour
             authManager.SignIn(username, password, () =>
                 {
                     CleanInputFields();
-                    messageTest.ClearMessage(1);
+                    messageTest.ClearAllMessage();
                     messageTest.SetMessage(2, "### 로그인 성공 ! ###", Color.green);
                     Debug.Log("<color=green>### 로그인 성공 ! ###</color>");
                 },
@@ -66,7 +66,7 @@ public class SignInTest : MonoBehaviour
         logout.onClick.AddListener(() => authManager.SignOut(() =>
             {
                 CleanInputFields();
-                messageTest.ClearMessage(1);
+                messageTest.ClearAllMessage();
                 messageTest.SetMessage(2, "### 로그아웃 성공 ! ###", Color.coral);
                 Debug.Log("<color=green>### 로그아웃 성공 ! ###</color>");
             },

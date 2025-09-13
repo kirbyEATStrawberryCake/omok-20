@@ -19,7 +19,7 @@ public class MatchResultTest : MonoBehaviour
             statsManager.UpdateGameResult(true,
                 () =>
                 {
-                    messageTest.ClearMessage(1);
+                    messageTest.ClearAllMessage();
                     messageTest.SetMessage(2, "### 게임 결과(승리) 등록 성공 ! ###", Color.green);
                     Debug.Log("<color=green>### 게임 결과(승리) 등록 성공 ! ###</color>");
                 },
@@ -43,7 +43,7 @@ public class MatchResultTest : MonoBehaviour
         {
             statsManager.UpdateGameResult(false, () =>
                 {
-                    messageTest.ClearMessage(1);
+                    messageTest.ClearAllMessage();
                     messageTest.SetMessage(2, "### 게임 결과(패배) 등록 성공 ! ###", Color.green);
                     Debug.Log("<color=green>### 게임 결과(패배) 등록 성공 ! ###</color>");
                 },
