@@ -6,6 +6,11 @@ public class PointsManager : MonoBehaviour
 {
     private NetworkManager networkManager => NetworkManager.Instance;
 
+    /// <summary>
+    /// 사용자 포인트 정보 가져오기
+    /// </summary>
+    /// <param name="onSuccess">사용자 포인트 정보 가져오기 성공 시 실행할 액션</param>
+    /// <param name="onFail">사용자 포인트 정보 가져오기 실패 시 실행할 액션</param>
     public void GetPoints(Action<GetPoints> onSuccess, Action<PointsResponseType> onFail)
     {
         StartCoroutine(GetPointsCoroutine(onSuccess, onFail));
@@ -32,6 +37,11 @@ public class PointsManager : MonoBehaviour
             (result) => onSuccess?.Invoke(result));
     }
 
+    /// <summary>
+    /// 사용자 등급 정보 가져오기
+    /// </summary>
+    /// <param name="onSuccess">사용자 등급 정보 가져오기 성공 시 실행할 액션</param>
+    /// <param name="onFail">사용자 등급 정보 가져오기 실패 시 실행할 액션</param>
     public void GetGrade(Action<GetGrade> onSuccess, Action<PointsResponseType> onFail)
     {
         StartCoroutine(GetGradeCoroutine(onSuccess, onFail));
