@@ -16,7 +16,7 @@ public class StatsManager : MonoBehaviour
         string requestData = isWin ? "win" : "lose";
         GameResultRequest gameResult = new(requestData);
         yield return networkManager.PostRequest<GameResultRequest, StatsResponse>(
-            "stats/updateGameResult",
+            "/stats/updateGameResult",
             gameResult,
             (response) =>
             {
