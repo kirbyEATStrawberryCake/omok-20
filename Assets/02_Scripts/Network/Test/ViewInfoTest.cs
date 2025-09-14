@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using TMPro;
+using UnityEngine;
 using UnityEngine.UI;
 
 public class ViewInfoTest : MonoBehaviour
@@ -7,6 +8,10 @@ public class ViewInfoTest : MonoBehaviour
     [SerializeField] private Button grade;
     [SerializeField] private Button record;
     [SerializeField] private Button Ranking;
+
+    [SerializeField] private GameObject rankingObject;
+    [SerializeField] private Transform rankingContentObject;
+    [SerializeField] private GameObject rankingPanelPrefab;
 
     private MessageTest messageTest;
     private StatsManager statsManager;
@@ -104,6 +109,29 @@ public class ViewInfoTest : MonoBehaviour
                             break;
                     }
                 });
+        });
+
+        Ranking.onClick.AddListener(() =>
+        {
+            statsManager.GetRanking((response) =>
+                {
+                    messageTest.ClearAllMessage();
+                    for (int i = 0; i < response.ranking.Length; i++)
+                    {
+                        var panel = Instantiate(rankingPanelPrefab, rankingContentObject);
+                        panel.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text =
+                            response.ranking[i].rank.ToString();
+                        panel.transform.GetChild(1).GetComponent<Image>().sprite = null; // TODO: 프로필 이미지 변경 로직 추가
+                        panel.transform.GetChild(2).GetComponent<TextMeshProUGUI>().text =
+                            response.ranking[i].grade.ToString() + "급 " + response.ranking[i].identity.nickname;
+                        panel.transform.GetChild(3).GetComponent<TextMeshProUGUI>().text =
+                            response.ranking[i].record.totalWins.ToString() + "승 " +
+                            response.ranking[i].record.totalLoses.ToString() + "패";
+                    }
+
+                    rankingObject.SetActive(true);
+                },
+                (errorType) => { });
         });
     }
 }
