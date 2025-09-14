@@ -7,6 +7,8 @@ public class MessageTest : MonoBehaviour
     [SerializeField] private TextMeshProUGUI message2;
     [SerializeField] private TextMeshProUGUI identity;
     [SerializeField] private TextMeshProUGUI[] recordTexts;
+    [SerializeField] private GameObject rankingObject;
+    [SerializeField] private Transform rankingContentObject;
 
     public void SetMessage(int num, string message, Color color)
     {
@@ -41,6 +43,7 @@ public class MessageTest : MonoBehaviour
         ClearMessage(2);
         ClearMessage(3);
         ClearMessage(4);
+        ClearRanking();
     }
 
     public void ClearMessage(int num)
@@ -68,5 +71,14 @@ public class MessageTest : MonoBehaviour
                 text.color = Color.white;
             }
         }
+    }
+
+    public void ClearRanking()
+    {
+        foreach (Transform child in rankingContentObject)
+        {
+            Destroy(child.gameObject);
+        }
+        rankingObject.SetActive(false);
     }
 }
