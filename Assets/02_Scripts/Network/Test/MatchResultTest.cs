@@ -35,6 +35,10 @@ public class MatchResultTest : MonoBehaviour
                             messageTest.SetMessage(1, "경기 결과 등록 실패 : \n유저를 찾지 못했습니다.", Color.red);
                             Debug.LogError("<color=red>경기 결과 등록 실패 : 유저를 찾지 못했습니다.</color>");
                             break;
+                        case StatsResponseType.NOT_LOGGED_IN:
+                            messageTest.SetMessage(1, "경기 결과 등록 실패 : \n로그인 상태가 아닙니다.", Color.red);
+                            Debug.LogError("<color=red>경기 결과 등록 실패 : 로그인 상태가 아닙니다.</color>");
+                            break;
                     }
                 });
         });
@@ -58,6 +62,10 @@ public class MatchResultTest : MonoBehaviour
                         case StatsResponseType.CANNOT_FOUND_USER:
                             messageTest.SetMessage(1, "경기 결과 등록 실패 : \n유저를 찾지 못했습니다.", Color.red);
                             Debug.LogError("<color=red>경기 결과 등록 실패 : 유저를 찾지 못했습니다.</color>");
+                            break;
+                        case StatsResponseType.NOT_LOGGED_IN:
+                            messageTest.SetMessage(1, "경기 결과 등록 실패 : \n로그인 상태가 아닙니다.", Color.red);
+                            Debug.LogError("<color=red>경기 결과 등록 실패 : 로그인 상태가 아닙니다.</color>");
                             break;
                     }
                 });
