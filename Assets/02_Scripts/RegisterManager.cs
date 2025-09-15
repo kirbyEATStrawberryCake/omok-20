@@ -10,8 +10,6 @@ public class JoinManager : MonoBehaviour
 
     public Image profileImage;
 
-    public GameObject popupPanel;
-    public GameObject popupText;
 
     void Start()
     {

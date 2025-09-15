@@ -32,12 +32,12 @@ public class UiManager : MonoBehaviour
 
         if (inputUser == validUsername && inputPass == validPassword)
         {
-            Debug.Log("로그인 성공");
+            Debug.Log("로그인 성공!");
             // 다음 화면으로 이동하는 코드 등 추가
         }
         else
         {
-            ShowError("계정정보가 유효하지 않습니다."); // 에러 메시지 표시
+            ShowError("회원정보가 없습니다."); // 에러 메시지 표시
         }
     }
 
