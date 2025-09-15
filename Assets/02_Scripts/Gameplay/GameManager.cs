@@ -20,8 +20,8 @@ public class GameManager : MonoBehaviour
     public RenjuRule renjuRule;                // 렌주룰 관리자 참조
 
     [Header("UI Components")]
-    public Text currentPlayerText;              // 현재 플레이어 표시 텍스트
-    public Text gameStatusText;                 // 게임 상태 표시 텍스트
+    public TMP_Text currentPlayerText;              // 현재 플레이어 표시 텍스트
+    public TMP_Text gameStatusText;                 // 게임 상태 표시 텍스트
     public Button resetButton;                  // 게임 리셋 버튼
     public Button undoButton;                   // 무르기 버튼
 
