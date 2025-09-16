@@ -6,7 +6,9 @@ public class RenjuRule : MonoBehaviour
     public bool enableForbiddenMoves = true;    // 금수 적용 여부
     public bool showForbiddenPositions = false; // 금수 위치 시각적 표시 여부
 
-    private BoardManager boardManager;           // 보드 매니저 참조
+    // 매니저 참조 (효율적인 접근)
+    private GameManager gameManager;
+    private BoardManager boardManager;
 
     // 8방향 벡터 (상하좌우, 대각선)
     private readonly int[,] directions = {
@@ -15,9 +17,18 @@ public class RenjuRule : MonoBehaviour
         {1, -1},  {1, 0},  {1, 1}     // 왼쪽 아래, 아래, 오른쪽 아래
     };
 
+    /// <summary>
+    /// GameManager 참조 설정
+    /// </summary>
+    public void SetGameManager(GameManager manager)
+    {
+        gameManager = manager;
+        boardManager = gameManager.boardManager; // GameManager를 통해 BoardManager 참조 획득
+    }
+
     void Start()
     {
-        Initialize();
+        // 초기화는 GameManager에서 호출하므로 여기서는 하지 않음
     }
 
     /// <summary>
@@ -25,10 +36,9 @@ public class RenjuRule : MonoBehaviour
     /// </summary>
     public void Initialize()
     {
-        boardManager = FindObjectOfType<BoardManager>();
         if (boardManager == null)
         {
-            Debug.LogError("BoardManager를 찾을 수 없습니다!");
+            Debug.LogError("BoardManager 참조가 설정되지 않았습니다!");
         }
 
         Debug.Log("렌주룰이 초기화되었습니다.");
