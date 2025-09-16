@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4797192293667284951}
   - component: {fileID: 5335923294329368515}
-  - component: {fileID: 4689897138998911603}
+  - component: {fileID: -838836860220116559}
   m_Layer: 0
   m_Name: marker-black
   m_TagString: Untagged
@@ -79,7 +79,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 10
   m_Sprite: {fileID: 21300000, guid: f4bdf1ab75882514bb26e5166c94f497, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -91,7 +91,7 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &4689897138998911603
+--- !u!114 &-838836860220116559
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -100,7 +100,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 7119038275744184421}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 880b1f2192c4deb4ba0e7afe05beec10, type: 3}
+  m_Script: {fileID: 11500000, guid: 6cd227159a15615429b8f6ccd3f85012, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerController
-  blackPlayerStarts: 1
+  m_EditorClassIdentifier: Assembly-CSharp::Stone
+  placementAnimationTime: 0.3
+  hoverScaleMultiplier: 1.1

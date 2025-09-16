@@ -10,19 +10,19 @@ public enum StoneType
 
 public class Stone : MonoBehaviour
 {
-    [Header("Stone Visual Settings")]
-    public Material blackStoneMaterial;     // 흑돌 머티리얼
-    public Material whiteStoneMaterial;     // 백돌 머티리얼
-    public float placementAnimationTime = 0.3f;  // 돌이 놓일 때 애니메이션 시간
+    [Header("Animation Settings")]
+    public float placementAnimationTime = 0.3f;     // 돌이 놓일 때 애니메이션 시간
+    public float hoverScaleMultiplier = 1.1f;       // 호버시 크기 배율
 
-    private StoneType stoneType;            // 이 돌의 타입
-    private Vector2Int boardPosition;       // 오목판에서의 위치 (x, y)
-    private Renderer stoneRenderer;         // 돌의 렌더러 컴포넌트
-    private Vector3 originalScale;          // 원래 크기 저장
+    private StoneType stoneType;                    // 이 돌의 타입
+    private Vector2Int boardPosition;               // 오목판에서의 위치 (x, y)
+    private SpriteRenderer spriteRenderer;          // 돌의 스프라이트 렌더러
+    private Vector3 originalScale;                  // 원래 크기 저장
+    private bool isAnimating = false;               // 애니메이션 진행 중 여부
 
     void Awake()
     {
-        stoneRenderer = GetComponent<Renderer>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
         originalScale = transform.localScale;
 
         // 시작할 때는 크기를 0으로 설정 (애니메이션 효과)
@@ -36,7 +36,6 @@ public class Stone : MonoBehaviour
     public void SetStoneType(StoneType type)
     {
         stoneType = type;
-        UpdateVisual();
         PlayPlacementAnimation();
     }
 
@@ -51,32 +50,12 @@ public class Stone : MonoBehaviour
     }
 
     /// <summary>
-    /// 돌의 시각적 표현 업데이트
-    /// </summary>
-    private void UpdateVisual()
-    {
-        if (stoneRenderer == null) return;
-
-        switch (stoneType)
-        {
-            case StoneType.Black:
-                stoneRenderer.material = blackStoneMaterial;
-                break;
-            case StoneType.White:
-                stoneRenderer.material = whiteStoneMaterial;
-                break;
-            default:
-                Debug.LogWarning("Unknown stone type!");
-                break;
-        }
-    }
-
-    /// <summary>
     /// 돌이 놓일 때의 애니메이션 재생
     /// </summary>
     private void PlayPlacementAnimation()
     {
-        // LeanTween이 없는 경우를 위한 간단한 코루틴 애니메이션
+        if (isAnimating) return;
+
         StartCoroutine(ScaleAnimation());
     }
 
@@ -85,23 +64,39 @@ public class Stone : MonoBehaviour
     /// </summary>
     private System.Collections.IEnumerator ScaleAnimation()
     {
+        isAnimating = true;
+
         float elapsedTime = 0f;
         Vector3 startScale = Vector3.zero;
         Vector3 endScale = originalScale;
+
+        // 탄성 효과를 위한 오버스케일
+        Vector3 overScale = originalScale * 1.2f;
 
         while (elapsedTime < placementAnimationTime)
         {
             elapsedTime += Time.deltaTime;
             float t = elapsedTime / placementAnimationTime;
 
-            // Ease-out 애니메이션 커브
-            t = 1f - Mathf.Pow(1f - t, 3f);
+            // 탄성 애니메이션 커브 (처음에 크게 나타났다가 원래 크기로)
+            if (t < 0.7f)
+            {
+                float scaleT = t / 0.7f;
+                scaleT = 1f - Mathf.Pow(1f - scaleT, 3f); // Ease-out
+                transform.localScale = Vector3.Lerp(startScale, overScale, scaleT);
+            }
+            else
+            {
+                float scaleT = (t - 0.7f) / 0.3f;
+                scaleT = 1f - Mathf.Pow(1f - scaleT, 2f); // Ease-out
+                transform.localScale = Vector3.Lerp(overScale, endScale, scaleT);
+            }
 
-            transform.localScale = Vector3.Lerp(startScale, endScale, t);
             yield return null;
         }
 
         transform.localScale = endScale;
+        isAnimating = false;
     }
 
     /// <summary>
@@ -125,12 +120,17 @@ public class Stone : MonoBehaviour
     /// </summary>
     void OnMouseEnter()
     {
-        // 투명도나 크기를 살짝 변경하여 하이라이트 효과
-        if (stoneRenderer != null)
+        if (isAnimating) return;
+
+        // 크기를 살짝 키워서 하이라이트 효과
+        StartCoroutine(HoverAnimation(originalScale * hoverScaleMultiplier));
+
+        // 투명도 변경으로 하이라이트
+        if (spriteRenderer != null)
         {
-            Color currentColor = stoneRenderer.material.color;
-            currentColor.a = 0.8f;
-            stoneRenderer.material.color = currentColor;
+            Color currentColor = spriteRenderer.color;
+            currentColor.a = 0.9f;
+            spriteRenderer.color = currentColor;
         }
     }
 
@@ -139,12 +139,37 @@ public class Stone : MonoBehaviour
     /// </summary>
     void OnMouseExit()
     {
-        if (stoneRenderer != null)
+        if (isAnimating) return;
+
+        // 원래 크기로 복원
+        StartCoroutine(HoverAnimation(originalScale));
+
+        // 투명도 원상복구
+        if (spriteRenderer != null)
         {
-            Color currentColor = stoneRenderer.material.color;
+            Color currentColor = spriteRenderer.color;
             currentColor.a = 1.0f;
-            stoneRenderer.material.color = currentColor;
+            spriteRenderer.color = currentColor;
         }
     }
-}
 
+    /// <summary>
+    /// 호버 애니메이션 코루틴
+    /// </summary>
+    private System.Collections.IEnumerator HoverAnimation(Vector3 targetScale)
+    {
+        Vector3 startScale = transform.localScale;
+        float animationTime = 0.1f;
+        float elapsedTime = 0f;
+
+        while (elapsedTime < animationTime)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = elapsedTime / animationTime;
+            transform.localScale = Vector3.Lerp(startScale, targetScale, t);
+            yield return null;
+        }
+
+        transform.localScale = targetScale;
+    }
+}
