@@ -28,7 +28,7 @@ public class GameManager : MonoBehaviour
     [Header("Game Settings")]
     public bool isRenjuModeEnabled = true;      // 렌주룰 적용 여부
 
-    private GameState currentGameState;         // 현재 게임 상태
+    public GameState currentGameState;         // 현재 게임 상태
     private int totalMoves;                     // 총 수 카운트
 
     void Start()

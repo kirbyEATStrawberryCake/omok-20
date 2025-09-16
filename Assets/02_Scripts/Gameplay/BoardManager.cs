@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System;
 
-public class BoardManager : MonoBehaviour
+public partial class BoardManager : MonoBehaviour
 {
     [Header("Board Settings")]
     public GameObject stonePrefab;              // 돌 프리팹
@@ -238,7 +238,8 @@ public class BoardManager : MonoBehaviour
     /// </summary>
     public StoneType GetStoneAt(int x, int y)
     {
-        if (!IsValidPosition(x, y)) return StoneType.None;
+        //에러 메세지로 변경
+        if (!IsValidPosition(x, y)) return new ArgumentOutOfRangeException($"({x},{y}) is outside board."); ;
         return board[x, y];
     }
 
