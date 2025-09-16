@@ -13,7 +13,7 @@ public enum GameState
     Paused      // 게임 일시정지
 }
 
-public class GameManager : MonoBehaviour
+public class GameManager : Singleton<GameManager>
 {
     [Header("Game Components")]
     public BoardManager boardManager;           // 오목판 관리자 참조
@@ -30,12 +30,12 @@ public class GameManager : MonoBehaviour
     public bool isRenjuModeEnabled = true;      // 렌주룰 적용 여부
     public bool showForbiddenPositions = true;  // 금지 위치 표시 여부
 
-    private GameState currentGameState;         // 현재 게임 상태
+    public GameState currentGameState;         // 현재 게임 상태
     private int totalMoves;                     // 총 수 카운트
     private Vector2Int pendingMove;             // 확정 대기 중인 착수 위치
     private bool hasPendingMove;                // 확정 대기 중인 착수가 있는지
 
-    void Awake()
+    protected override void Awake()
     {
         // 컴포넌트 자동 찾기 (인스펙터에서 할당되지 않은 경우)
         if (boardManager == null) boardManager = GetComponent<BoardManager>();
@@ -262,8 +262,8 @@ public class GameManager : MonoBehaviour
             boardManager.HideForbiddenMarkers();
         }
     }
-    //protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
-    //{
-    //    throw new NotImplementedException();
-    //}
+    protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
+    {
+        throw new NotImplementedException();
+    }
 }

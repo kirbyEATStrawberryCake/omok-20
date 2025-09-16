@@ -60,13 +60,13 @@ public class GomokuAI
         
         foreach (var move in candidateMoves)
         {
-            board.TryPlaceStone(move.x, move.y, myStone); // 미리 둬보기
+            board.PlaceStone(move.x, move.y, myStone); // 미리 둬보기
             
             // Minimax 함수를 호출하여 이 수가 가져올 최종 점수를 계산
             // 최상위 레벨(루트 노드)에서의 탐색. 여기서의 alpha와 beta는 초기값
             int score = Minimax(board, searchDepth, int.MinValue, int.MaxValue, false);
             
-            board.TryPlaceStone(move.x, move.y, StoneType.None); // 수 되돌리기
+            board.PlaceStone(move.x, move.y, StoneType.None); // 수 되돌리기
 
             if (score > bestScore)
             {
@@ -339,9 +339,9 @@ public class GomokuAI
 
             foreach (var move in candidateMoves) // 현재 상태에서 가능한 모든 다음 수들을 탐색(후보 수)
             {
-                board.TryPlaceStone(move.x, move.y, myStone); // 수를 미리 둬본다.
+                board.PlaceStone(move.x, move.y, myStone); // 수를 미리 둬본다.
                 int eval = Minimax(board, depth - 1, alpha, beta, false); // 이 수에 대해 탐색을 진행한다. (다음 턴은 상대방에게 넘김)
-                board.TryPlaceStone(move.x, move.y, StoneType.None); // 수를 되돌린다.
+                board.PlaceStone(move.x, move.y, StoneType.None); // 수를 되돌린다.
 
                 maxEval = Math.Max(maxEval, eval);
                 alpha = Math.Max(alpha, eval);
@@ -357,9 +357,9 @@ public class GomokuAI
 
             foreach (var move in candidateMoves) // 현재 상태에서 가능한 모든 다음 수들을 탐색(후보 수)
             {
-                board.TryPlaceStone(move.x, move.y, enemyStone); // 수를 미리 둬본다.
+                board.PlaceStone(move.x, move.y, enemyStone); // 수를 미리 둬본다.
                 int eval = Minimax(board, depth - 1, alpha, beta,true); // maximizingPlayer가 false였으므로, 다음 턴은 상대방.
-                board.TryPlaceStone(move.x, move.y, StoneType.None); // 수를 되돌린다.
+                board.PlaceStone(move.x, move.y, StoneType.None); // 수를 되돌린다.
                 
                 minEval = Math.Min(minEval, eval);
                 beta = Math.Min(beta, eval);
