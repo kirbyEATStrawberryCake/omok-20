@@ -25,7 +25,7 @@ public class BoardManager : MonoBehaviour
     public Color lastMoveColor = Color.green;   // 마지막 수 색상
     public Color pendingMoveColor = Color.cyan; // 착수 대기 색상
 
-    private StoneType[,] board;                 // 오목판 배열 (논리적 보드)
+    protected StoneType[,] board;                 // 오목판 배열 (논리적 보드)
     private GameObject[,] stoneObjects;         // 돌 오브젝트 배열
     private GameObject boardObject;             // 보드 스프라이트 오브젝트
 
