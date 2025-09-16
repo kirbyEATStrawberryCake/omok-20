@@ -1147,6 +1147,7 @@ MonoBehaviour:
   resetButton: {fileID: 1769711716}
   undoButton: {fileID: 686148556}
   isRenjuModeEnabled: 1
+  showForbiddenPositions: 1
   currentGameState: 0
 --- !u!4 &1310638631
 Transform:
@@ -1419,7 +1420,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RenjuRule
   enableForbiddenMoves: 1
-  showForbiddenPositions: 0
+  showForbiddenPositions: 1
 --- !u!4 &1534173147
 Transform:
   m_ObjectHideFlags: 0
