@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-public class UiManager : MonoBehaviour
+public class LoginManager : MonoBehaviour
 {
     public GameObject loginCanvas;
     public GameObject registerCanvas;
@@ -30,10 +30,17 @@ public class UiManager : MonoBehaviour
         string inputUser = usernameInput.text;
         string inputPass = passwordInput.text;
 
+        string storedToken = PlayerPrefs.GetString("auth_token", "");
+
         if (inputUser == validUsername && inputPass == validPassword)
         {
             Debug.Log("로그인 성공!");
-            // 다음 화면으로 이동하는 코드 등 추가
+
+            PlayerPrefs.SetString("login_token", "로그인_" + inputUser);
+            PlayerPrefs.Save();
+
+            // 다음 화면으로 이동하는 코드
+            // SceneManager.LoadScene("GameScene");
         }
         else
         {
