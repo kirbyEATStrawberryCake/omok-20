@@ -4,7 +4,8 @@ public enum StoneType
 {
     None = 0,   // 빈 공간
     Black = 1,  // 흑돌
-    White = 2   // 백돌
+    White = 2,   // 백돌
+    Error = 3 // 에러 (이게 뜨면 문제가 있는 상황입니다)
 }
 
 public class Stone : MonoBehaviour

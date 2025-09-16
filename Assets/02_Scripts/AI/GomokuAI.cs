@@ -87,15 +87,15 @@ public class GomokuAI
         {
             for (int y = 0; y < boardSize; y++)
             {
-                if (board.IsEmpty(x, y))
-                {
-                    board.TryPlaceStone(x, y, stone);
-                    bool isWin = CheckWin(x, y, stone);
-                    board.TryPlaceStone(x, y, StoneType.None);
-
-                    if (isWin)
-                        return new Vector2Int(x, y);
-                }
+                // if (board.IsEmpty(x, y))
+                // {
+                //     board.TryPlaceStone(x, y, stone);
+                //     bool isWin = CheckWin(x, y, stone);
+                //     board.TryPlaceStone(x, y, StoneType.None);
+                //
+                //     if (isWin)
+                //         return new Vector2Int(x, y);
+                // }
             }
         }
         return null;
@@ -146,7 +146,7 @@ public class GomokuAI
         {
             for (int y = 0; y < boardSize; y++)
             {
-                if (!BoardManager.IsEmpty(x, y)) continue;
+                //if (!BoardManager.IsEmpty(x, y)) continue;
                 if (HasNeighborWithinRadius(x, y, collectRadius))
                     list.Add(new Vector2Int(x, y));
             }
@@ -166,7 +166,7 @@ public class GomokuAI
 
         for (int i = xmin; i <= xmax; i++)
         for (int j = ymin; j <= ymax; j++)
-            if (!board.IsEmpty(i, j))
+            //if (!board.IsEmpty(i, j))
                 return true;
 
         return false;
@@ -323,7 +323,7 @@ public class GomokuAI
     private int Minimax(BoardManager board, int depth, int alpha, int beta, bool maximizingPlayer)
     {
         // 1. 종료 조건: 깊이 제한에 도달했거나, 게임이 끝났거나, 오목판이 다 찼으면 (더이상 둘 공간이 없으면)
-        if (depth == 0 || GameManager.currentGameState == GameState.GameOver /*|| + 오목판이 다 찼다면*/)
+        if (depth == 0 || GameManager.Instance.currentGameState == GameState.GameOver /*|| + 오목판이 다 찼다면*/)
         {
             // 전체 보드의 형세를 평가
             return EvaluateBoard(board);

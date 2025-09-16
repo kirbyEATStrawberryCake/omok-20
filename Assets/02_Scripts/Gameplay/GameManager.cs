@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public enum GameState
@@ -12,7 +13,7 @@ public enum GameState
     Paused      // 게임 일시정지
 }
 
-public class GameManager : MonoBehaviour
+public class GameManager : Singleton<GameManager>
 {
     [Header("Game Components")]
     public BoardManager boardManager;           // 오목판 관리자 참조
@@ -162,5 +163,10 @@ public class GameManager : MonoBehaviour
     public GameState GetGameState()
     {
         return currentGameState;
+    }
+
+    protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
+    {
+        throw new NotImplementedException();
     }
 }
