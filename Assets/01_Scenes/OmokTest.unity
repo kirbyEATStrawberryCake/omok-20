@@ -180,8 +180,8 @@ Camera:
   near clip plane: 0.3
   far clip plane: 1000
   field of view: 60
-  orthographic: 0
-  orthographic size: 5
+  orthographic: 1
+  orthographic size: 7
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -206,7 +206,7 @@ Transform:
   m_GameObject: {fileID: 22742877}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: -10}
+  m_LocalPosition: {x: 0, y: 0, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -364,7 +364,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.8, y: 0.8, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -435,8 +435,17 @@ MonoBehaviour:
   lastMoveMarkerSprite: {fileID: 21300000, guid: a8a1ce8ee1859a947907218a3c4cbbbc, type: 3}
   pendingMoveSprite: {fileID: 21300000, guid: 97b5b38c7f8b7e7458a62e91324a9b32, type: 3}
   boardSize: 15
-  cellSize: 0.6
+  cellSize: 0.45
   boardOffset: {x: 0, y: 0}
+  gridAreaRatio: 0.7
+  gridCenterOffset: {x: 0, y: 0}
+  topMargin: 10
+  bottomMargin: 10
+  leftMargin: 10
+  rightMargin: 10
+  useManualMargins: 0
+  coordinateOffset: {x: 0, y: 0}
+  debugCoordinates: 1
   markerAlpha: 0.7
   forbiddenColor: {r: 1, g: 0, b: 0, a: 1}
   selectedColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
