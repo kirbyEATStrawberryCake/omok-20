@@ -1,4 +1,5 @@
 using UnityEngine;
+using TMPro;
 
 public enum PlayerID
 {
@@ -9,22 +10,22 @@ public enum PlayerID
 public class PlayerManager : MonoBehaviour
 {
     [Header("Player Settings")]
-    public string player1Name = "플레이어 1";       // 플레이어 1 이름
-    public string player2Name = "플레이어 2";       // 플레이어 2 이름
+    private string player1Name = "플레이어 1";
+    private string player2Name = "플레이어 2";
 
     private StoneType currentPlayer;                // 현재 차례인 돌 타입 (항상 흑돌부터 시작)
     private PlayerID blackStonePlayer;              // 흑돌을 가진 플레이어
     private PlayerID whiteStonePlayer;              // 백돌을 가진 플레이어
     private PlayerID currentTurnPlayer;             // 현재 턴인 플레이어 ID
-
+    
     // 게임 기록
     private int player1Wins = 0;                    // 플레이어 1 승수
     private int player2Wins = 0;                    // 플레이어 2 승수
     private int draws = 0;                          // 무승부 횟수
-
+    
     // 플레이어 변경 시 발생하는 이벤트
     public System.Action<StoneType> OnPlayerChanged;
-
+    
     void Start()
     {
         // 초기화는 GameManager에서 호출하므로 여기서는 하지 않음
@@ -37,7 +38,7 @@ public class PlayerManager : MonoBehaviour
     {
         // 랜덤으로 플레이어 1이 흑돌을 가질지 결정
         bool player1GetsBlack = Random.Range(0, 2) == 0;
-
+        
         if (player1GetsBlack)
         {
             blackStonePlayer = PlayerID.Player1;
@@ -50,15 +51,15 @@ public class PlayerManager : MonoBehaviour
             whiteStonePlayer = PlayerID.Player1;
             Debug.Log($"{player2Name}이 흑돌(선공)을 가져갑니다!");
         }
-
+        
         // 오목은 항상 흑돌부터 시작
         currentPlayer = StoneType.Black;
         currentTurnPlayer = blackStonePlayer;
-
+        
         // 이벤트 발생
         OnPlayerChanged?.Invoke(currentPlayer);
     }
-
+    
     /// <summary>
     /// 플레이어 턴 교체 (흑돌 -> 백돌 -> 흑돌 순서)
     /// </summary>
@@ -66,19 +67,19 @@ public class PlayerManager : MonoBehaviour
     {
         // 돌 색깔 변경
         currentPlayer = (currentPlayer == StoneType.Black) ? StoneType.White : StoneType.Black;
-
+        
         // 현재 턴 플레이어 변경
         currentTurnPlayer = (currentPlayer == StoneType.Black) ? blackStonePlayer : whiteStonePlayer;
-
+        
         string currentPlayerName = GetCurrentPlayerName();
         string stoneColorName = (currentPlayer == StoneType.Black) ? "흑돌" : "백돌";
-
+        
         Debug.Log($"턴 교체: {currentPlayerName}의 {stoneColorName} 차례");
-
+        
         // 이벤트 발생
         OnPlayerChanged?.Invoke(currentPlayer);
     }
-
+    
     /// <summary>
     /// 현재 차례인 돌 타입 반환
     /// </summary>
@@ -87,7 +88,7 @@ public class PlayerManager : MonoBehaviour
     {
         return currentPlayer;
     }
-
+    
     /// <summary>
     /// 현재 차례인 플레이어의 이름 반환
     /// </summary>
@@ -96,7 +97,7 @@ public class PlayerManager : MonoBehaviour
     {
         return GetPlayerName(currentTurnPlayer);
     }
-
+    
     /// <summary>
     /// 특정 돌 색깔을 가진 플레이어의 이름 반환
     /// </summary>
@@ -112,10 +113,10 @@ public class PlayerManager : MonoBehaviour
         {
             return GetPlayerName(whiteStonePlayer);
         }
-
+        
         return "알 수 없음";
     }
-
+    
     /// <summary>
     /// 플레이어 ID로 플레이어 이름 반환
     /// </summary>
@@ -125,7 +126,7 @@ public class PlayerManager : MonoBehaviour
     {
         return (playerID == PlayerID.Player1) ? player1Name : player2Name;
     }
-
+    
     /// <summary>
     /// 흑돌을 가진 플레이어 이름 반환
     /// </summary>
@@ -134,7 +135,7 @@ public class PlayerManager : MonoBehaviour
     {
         return GetPlayerName(blackStonePlayer);
     }
-
+    
     /// <summary>
     /// 백돌을 가진 플레이어 이름 반환
     /// </summary>
@@ -143,7 +144,7 @@ public class PlayerManager : MonoBehaviour
     {
         return GetPlayerName(whiteStonePlayer);
     }
-
+    
     /// <summary>
     /// 현재 턴인 플레이어 ID 반환
     /// </summary>
@@ -152,7 +153,7 @@ public class PlayerManager : MonoBehaviour
     {
         return currentTurnPlayer;
     }
-
+    
     /// <summary>
     /// 상대방 돌 타입 반환
     /// </summary>
@@ -161,7 +162,7 @@ public class PlayerManager : MonoBehaviour
     {
         return (currentPlayer == StoneType.Black) ? StoneType.White : StoneType.Black;
     }
-
+    
     /// <summary>
     /// 상대방 플레이어 이름 반환
     /// </summary>
@@ -171,7 +172,7 @@ public class PlayerManager : MonoBehaviour
         PlayerID opponentID = (currentTurnPlayer == PlayerID.Player1) ? PlayerID.Player2 : PlayerID.Player1;
         return GetPlayerName(opponentID);
     }
-
+    
     /// <summary>
     /// 게임 결과 기록
     /// </summary>
@@ -190,7 +191,7 @@ public class PlayerManager : MonoBehaviour
                     Debug.Log($"{winnerName} 승리! (흑돌로 승리)");
                 }
                 break;
-
+                
             case StoneType.White:
                 {
                     string winnerName = GetWhiteStonePlayerName();
@@ -201,16 +202,16 @@ public class PlayerManager : MonoBehaviour
                     Debug.Log($"{winnerName} 승리! (백돌로 승리)");
                 }
                 break;
-
+                
             case StoneType.None:
                 draws++;
                 Debug.Log("무승부!");
                 break;
         }
-
+        
         Debug.Log($"현재 전적 - {player1Name}: {player1Wins}승, {player2Name}: {player2Wins}승, 무승부: {draws}회");
     }
-
+    
     /// <summary>
     /// 승패 기록 반환
     /// </summary>
@@ -219,7 +220,7 @@ public class PlayerManager : MonoBehaviour
     {
         return (player1Wins, player2Wins, draws);
     }
-
+    
     /// <summary>
     /// 게임 기록 초기화
     /// </summary>
@@ -232,14 +233,16 @@ public class PlayerManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 플레이어 이름 설정
+    /// 플레이어 이름 설정 (UI에서 읽어온 이름으로 설정)
     /// </summary>
     /// <param name="player1">플레이어 1 이름</param>
     /// <param name="player2">플레이어 2 이름</param>
     public void SetPlayerNames(string player1, string player2)
     {
-        player1Name = player1;
-        player2Name = player2;
+        // 빈 문자열이나 null 체크하여 기본값 설정
+        player1Name = string.IsNullOrEmpty(player1) ? "플레이어 1" : player1;
+        player2Name = string.IsNullOrEmpty(player2) ? "플레이어 2" : player2;
+
         Debug.Log($"플레이어 설정: {player1Name} vs {player2Name}");
     }
 
@@ -252,7 +255,7 @@ public class PlayerManager : MonoBehaviour
     {
         return blackStonePlayer == playerID;
     }
-
+    
     /// <summary>
     /// 특정 플레이어가 백돌을 가지고 있는지 확인
     /// </summary>
