@@ -15,7 +15,7 @@ public class BoardManager : MonoBehaviour
 
     [Header("Board Settings")]
     public int boardSize = 15;                  // 오목판 크기 (15x15)
-    public float cellSize = 0.6f;               // 각 칸의 크기
+    public float cellSize = 0.494f;               // 각 칸의 크기
     public Vector2 boardOffset = Vector2.zero;  // 보드 오프셋
 
     [Header("Marker Settings")]
@@ -102,18 +102,8 @@ public class BoardManager : MonoBehaviour
         boardRenderer.sortingOrder = -10; // 가장 뒤에 렌더링
 
         // 보드 크기 조정
-        if (boardSprite != null)
-        {
-            float spriteWidth = boardSprite.bounds.size.x;
-            float spriteHeight = boardSprite.bounds.size.y;
-            float desiredSize = (boardSize - 1) * cellSize;
-
-            boardObject.transform.localScale = new Vector3(
-                desiredSize / spriteWidth,
-                desiredSize / spriteHeight,
-                1f
-            );
-        }
+        // 보드 스프라이트는 원본 크기 유지 (격자는 별도로 계산)
+        boardObject.transform.localScale = Vector3.one;
     }
 
     /// <summary>
