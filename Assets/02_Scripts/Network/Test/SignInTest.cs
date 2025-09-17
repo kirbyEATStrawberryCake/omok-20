@@ -13,13 +13,11 @@ public class SignInTest : MonoBehaviour
 
     private MessageTest messageTest;
     private AuthManager authManager;
-    private MultiplayMenuTest multiplayMenuTest;
 
     private void Awake()
     {
         authManager = FindFirstObjectByType<AuthManager>();
         messageTest = FindFirstObjectByType<MessageTest>();
-        multiplayMenuTest = FindFirstObjectByType<MultiplayMenuTest>();
 
         login.onClick.AddListener(() =>
         {
@@ -42,7 +40,6 @@ public class SignInTest : MonoBehaviour
 
             authManager.SignIn(username, password, () =>
                 {
-                    multiplayMenuTest.multiplayController.Connect(username);
                     CleanInputFields();
                     messageTest.ClearAllMessage();
                     messageTest.SetMessage(2, "### 로그인 성공 ! ###", Color.green);

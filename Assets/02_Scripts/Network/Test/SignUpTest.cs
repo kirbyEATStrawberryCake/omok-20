@@ -8,7 +8,6 @@ public class SignUpTest : MonoBehaviour
     [SerializeField] private TMP_InputField _password;
     [SerializeField] private TMP_InputField _confirmPassword;
     [SerializeField] private TMP_InputField _nickname;
-    [SerializeField] private int profileImage = 1;
     [SerializeField] private Button confirm;
     [SerializeField] private Button cancel;
 
@@ -59,25 +58,25 @@ public class SignUpTest : MonoBehaviour
                 return;
             }
 
-            authManager.SignUp(username, password, nickname, profileImage,
-                () =>
-                {
-                    CleanInputFields();
-                    messageTest.ClearAllMessage();
-                    messageTest.SetMessage(2, "### 회원가입 성공 ! ###", Color.green);
-                    Debug.Log("<color=green>### 회원가입 성공 ! ###</color>");
-                },
-                (errorType) =>
-                {
-                    switch (errorType)
-                    {
-                        case AuthResponseType.DUPLICATED_USERNAME:
-                            messageTest.SetMessage(1, "중복된 아이디 입니다.", Color.red);
-                            Debug.LogWarning("중복된 아이디 입니다.");
-                            _username.text = "";
-                            break;
-                    }
-                });
+            //authManager.SignUp(username, password, nickname,
+            //    () =>
+            //    {
+            //        CleanInputFields();
+            //        messageTest.ClearAllMessage();
+            //        messageTest.SetMessage(2, "### 회원가입 성공 ! ###", Color.green);
+            //        Debug.Log("<color=green>### 회원가입 성공 ! ###</color>");
+            //    },
+            //    (errorType) =>
+            //    {
+            //        switch (errorType)
+            //        {
+            //            case AuthResponseType.DUPLICATED_USERNAME:
+            //                messageTest.SetMessage(1, "중복된 아이디 입니다.", Color.red);
+            //                Debug.LogWarning("중복된 아이디 입니다.");
+            //                _username.text = "";
+            //                break;
+            //        }
+            //    });
         });
         cancel.onClick.AddListener(CleanInputFields);
     }

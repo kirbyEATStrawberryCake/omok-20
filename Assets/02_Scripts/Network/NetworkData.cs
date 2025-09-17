@@ -90,6 +90,7 @@ public class SignUpRequest
         this.password = password;
         this.nickname = nickname;
         this.profileImage = profileImage;
+
     }
 }
 
@@ -241,14 +242,11 @@ public class GetRanking
 
 public enum MultiplayControllerState
 {
-    MatchWaiting,
-    MatchExpanded, 
-    MatchFailed,
-    MatchFound,
-    MatchCanceled,
+    CreateRoom, // 방 생성
+    JoinRoom,   // 생성된 방 참여
     ExitRoom,   // 클라이언트가 방에서 나갈 때
-    OpponentLeft,   // 상대방이 접속을 끊거나 방을 나갔을 때
-    Error
+    OpponentJoined, // 상대방이 들어왔을 때
+    OpponentLeft   // 상대방이 접속을 끊거나 방을 나갔을 때
 }
 
 #endregion

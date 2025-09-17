@@ -4688,9 +4688,6 @@ MonoBehaviour:
   startMatching: {fileID: 326536764}
   cancel: {fileID: 573261243}
   exitRoom: {fileID: 466891668}
-  x: {fileID: 456973290}
-  y: {fileID: 690873989}
-  goStone: {fileID: 1695699770}
 --- !u!1 &959882185
 GameObject:
   m_ObjectHideFlags: 0
@@ -5548,7 +5545,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: GO STONE
+  m_text: LOG IN
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 6d5a3baef93c1d04d8b5373617d50a52, type: 2}
   m_sharedMaterial: {fileID: -5964054793901177232, guid: 6d5a3baef93c1d04d8b5373617d50a52, type: 2}
