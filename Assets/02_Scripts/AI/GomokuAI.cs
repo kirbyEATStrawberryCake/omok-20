@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class GomokuAI
 {
-    private readonly BoardManager board;
+    private readonly BoardManager_AI board;
     private readonly StoneType myStone;
     private readonly StoneType enemyStone;
     
@@ -24,7 +24,7 @@ public class GomokuAI
         new Vector2Int(1, -1)   // 대각 ↗
     };
 
-    public GomokuAI(BoardManager board, StoneType myStone)
+    public GomokuAI(BoardManager_AI board, StoneType myStone)
     {
         this.board = board;
         this.myStone = myStone;
@@ -60,13 +60,15 @@ public class GomokuAI
         
         foreach (var move in candidateMoves)
         {
-            board.PlaceStone(move.x, move.y, myStone); // 미리 둬보기
+            board.PlaceStone_Logical(move.x, move.y, myStone); // 미리 둬보기
+
             
             // Minimax 함수를 호출하여 이 수가 가져올 최종 점수를 계산
             // 최상위 레벨(루트 노드)에서의 탐색. 여기서의 alpha와 beta는 초기값
             int score = Minimax(board, searchDepth, int.MinValue, int.MaxValue, false);
             
-            board.PlaceStone(move.x, move.y, StoneType.None); // 수 되돌리기
+            board.PlaceStone_Logical(move.x, move.y, StoneType.None); // 수 되돌리기
+
 
             if (score > bestScore)
             {
@@ -87,15 +89,15 @@ public class GomokuAI
         {
             for (int y = 0; y < boardSize; y++)
             {
-                // if (board.IsEmpty(x, y))
-                // {
-                //     board.TryPlaceStone(x, y, stone);
-                //     bool isWin = CheckWin(x, y, stone);
-                //     board.TryPlaceStone(x, y, StoneType.None);
-                //
-                //     if (isWin)
-                //         return new Vector2Int(x, y);
-                // }
+                if (board.IsEmpty(x, y))
+                {
+                    board.PlaceStone_Logical(x, y, stone);
+                    bool isWin = CheckWin(x, y, stone);
+                    board.PlaceStone_Logical(x, y, StoneType.None);
+                
+                    if (isWin)
+                        return new Vector2Int(x, y);
+                }
             }
         }
         return null;
@@ -146,7 +148,7 @@ public class GomokuAI
         {
             for (int y = 0; y < boardSize; y++)
             {
-                //if (!BoardManager.IsEmpty(x, y)) continue;
+                if (!board.IsEmpty(x, y)) continue;
                 if (HasNeighborWithinRadius(x, y, collectRadius))
                     list.Add(new Vector2Int(x, y));
             }
@@ -166,7 +168,7 @@ public class GomokuAI
 
         for (int i = xmin; i <= xmax; i++)
         for (int j = ymin; j <= ymax; j++)
-            //if (!board.IsEmpty(i, j))
+            if (!board.IsEmpty(i, j))
                 return true;
 
         return false;
@@ -176,7 +178,7 @@ public class GomokuAI
     /// 보드 전체를 평가하여 현재 게임 상태의 점수를 반환하는 메서드.
     /// 양쪽 플레이어의 패턴을 모두 고려한다.
     /// </summary>
-    private int EvaluateBoard(BoardManager board)
+    private int EvaluateBoard(BoardManager_AI board)
     {
         int myTotalScore = 0;
         int enemyTotalScore = 0;
@@ -244,8 +246,8 @@ public class GomokuAI
     bool leftIsFriend = !leftOut && leftStone == stone;
     bool rightIsFriend = !rightOut && rightStone == stone;
     
-    bool leftIsEnemy = !leftOut && leftStone != StoneType.None && leftStone != stone;
-    bool rightIsEnemy = !rightOut && rightStone != StoneType.None && rightStone != stone;
+    bool leftIsEnemy = !leftOut && leftStone != StoneType.None && leftStone != StoneType.Error && leftStone != stone;
+    bool rightIsEnemy = !rightOut && rightStone != StoneType.None && leftStone != StoneType.Error && rightStone != stone;
     
     // 경계 또는 적으로 막힌 경우는 '막힘'으로 처리
     bool leftBlocked = leftOut || leftIsEnemy;
@@ -320,10 +322,10 @@ public class GomokuAI
     return 0;
     }
     
-    private int Minimax(BoardManager board, int depth, int alpha, int beta, bool maximizingPlayer)
+    private int Minimax(BoardManager_AI board, int depth, int alpha, int beta, bool maximizingPlayer)
     {
         // 1. 종료 조건: 깊이 제한에 도달했거나, 게임이 끝났거나, 오목판이 다 찼으면 (더이상 둘 공간이 없으면)
-        if (depth == 0 || GameManager.Instance.currentGameState == GameState.GameOver /*|| + 오목판이 다 찼다면*/)
+        if (depth == 0 || GameManager.Instance.currentGameState == GameState.GameOver || board.IsBoardFull())
         {
             // 전체 보드의 형세를 평가
             return EvaluateBoard(board);
@@ -339,13 +341,15 @@ public class GomokuAI
 
             foreach (var move in candidateMoves) // 현재 상태에서 가능한 모든 다음 수들을 탐색(후보 수)
             {
-                board.PlaceStone(move.x, move.y, myStone); // 수를 미리 둬본다.
+
+                board.PlaceStone_Logical(move.x, move.y, myStone); // 수를 미리 둬본다.
                 int eval = Minimax(board, depth - 1, alpha, beta, false); // 이 수에 대해 탐색을 진행한다. (다음 턴은 상대방에게 넘김)
-                board.PlaceStone(move.x, move.y, StoneType.None); // 수를 되돌린다.
+                board.PlaceStone_Logical(move.x, move.y, StoneType.None); // 수를 되돌린다.
 
                 maxEval = Math.Max(maxEval, eval);
-                alpha = Math.Max(alpha, eval);
-                if (beta <= alpha) break; // 가지치기
+                alpha = Math.Max(alpha, eval); // alpha : 현재 플레이어 입장에서 보장받은 최댓값
+                if (beta <= alpha) break; // 가지치기 (알파 ≥ 베타가 되면 그 이후는 볼 필요가 없다)
+                //
             }
             return maxEval;
         }
@@ -357,20 +361,19 @@ public class GomokuAI
 
             foreach (var move in candidateMoves) // 현재 상태에서 가능한 모든 다음 수들을 탐색(후보 수)
             {
-                board.PlaceStone(move.x, move.y, enemyStone); // 수를 미리 둬본다.
+                board.PlaceStone_Logical(move.x, move.y, enemyStone); // 수를 미리 둬본다.
                 int eval = Minimax(board, depth - 1, alpha, beta,true); // maximizingPlayer가 false였으므로, 다음 턴은 상대방.
-                board.PlaceStone(move.x, move.y, StoneType.None); // 수를 되돌린다.
+                board.PlaceStone_Logical(move.x, move.y, StoneType.None); // 수를 되돌린다.
+
                 
                 minEval = Math.Min(minEval, eval);
-                beta = Math.Min(beta, eval);
-                if (beta <= alpha) break; // 가지치기
+                beta = Math.Min(beta, eval); // beta : 상대 플레이어입장에서 보장받은 최솟값
+                if (beta <= alpha) break; // 가지치기 (알파 ≥ 베타가 되면 그 이후는 볼 필요가 없다)
             }
             return minEval;
         }
     }
 }
-
-
 
     // 미사용 메서드
 

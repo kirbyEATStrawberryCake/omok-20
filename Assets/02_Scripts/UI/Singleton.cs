@@ -53,3 +53,4 @@ public abstract class Singleton<T> : MonoBehaviour where T : MonoBehaviour
     
     protected abstract void OnSceneLoad(Scene scene, LoadSceneMode mode);
 }
+
