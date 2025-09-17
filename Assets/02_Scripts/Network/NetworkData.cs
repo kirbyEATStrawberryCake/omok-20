@@ -240,6 +240,8 @@ public class GetRanking
 public enum MultiplayControllerState
 {
     MatchWaiting,
+    MatchExpanded, 
+    MatchFailed,
     MatchFound,
     MatchCanceled,
     ExitRoom,   // 클라이언트가 방에서 나갈 때

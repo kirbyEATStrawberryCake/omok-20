@@ -77,13 +77,16 @@ public class MultiplayController : IDisposable
         };
 
         socket.OnUnityThread("userInfoLoaded", UserInfoLoaded);
-        socket.OnUnityThread("matchWaiting", MatchWaiting);
-        socket.OnUnityThread("matchFound", MatchFound);
-        socket.OnUnityThread("matchCanceled", MatchCanceled);
         socket.OnUnityThread("exitRoom", ExitRoom);
         socket.OnUnityThread("opponentLeft", OpponentLeft);
 
         socket.OnUnityThread("doOpponent", DoOpponent);
+        
+        socket.OnUnityThread("matchWaiting", MatchWaiting);
+        socket.OnUnityThread("matchExpanded", MatchExpanded);
+        socket.OnUnityThread("matchFound", MatchFound);
+        socket.OnUnityThread("matchFailed", MatchFailed);
+        socket.OnUnityThread("matchCanceled", MatchCanceled);
 
         socket.OnUnityThread("matchError", MatchError);
         socket.OnUnityThread("authRequired", AuthRequired);
@@ -112,28 +115,6 @@ public class MultiplayController : IDisposable
         CurrentUserInfo = response.GetValue<UserInfo>();
     }
 
-    private void MatchWaiting(SocketIOResponse response)
-    {
-        var data = response.GetValue<MessageData>();
-
-        onMultiplayStateChanged?.Invoke(MultiplayControllerState.MatchWaiting, data.message);
-    }
-
-    private void MatchFound(SocketIOResponse response)
-    {
-        var data = response.GetValue<MatchFoundData>();
-
-        onMultiplayStateChanged?.Invoke(MultiplayControllerState.MatchFound, data.roomId);
-    }
-
-    private void MatchCanceled(SocketIOResponse response)
-    {
-        var data = response.GetValue<MessageData>();
-
-        onMultiplayStateChanged?.Invoke(MultiplayControllerState.MatchCanceled, data.message);
-    }
-
-
     private void ExitRoom(SocketIOResponse response)
     {
         var data = response.GetValue<RoomData>();
@@ -150,6 +131,45 @@ public class MultiplayController : IDisposable
     {
         var data = response.GetValue<BlockData>();
         onBlockDataChanged?.Invoke(data.blockIdx_x, data.blockIdx_y);
+    }
+
+    #endregion
+
+    #region Match (Server -> Client)
+
+    private void MatchWaiting(SocketIOResponse response)
+    {
+        var data = response.GetValue<MessageData>();
+
+        onMultiplayStateChanged?.Invoke(MultiplayControllerState.MatchWaiting, data.message);
+    }
+
+    private void MatchExpanded(SocketIOResponse response)
+    {
+        var data = response.GetValue<MessageData>();
+
+        onMultiplayStateChanged?.Invoke(MultiplayControllerState.MatchExpanded, data.message);
+    }
+
+    private void MatchFound(SocketIOResponse response)
+    {
+        var data = response.GetValue<MatchFoundData>();
+
+        onMultiplayStateChanged?.Invoke(MultiplayControllerState.MatchFound, data.roomId);
+    }
+
+    private void MatchFailed(SocketIOResponse response)
+    {
+        var data = response.GetValue<MessageData>();
+
+        onMultiplayStateChanged?.Invoke(MultiplayControllerState.MatchFailed, data.message);
+    }
+
+    private void MatchCanceled(SocketIOResponse response)
+    {
+        var data = response.GetValue<MessageData>();
+
+        onMultiplayStateChanged?.Invoke(MultiplayControllerState.MatchCanceled, data.message);
     }
 
     #endregion
