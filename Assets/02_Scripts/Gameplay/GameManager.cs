@@ -8,51 +8,51 @@ using UnityEngine.UI;
 
 public enum GameState
 {
-    Playing,    // °ÔÀÓ ÁøÇà Áß
-    GameOver,   // °ÔÀÓ Á¾·á
-    Paused      // °ÔÀÓ ÀÏ½ÃÁ¤Áö
+    Playing,    // ê²Œì„ ì§„í–‰ ì¤‘
+    GameOver,   // ê²Œì„ ì¢…ë£Œ
+    Paused      // ê²Œì„ ì¼ì‹œì •ì§€
 }
 
 public class GameManager : Singleton<GameManager>
 {
     [Header("Game Components")]
-    public BoardManager boardManager;           // ¿À¸ñÆÇ °ü¸®ÀÚ ÂüÁ¶
-    public PlayerManager playerManager;         // ÇÃ·¹ÀÌ¾î °ü¸®ÀÚ ÂüÁ¶
-    public RenjuRule renjuRule;                // ·»ÁÖ·ê °ü¸®ÀÚ ÂüÁ¶
+    public BoardManager boardManager;           // ì˜¤ëª©íŒ ê´€ë¦¬ì ì°¸ì¡°
+    public PlayerManager playerManager;         // í”Œë ˆì´ì–´ ê´€ë¦¬ì ì°¸ì¡°
+    public RenjuRule renjuRule;                // ë Œì£¼ë£° ê´€ë¦¬ì ì°¸ì¡°
 
     [Header("UI Components")]
-    public Image blackStonePlayerTurnImage;     // Èæµ¹ ÇÃ·¹ÀÌ¾î Â÷·Ê Ç¥½Ã ÀÌ¹ÌÁö
-    public Image whiteStonePlayerTurnImage;     // ¹éµ¹ ÇÃ·¹ÀÌ¾î Â÷·Ê Ç¥½Ã ÀÌ¹ÌÁö
+    public Image blackStonePlayerTurnImage;     // í‘ëŒ í”Œë ˆì´ì–´ ì°¨ë¡€ í‘œì‹œ ì´ë¯¸ì§€
+    public Image whiteStonePlayerTurnImage;     // ë°±ëŒ í”Œë ˆì´ì–´ ì°¨ë¡€ í‘œì‹œ ì´ë¯¸ì§€
 
-    public GameObject winPanel;                 // ½Â¸® ÆĞ³Î
-    public GameObject losePanel;                // ÆĞ¹è ÆĞ³Î
-    public GameObject drawPanel;                // ¹«½ÂºÎ ÆĞ³Î (¼±ÅÃ»çÇ×
+    public GameObject winPanel;                 // ìŠ¹ë¦¬ íŒ¨ë„
+    public GameObject losePanel;                // íŒ¨ë°° íŒ¨ë„
+    public GameObject drawPanel;                // ë¬´ìŠ¹ë¶€ íŒ¨ë„ (ì„ íƒì‚¬í•­
 
-    public Button confirmMoveButton;            // Âø¼ö È®Á¤ ¹öÆ°
-    public Button surrenderButton;              // Ç×º¹ ¹öÆ°
+    public Button confirmMoveButton;            // ì°©ìˆ˜ í™•ì • ë²„íŠ¼
+    public Button surrenderButton;              // í•­ë³µ ë²„íŠ¼
 
-    // TMP Text ÇÊµå Ãß°¡
+    // TMP Text í•„ë“œ ì¶”ê°€
     [Header("Player Name Input")]
-    public TMP_Text player1NameText;            // ÇÃ·¹ÀÌ¾î1 ÀÌ¸§ TMP Text
-    public TMP_Text player2NameText;            // ÇÃ·¹ÀÌ¾î2 ÀÌ¸§ TMP Text
+    public TMP_Text player1NameText;            // í”Œë ˆì´ì–´1 ì´ë¦„ TMP Text
+    public TMP_Text player2NameText;            // í”Œë ˆì´ì–´2 ì´ë¦„ TMP Text
 
     [Header("Game Settings")]
-    public bool isRenjuModeEnabled = true;      // ·»ÁÖ·ê Àû¿ë ¿©ºÎ
-    public bool showForbiddenPositions = true;  // ±İÁö À§Ä¡ Ç¥½Ã ¿©ºÎ
+    public bool isRenjuModeEnabled = true;      // ë Œì£¼ë£° ì ìš© ì—¬ë¶€
+    public bool showForbiddenPositions = true;  // ê¸ˆì§€ ìœ„ì¹˜ í‘œì‹œ ì—¬ë¶€
 
-    public GameState currentGameState;         // ÇöÀç °ÔÀÓ »óÅÂ
-    private int totalMoves;                     // ÃÑ ¼ö Ä«¿îÆ®
-    private Vector2Int pendingMove;             // È®Á¤ ´ë±â ÁßÀÎ Âø¼ö À§Ä¡
-    private bool hasPendingMove;                // È®Á¤ ´ë±â ÁßÀÎ Âø¼ö°¡ ÀÖ´ÂÁö
+    public GameState currentGameState;         // í˜„ì¬ ê²Œì„ ìƒíƒœ
+    private int totalMoves;                     // ì´ ìˆ˜ ì¹´ìš´íŠ¸
+    private Vector2Int pendingMove;             // í™•ì • ëŒ€ê¸° ì¤‘ì¸ ì°©ìˆ˜ ìœ„ì¹˜
+    private bool hasPendingMove;                // í™•ì • ëŒ€ê¸° ì¤‘ì¸ ì°©ìˆ˜ê°€ ìˆëŠ”ì§€
 
     protected override void Awake()
     {
-        // ÄÄÆ÷³ÍÆ® ÀÚµ¿ Ã£±â (ÀÎ½ºÆåÅÍ¿¡¼­ ÇÒ´çµÇÁö ¾ÊÀº °æ¿ì)
+        // ì»´í¬ë„ŒíŠ¸ ìë™ ì°¾ê¸° (ì¸ìŠ¤í™í„°ì—ì„œ í• ë‹¹ë˜ì§€ ì•Šì€ ê²½ìš°)
         if (boardManager == null) boardManager = GetComponent<BoardManager>();
         if (playerManager == null) playerManager = GetComponent<PlayerManager>();
         if (renjuRule == null) renjuRule = GetComponent<RenjuRule>();
 
-        // °¢ ¸Å´ÏÀú¿¡ GameManager ÂüÁ¶ Àü´Ş
+        // ê° ë§¤ë‹ˆì €ì— GameManager ì°¸ì¡° ì „ë‹¬
         if (boardManager != null) boardManager.SetGameManager(this);
         if (renjuRule != null) renjuRule.SetGameManager(this);
     }
@@ -63,7 +63,7 @@ public class GameManager : Singleton<GameManager>
     }
 
     /// <summary>
-    /// °ÔÀÓ ÃÊ±âÈ­
+    /// ê²Œì„ ì´ˆê¸°í™”
     /// </summary>
     public void InitializeGame()
     {
@@ -72,49 +72,49 @@ public class GameManager : Singleton<GameManager>
         pendingMove = Vector2Int.zero;
         hasPendingMove = false;
 
-        // °¢ ¸Å´ÏÀú ÃÊ±âÈ­
+        // ê° ë§¤ë‹ˆì € ì´ˆê¸°í™”
         boardManager.InitializeBoard();
 
-        // UI¿¡¼­ ÇÃ·¹ÀÌ¾î ÀÌ¸§À» ÀĞ¾î¿Í¼­ ¼³Á¤
+        // UIì—ì„œ í”Œë ˆì´ì–´ ì´ë¦„ì„ ì½ì–´ì™€ì„œ ì„¤ì •
         string player1Name = GetPlayer1NameFromUI();
         string player2Name = GetPlayer2NameFromUI();
 
-        // PlayerManager¿¡ ÇÃ·¹ÀÌ¾î ÀÌ¸§ ¼³Á¤
+        // PlayerManagerì— í”Œë ˆì´ì–´ ì´ë¦„ ì„¤ì •
         playerManager.SetPlayerNames(player1Name, player2Name);
-        playerManager.RandomizePlayerStones(); // ÇÃ·¹ÀÌ¾îº° µ¹ »ö±ò ·£´ı ÇÒ´ç
+        playerManager.RandomizePlayerStones(); // í”Œë ˆì´ì–´ë³„ ëŒ ìƒ‰ê¹” ëœë¤ í• ë‹¹
 
         renjuRule.Initialize();
 
 
-        // UI ÃÊ±âÈ­
+        // UI ì´ˆê¸°í™”
         InitializeUI();
         UpdatePlayerTurnDisplay();
 
-        // ÀÌº¥Æ® µî·Ï
+        // ì´ë²¤íŠ¸ ë“±ë¡
         boardManager.OnPositionSelected += OnPositionSelected;
         confirmMoveButton.onClick.AddListener(ConfirmMove);
         surrenderButton.onClick.AddListener(Surrender);
 
-        Debug.Log("°ÔÀÓÀÌ ½ÃÀÛµÇ¾ú½À´Ï´Ù!");
+        Debug.Log("ê²Œì„ì´ ì‹œì‘ë˜ì—ˆìŠµë‹ˆë‹¤!");
     }
 
     /// <summary>
-    /// UI ÃÊ±âÈ­ (°ÔÀÓ ½ÃÀÛ½Ã)
+    /// UI ì´ˆê¸°í™” (ê²Œì„ ì‹œì‘ì‹œ)
     /// </summary>
     private void InitializeUI()
     {
-        // °á°ú ÆĞ³Îµé ¼û±â±â
+        // ê²°ê³¼ íŒ¨ë„ë“¤ ìˆ¨ê¸°ê¸°
         if (winPanel != null) winPanel.SetActive(false);
         if (losePanel != null) losePanel.SetActive(false);
         if (drawPanel != null) drawPanel.SetActive(false);
 
-        // Â÷·Ê Ç¥½Ã ÀÌ¹ÌÁöµé ÃÊ±âÈ­
+        // ì°¨ë¡€ í‘œì‹œ ì´ë¯¸ì§€ë“¤ ì´ˆê¸°í™”
         if (blackStonePlayerTurnImage != null) blackStonePlayerTurnImage.gameObject.SetActive(false);
         if (whiteStonePlayerTurnImage != null) whiteStonePlayerTurnImage.gameObject.SetActive(false);
     }
 
     /// <summary>
-    /// ÇÃ·¹ÀÌ¾î Â÷·Ê Ç¥½Ã ¾÷µ¥ÀÌÆ®
+    /// í”Œë ˆì´ì–´ ì°¨ë¡€ í‘œì‹œ ì—…ë°ì´íŠ¸
     /// </summary>
     private void UpdatePlayerTurnDisplay()
     {
@@ -122,7 +122,7 @@ public class GameManager : Singleton<GameManager>
 
         StoneType currentStone = playerManager.GetCurrentPlayer();
 
-        // Èæµ¹/¹éµ¹ Â÷·Ê Ç¥½Ã ÀÌ¹ÌÁö ¾÷µ¥ÀÌÆ®
+        // í‘ëŒ/ë°±ëŒ ì°¨ë¡€ í‘œì‹œ ì´ë¯¸ì§€ ì—…ë°ì´íŠ¸
         if (blackStonePlayerTurnImage != null)
         {
             blackStonePlayerTurnImage.gameObject.SetActive(currentStone == StoneType.Black);
@@ -133,35 +133,35 @@ public class GameManager : Singleton<GameManager>
             whiteStonePlayerTurnImage.gameObject.SetActive(currentStone == StoneType.White);
         }
 
-        Debug.Log($"Â÷·Ê Ç¥½Ã ¾÷µ¥ÀÌÆ®: {(currentStone == StoneType.Black ? "Èæµ¹" : "¹éµ¹")} Â÷·Ê");
+        Debug.Log($"ì°¨ë¡€ í‘œì‹œ ì—…ë°ì´íŠ¸: {(currentStone == StoneType.Black ? "í‘ëŒ" : "ë°±ëŒ")} ì°¨ë¡€");
     }
 
 
     /// <summary>
-    /// °ÔÀÓ °á°ú UI Ç¥½Ã
+    /// ê²Œì„ ê²°ê³¼ UI í‘œì‹œ
     /// </summary>
-    /// <param name="winner">½Â¸®ÇÑ µ¹ Å¸ÀÔ</param>
-    /// <param name="isCurrentPlayerWinner">ÇöÀç ÇÃ·¹ÀÌ¾î°¡ ½Â¸®Çß´ÂÁö</param>
+    /// <param name="winner">ìŠ¹ë¦¬í•œ ëŒ íƒ€ì…</param>
+    /// <param name="isCurrentPlayerWinner">í˜„ì¬ í”Œë ˆì´ì–´ê°€ ìŠ¹ë¦¬í–ˆëŠ”ì§€</param>
     private void ShowGameResultUI(StoneType winner, bool isCurrentPlayerWinner)
     {
-        // Â÷·Ê Ç¥½Ã ÀÌ¹ÌÁöµé ¼û±â±â
+        // ì°¨ë¡€ í‘œì‹œ ì´ë¯¸ì§€ë“¤ ìˆ¨ê¸°ê¸°
         if (blackStonePlayerTurnImage != null) blackStonePlayerTurnImage.gameObject.SetActive(false);
         if (whiteStonePlayerTurnImage != null) whiteStonePlayerTurnImage.gameObject.SetActive(false);
 
-        if (winner == StoneType.None) // ¹«½ÂºÎ
+        if (winner == StoneType.None) // ë¬´ìŠ¹ë¶€
         {
             if (drawPanel != null)
             {
                 drawPanel.SetActive(true);
             }
         }
-        else // ½ÂºÎ °áÁ¤
+        else // ìŠ¹ë¶€ ê²°ì •
         {
             string winnerName = playerManager.GetPlayerNameByStone(winner);
 
             if (isCurrentPlayerWinner)
             {
-                // ½Â¸® ÆĞ³Î Ç¥½Ã
+                // ìŠ¹ë¦¬ íŒ¨ë„ í‘œì‹œ
                 if (winPanel != null)
                 {
                     winPanel.SetActive(true);
@@ -169,7 +169,7 @@ public class GameManager : Singleton<GameManager>
             }
             else
             {
-                // ÆĞ¹è ÆĞ³Î Ç¥½Ã
+                // íŒ¨ë°° íŒ¨ë„ í‘œì‹œ
                 if (losePanel != null)
                 {
                     losePanel.SetActive(true);
@@ -178,14 +178,14 @@ public class GameManager : Singleton<GameManager>
         }
     }
 
-    // UI¿¡¼­ ÇÃ·¹ÀÌ¾î ÀÌ¸§À» °¡Á®¿À´Â ¸Ş¼­µåµé Ãß°¡
+    // UIì—ì„œ í”Œë ˆì´ì–´ ì´ë¦„ì„ ê°€ì ¸ì˜¤ëŠ” ë©”ì„œë“œë“¤ ì¶”ê°€
     private string GetPlayer1NameFromUI()
     {
         if (player1NameText != null && !string.IsNullOrEmpty(player1NameText.text))
         {
             return player1NameText.text;
         }
-        return "ÇÃ·¹ÀÌ¾î 1"; // ±âº»°ª
+        return "í”Œë ˆì´ì–´ 1"; // ê¸°ë³¸ê°’
     }
 
     private string GetPlayer2NameFromUI()
@@ -194,41 +194,41 @@ public class GameManager : Singleton<GameManager>
         {
             return player2NameText.text;
         }
-        return "ÇÃ·¹ÀÌ¾î 2"; // ±âº»°ª
+        return "í”Œë ˆì´ì–´ 2"; // ê¸°ë³¸ê°’
     }
 
     /// <summary>
-    /// º¸µå¿¡¼­ À§Ä¡°¡ ¼±ÅÃµÇ¾úÀ» ¶§ È£ÃâµÇ´Â ÀÌº¥Æ® ÇÚµé·¯
+    /// ë³´ë“œì—ì„œ ìœ„ì¹˜ê°€ ì„ íƒë˜ì—ˆì„ ë•Œ í˜¸ì¶œë˜ëŠ” ì´ë²¤íŠ¸ í•¸ë“¤ëŸ¬
     /// </summary>
-    /// <param name="x">¼±ÅÃµÈ À§Ä¡ÀÇ xÁÂÇ¥</param>
-    /// <param name="y">¼±ÅÃµÈ À§Ä¡ÀÇ yÁÂÇ¥</param>
+    /// <param name="x">ì„ íƒëœ ìœ„ì¹˜ì˜ xì¢Œí‘œ</param>
+    /// <param name="y">ì„ íƒëœ ìœ„ì¹˜ì˜ yì¢Œí‘œ</param>
     private void OnPositionSelected(int x, int y)
     {
         if (currentGameState != GameState.Playing) return;
 
         StoneType currentPlayer = playerManager.GetCurrentPlayer();
 
-        // ÇØ´ç À§Ä¡¿¡ µ¹À» ³õÀ» ¼ö ÀÖ´ÂÁö °Ë»ç
+        // í•´ë‹¹ ìœ„ì¹˜ì— ëŒì„ ë†“ì„ ìˆ˜ ìˆëŠ”ì§€ ê²€ì‚¬
         if (boardManager.CanPlaceStone(x, y, currentPlayer))
         {
             pendingMove = new Vector2Int(x, y);
             hasPendingMove = true;
 
-            // ¿¹»ó µ¹ À§Ä¡ Ç¥½Ã
+            // ì˜ˆìƒ ëŒ ìœ„ì¹˜ í‘œì‹œ
             boardManager.ShowPendingMove(x, y, currentPlayer);
 
             UpdateUI();
-            Debug.Log($"Âø¼ö ´ë±â: ({x}, {y}) - {playerManager.GetCurrentPlayerName()}ÀÇ {(currentPlayer == StoneType.Black ? "Èæµ¹" : "¹éµ¹")}");
+            Debug.Log($"ì°©ìˆ˜ ëŒ€ê¸°: ({x}, {y}) - {playerManager.GetCurrentPlayerName()}ì˜ {(currentPlayer == StoneType.Black ? "í‘ëŒ" : "ë°±ëŒ")}");
         }
         else
         {
-            // Àß¸øµÈ À§Ä¡ ¼±ÅÃ½Ã ´ë±â »óÅÂ ÇØÁ¦
+            // ì˜ëª»ëœ ìœ„ì¹˜ ì„ íƒì‹œ ëŒ€ê¸° ìƒíƒœ í•´ì œ
             ClearPendingMove();
         }
     }
 
     /// <summary>
-    /// Âø¼ö È®Á¤
+    /// ì°©ìˆ˜ í™•ì •
     /// </summary>
     public void ConfirmMove()
     {
@@ -236,42 +236,42 @@ public class GameManager : Singleton<GameManager>
 
         StoneType currentPlayer = playerManager.GetCurrentPlayer();
 
-        // ½ÇÁ¦ µ¹ ³õ±â
+        // ì‹¤ì œ ëŒ ë†“ê¸°
         if (boardManager.PlaceStone(pendingMove.x, pendingMove.y, currentPlayer))
         {
             totalMoves++;
 
-            // ±İÁö À§Ä¡ Ç¥½Ã ¾÷µ¥ÀÌÆ®
+            // ê¸ˆì§€ ìœ„ì¹˜ í‘œì‹œ ì—…ë°ì´íŠ¸
             if (showForbiddenPositions && isRenjuModeEnabled)
             {
                 boardManager.UpdateForbiddenPositions();
             }
 
-            // ½Â¸® Á¶°Ç °Ë»ç
+            // ìŠ¹ë¦¬ ì¡°ê±´ ê²€ì‚¬
             if (renjuRule.CheckWinCondition(pendingMove.x, pendingMove.y, currentPlayer))
             {
                 EndGame(currentPlayer);
                 return;
             }
 
-            // ¹«½ÂºÎ °Ë»ç (¹ÙµÏÆÇÀÌ °¡µæÂü)
+            // ë¬´ìŠ¹ë¶€ ê²€ì‚¬ (ë°”ë‘‘íŒì´ ê°€ë“ì°¸)
             if (totalMoves >= 225) // 15x15 = 225
             {
-                EndGame(StoneType.None); // ¹«½ÂºÎ
+                EndGame(StoneType.None); // ë¬´ìŠ¹ë¶€
                 return;
             }
 
-            // ´ë±â »óÅÂ ÇØÁ¦
+            // ëŒ€ê¸° ìƒíƒœ í•´ì œ
             ClearPendingMove();
 
-            // ´ÙÀ½ ÇÃ·¹ÀÌ¾î·Î ÅÏ º¯°æ
+            // ë‹¤ìŒ í”Œë ˆì´ì–´ë¡œ í„´ ë³€ê²½
             playerManager.SwitchPlayer();
             UpdateUI();
         }
     }
 
     /// <summary>
-    /// Ç×º¹ Ã³¸®
+    /// í•­ë³µ ì²˜ë¦¬
     /// </summary>
     public void Surrender()
     {
@@ -283,14 +283,14 @@ public class GameManager : Singleton<GameManager>
         string currentPlayerName = playerManager.GetCurrentPlayerName();
         string winnerName = playerManager.GetPlayerNameByStone(winner);
 
-        // Ç×º¹ÇÑ ÇÃ·¹ÀÌ¾îÀÇ »ó´ë°¡ ½Â¸®
+        // í•­ë³µí•œ í”Œë ˆì´ì–´ì˜ ìƒëŒ€ê°€ ìŠ¹ë¦¬
         EndGame(winner);
 
-        Debug.Log($"{currentPlayerName}ÀÌ Ç×º¹Çß½À´Ï´Ù. {winnerName} ½Â¸®!");
+        Debug.Log($"{currentPlayerName}ì´ í•­ë³µí–ˆìŠµë‹ˆë‹¤. {winnerName} ìŠ¹ë¦¬!");
     }
 
     /// <summary>
-    /// ´ë±â ÁßÀÎ Âø¼ö Ãë¼Ò
+    /// ëŒ€ê¸° ì¤‘ì¸ ì°©ìˆ˜ ì·¨ì†Œ
     /// </summary>
     private void ClearPendingMove()
     {
@@ -300,62 +300,62 @@ public class GameManager : Singleton<GameManager>
     }
 
     /// <summary>
-    /// °ÔÀÓ Á¾·á Ã³¸® (UI Ç¥½Ã ¹æ½Ä º¯°æ)
+    /// ê²Œì„ ì¢…ë£Œ ì²˜ë¦¬ (UI í‘œì‹œ ë°©ì‹ ë³€ê²½)
     /// </summary>
-    /// <param name="winner">½Â¸®ÇÑ ÇÃ·¹ÀÌ¾îÀÇ µ¹ Å¸ÀÔ</param>
+    /// <param name="winner">ìŠ¹ë¦¬í•œ í”Œë ˆì´ì–´ì˜ ëŒ íƒ€ì…</param>
     private void EndGame(StoneType winner)
     {
         currentGameState = GameState.GameOver;
 
-        // °ÔÀÓ °á°ú ±â·Ï
+        // ê²Œì„ ê²°ê³¼ ê¸°ë¡
         playerManager.RecordGameResult(winner);
 
-        // ÇöÀç ÇÃ·¹ÀÌ¾î°¡ ½Â¸®Çß´ÂÁö È®ÀÎ
+        // í˜„ì¬ í”Œë ˆì´ì–´ê°€ ìŠ¹ë¦¬í–ˆëŠ”ì§€ í™•ì¸
         bool isCurrentPlayerWinner = (winner == playerManager.GetCurrentPlayer());
 
-        // °ÔÀÓ °á°ú UI Ç¥½Ã
+        // ê²Œì„ ê²°ê³¼ UI í‘œì‹œ
         ShowGameResultUI(winner, isCurrentPlayerWinner);
 
-        // ´ë±â ÁßÀÎ Âø¼ö Ãë¼Ò
+        // ëŒ€ê¸° ì¤‘ì¸ ì°©ìˆ˜ ì·¨ì†Œ
         ClearPendingMove();
 
-        // ¸ğµç ¸¶Ä¿ ¼û±â±â
+        // ëª¨ë“  ë§ˆì»¤ ìˆ¨ê¸°ê¸°
         boardManager.HideAllMarkers();
 
         string resultMessage = "";
         switch (winner)
         {
             case StoneType.Black:
-                resultMessage = $"{playerManager.GetBlackStonePlayerName()} ½Â¸®! (Èæµ¹)";
+                resultMessage = $"{playerManager.GetBlackStonePlayerName()} ìŠ¹ë¦¬! (í‘ëŒ)";
                 break;
             case StoneType.White:
-                resultMessage = $"{playerManager.GetWhiteStonePlayerName()} ½Â¸®! (¹éµ¹)";
+                resultMessage = $"{playerManager.GetWhiteStonePlayerName()} ìŠ¹ë¦¬! (ë°±ëŒ)";
                 break;
             case StoneType.None:
-                resultMessage = "¹«½ÂºÎ!";
+                resultMessage = "ë¬´ìŠ¹ë¶€!";
                 break;
         }
 
-        Debug.Log($"°ÔÀÓ Á¾·á: {resultMessage}");
+        Debug.Log($"ê²Œì„ ì¢…ë£Œ: {resultMessage}");
     }
 
     /// <summary>
-    /// UI ¾÷µ¥ÀÌÆ® (¹öÆ° »óÅÂ¸¸ °ü¸®)
+    /// UI ì—…ë°ì´íŠ¸ (ë²„íŠ¼ ìƒíƒœë§Œ ê´€ë¦¬)
     /// </summary>
     private void UpdateUI()
     {
-        // ÇÃ·¹ÀÌ¾î Â÷·Ê Ç¥½Ã ¾÷µ¥ÀÌÆ®
+        // í”Œë ˆì´ì–´ ì°¨ë¡€ í‘œì‹œ ì—…ë°ì´íŠ¸
         UpdatePlayerTurnDisplay();
 
-        // Âø¼ö È®Á¤ ¹öÆ°Àº ´ë±â ÁßÀÎ Âø¼ö°¡ ÀÖÀ» ¶§¸¸ È°¼ºÈ­
+        // ì°©ìˆ˜ í™•ì • ë²„íŠ¼ì€ ëŒ€ê¸° ì¤‘ì¸ ì°©ìˆ˜ê°€ ìˆì„ ë•Œë§Œ í™œì„±í™”
         confirmMoveButton.interactable = hasPendingMove && currentGameState == GameState.Playing;
 
-        // Ç×º¹ ¹öÆ°Àº °ÔÀÓ ÁßÀÏ ¶§¸¸ È°¼ºÈ­
+        // í•­ë³µ ë²„íŠ¼ì€ ê²Œì„ ì¤‘ì¼ ë•Œë§Œ í™œì„±í™”
         surrenderButton.interactable = currentGameState == GameState.Playing;
     }
 
     /// <summary>
-    /// °ÔÀÓ »óÅÂ ¹İÈ¯
+    /// ê²Œì„ ìƒíƒœ ë°˜í™˜
     /// </summary>
     public GameState GetGameState()
     {
@@ -363,7 +363,7 @@ public class GameManager : Singleton<GameManager>
     }
 
     /// <summary>
-    /// ±İÁö À§Ä¡ Ç¥½Ã Åä±Û
+    /// ê¸ˆì§€ ìœ„ì¹˜ í‘œì‹œ í† ê¸€
     /// </summary>
     public void ToggleForbiddenPositions()
     {

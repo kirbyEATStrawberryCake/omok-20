@@ -14,16 +14,16 @@ public class AuthManager : MonoBehaviour
     /// <param name="nickname">닉네임</param>
     /// <param name="onSuccess">회원가입 성공 시 실행할 액션</param>
     /// <param name="onFail">회원가입 실패 시 실행할 액션</param>
-    public void SignUp(string username, string password, string nickname,
+    public void SignUp(string username, string password, string nickname, int profileImage,
         Action onSuccess, Action<AuthResponseType> onFail)
     {
-        StartCoroutine(SignUpCoroutine(username, password, nickname, onSuccess, onFail));
+        StartCoroutine(SignUpCoroutine(username, password, nickname, profileImage, onSuccess, onFail));
     }
 
-    private IEnumerator SignUpCoroutine(string username, string password, string nickname,
+    private IEnumerator SignUpCoroutine(string username, string password, string nickname, int profileImage,
         Action onSuccess, Action<AuthResponseType> onFail)
     {
-        SignUpRequest requestData = new(username, password, nickname);
+        SignUpRequest requestData = new(username, password, nickname, profileImage);
 
         yield return networkManager.PostRequest<SignUpRequest, AuthResponse>(
             "/auth/signup",

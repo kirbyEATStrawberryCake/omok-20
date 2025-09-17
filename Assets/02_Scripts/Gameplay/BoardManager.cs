@@ -5,53 +5,53 @@ using System;
 public class BoardManager : MonoBehaviour
 {
     [Header("Sprites")]
-    public Sprite boardSprite;                  // ¿À¸ñÆÇ ½ºÇÁ¶óÀÌÆ®
-    public Sprite blackStoneSprite;             // Èæµ¹ ½ºÇÁ¶óÀÌÆ®
-    public Sprite whiteStoneSprite;             // ¹éµ¹ ½ºÇÁ¶óÀÌÆ®
-    public Sprite forbiddenMarkerSprite;        // ±İÁö À§Ä¡ ¸¶Ä¿ ½ºÇÁ¶óÀÌÆ®
-    public Sprite selectedMarkerSprite;         // ¼±ÅÃÇÑ À§Ä¡ Ç¥½Ã ¸¶Ä¿ ½ºÇÁ¶óÀÌÆ®
-    public Sprite lastMoveMarkerSprite;         // ¸¶Áö¸· Âø¼ö À§Ä¡ Ç¥½Ã ¸¶Ä¿ ½ºÇÁ¶óÀÌÆ®
-    public Sprite pendingMoveSprite;            // Âø¼ö ´ë±â Ç¥½Ã ½ºÇÁ¶óÀÌÆ®
+    public Sprite boardSprite;                  // ì˜¤ëª©íŒ ìŠ¤í”„ë¼ì´íŠ¸
+    public Sprite blackStoneSprite;             // í‘ëŒ ìŠ¤í”„ë¼ì´íŠ¸
+    public Sprite whiteStoneSprite;             // ë°±ëŒ ìŠ¤í”„ë¼ì´íŠ¸
+    public Sprite forbiddenMarkerSprite;        // ê¸ˆì§€ ìœ„ì¹˜ ë§ˆì»¤ ìŠ¤í”„ë¼ì´íŠ¸
+    public Sprite selectedMarkerSprite;         // ì„ íƒí•œ ìœ„ì¹˜ í‘œì‹œ ë§ˆì»¤ ìŠ¤í”„ë¼ì´íŠ¸
+    public Sprite lastMoveMarkerSprite;         // ë§ˆì§€ë§‰ ì°©ìˆ˜ ìœ„ì¹˜ í‘œì‹œ ë§ˆì»¤ ìŠ¤í”„ë¼ì´íŠ¸
+    public Sprite pendingMoveSprite;            // ì°©ìˆ˜ ëŒ€ê¸° í‘œì‹œ ìŠ¤í”„ë¼ì´íŠ¸
 
     [Header("Board Settings")]
-    public int boardSize = 15;                  // ¿À¸ñÆÇ Å©±â (15x15)
-    public float cellSize = 0.494f;               // °¢ Ä­ÀÇ Å©±â
-    public Vector2 boardOffset = Vector2.zero;  // º¸µå ¿ÀÇÁ¼Â
+    public int boardSize = 15;                  // ì˜¤ëª©íŒ í¬ê¸° (15x15)
+    public float cellSize = 0.494f;               // ê° ì¹¸ì˜ í¬ê¸°
+    public Vector2 boardOffset = Vector2.zero;  // ë³´ë“œ ì˜¤í”„ì…‹
 
     [Header("Marker Settings")]
-    public float markerAlpha = 0.7f;            // ¸¶Ä¿ Åõ¸íµµ
-    public Color forbiddenColor = Color.red;    // ±İÁö À§Ä¡ »ö»ó
-    public Color selectedColor = Color.yellow;   // ¼±ÅÃ À§Ä¡ »ö»ó
-    public Color lastMoveColor = Color.green;   // ¸¶Áö¸· ¼ö »ö»ó
-    public Color pendingMoveColor = Color.cyan; // Âø¼ö ´ë±â »ö»ó
+    public float markerAlpha = 0.7f;            // ë§ˆì»¤ íˆ¬ëª…ë„
+    public Color forbiddenColor = Color.red;    // ê¸ˆì§€ ìœ„ì¹˜ ìƒ‰ìƒ
+    public Color selectedColor = Color.yellow;   // ì„ íƒ ìœ„ì¹˜ ìƒ‰ìƒ
+    public Color lastMoveColor = Color.green;   // ë§ˆì§€ë§‰ ìˆ˜ ìƒ‰ìƒ
+    public Color pendingMoveColor = Color.cyan; // ì°©ìˆ˜ ëŒ€ê¸° ìƒ‰ìƒ
 
-    protected StoneType[,] board;                 // ¿À¸ñÆÇ ¹è¿­ (³í¸®Àû º¸µå)
-    private GameObject[,] stoneObjects;         // µ¹ ¿ÀºêÁ§Æ® ¹è¿­
-    private GameObject boardObject;             // º¸µå ½ºÇÁ¶óÀÌÆ® ¿ÀºêÁ§Æ®
+    protected StoneType[,] board;                 // ì˜¤ëª©íŒ ë°°ì—´ (ë…¼ë¦¬ì  ë³´ë“œ)
+    private GameObject[,] stoneObjects;         // ëŒ ì˜¤ë¸Œì íŠ¸ ë°°ì—´
+    private GameObject boardObject;             // ë³´ë“œ ìŠ¤í”„ë¼ì´íŠ¸ ì˜¤ë¸Œì íŠ¸
 
-    // ¸Å´ÏÀú ÂüÁ¶ (È¿À²ÀûÀÎ Á¢±Ù)
+    // ë§¤ë‹ˆì € ì°¸ì¡° (íš¨ìœ¨ì ì¸ ì ‘ê·¼)
     private GameManager gameManager;
     private RenjuRule renjuRule;
 
-    // ¸¶Ä¿ °ü¸®
-    private List<GameObject> forbiddenMarkers;  // ±İÁö À§Ä¡ ¸¶Ä¿µé
-    private GameObject selectedMarker;          // ÇöÀç ¼±ÅÃµÈ À§Ä¡ ¸¶Ä¿
-    private GameObject lastMoveMarker;          // ¸¶Áö¸· ¼ö ¸¶Ä¿
-    private GameObject pendingMoveMarker;       // Âø¼ö ´ë±â ¸¶Ä¿
+    // ë§ˆì»¤ ê´€ë¦¬
+    private List<GameObject> forbiddenMarkers;  // ê¸ˆì§€ ìœ„ì¹˜ ë§ˆì»¤ë“¤
+    private GameObject selectedMarker;          // í˜„ì¬ ì„ íƒëœ ìœ„ì¹˜ ë§ˆì»¤
+    private GameObject lastMoveMarker;          // ë§ˆì§€ë§‰ ìˆ˜ ë§ˆì»¤
+    private GameObject pendingMoveMarker;       // ì°©ìˆ˜ ëŒ€ê¸° ë§ˆì»¤
 
-    // ¸¶¿ì½º À§Ä¡ ÃßÀû
+    // ë§ˆìš°ìŠ¤ ìœ„ì¹˜ ì¶”ì 
     private Vector2Int hoveredPosition = new Vector2Int(-1, -1);
 
-    // À§Ä¡°¡ ¼±ÅÃµÇ¾úÀ» ¶§ ¹ß»ıÇÏ´Â ÀÌº¥Æ®
+    // ìœ„ì¹˜ê°€ ì„ íƒë˜ì—ˆì„ ë•Œ ë°œìƒí•˜ëŠ” ì´ë²¤íŠ¸
     public event Action<int, int> OnPositionSelected;
 
     /// <summary>
-    /// GameManager ÂüÁ¶ ¼³Á¤
+    /// GameManager ì°¸ì¡° ì„¤ì •
     /// </summary>
     public void SetGameManager(GameManager manager)
     {
         gameManager = manager;
-        renjuRule = gameManager.renjuRule; // GameManager¸¦ ÅëÇØ RenjuRule ÂüÁ¶ È¹µæ
+        renjuRule = gameManager.renjuRule; // GameManagerë¥¼ í†µí•´ RenjuRule ì°¸ì¡° íšë“
     }
 
     void Start()
@@ -65,26 +65,26 @@ public class BoardManager : MonoBehaviour
     }
 
     /// <summary>
-    /// ¿À¸ñÆÇ ÃÊ±âÈ­
+    /// ì˜¤ëª©íŒ ì´ˆê¸°í™”
     /// </summary>
     public void InitializeBoard()
     {
-        // ¹è¿­ ÃÊ±âÈ­
+        // ë°°ì—´ ì´ˆê¸°í™”
         board = new StoneType[boardSize, boardSize];
         stoneObjects = new GameObject[boardSize, boardSize];
         forbiddenMarkers = new List<GameObject>();
 
-        // ±âÁ¸ ¿ÀºêÁ§Æ®µé Á¦°Å
+        // ê¸°ì¡´ ì˜¤ë¸Œì íŠ¸ë“¤ ì œê±°
         ClearBoard();
 
-        // º¸µå ½ºÇÁ¶óÀÌÆ® »ı¼º
+        // ë³´ë“œ ìŠ¤í”„ë¼ì´íŠ¸ ìƒì„±
         CreateBoardSprite();
 
-        Debug.Log("¿À¸ñÆÇÀÌ ÃÊ±âÈ­µÇ¾ú½À´Ï´Ù.");
+        Debug.Log("ì˜¤ëª©íŒì´ ì´ˆê¸°í™”ë˜ì—ˆìŠµë‹ˆë‹¤.");
     }
 
     /// <summary>
-    /// º¸µå ½ºÇÁ¶óÀÌÆ® »ı¼º
+    /// ë³´ë“œ ìŠ¤í”„ë¼ì´íŠ¸ ìƒì„±
     /// </summary>
     private void CreateBoardSprite()
     {
@@ -99,15 +99,15 @@ public class BoardManager : MonoBehaviour
 
         SpriteRenderer boardRenderer = boardObject.AddComponent<SpriteRenderer>();
         boardRenderer.sprite = boardSprite;
-        boardRenderer.sortingOrder = 0; // °¡Àå µÚ¿¡ ·»´õ¸µ
+        boardRenderer.sortingOrder = 0; // ê°€ì¥ ë’¤ì— ë Œë”ë§
 
-        // º¸µå Å©±â Á¶Á¤
-        // º¸µå ½ºÇÁ¶óÀÌÆ®´Â ¿øº» Å©±â À¯Áö (°İÀÚ´Â º°µµ·Î °è»ê)
+        // ë³´ë“œ í¬ê¸° ì¡°ì •
+        // ë³´ë“œ ìŠ¤í”„ë¼ì´íŠ¸ëŠ” ì›ë³¸ í¬ê¸° ìœ ì§€ (ê²©ìëŠ” ë³„ë„ë¡œ ê³„ì‚°)
         boardObject.transform.localScale = Vector3.one;
     }
 
     /// <summary>
-    /// ¿À¸ñÆÇÀÇ ¸ğµç µ¹ Á¦°Å
+    /// ì˜¤ëª©íŒì˜ ëª¨ë“  ëŒ ì œê±°
     /// </summary>
     private void ClearBoard()
     {
@@ -125,12 +125,12 @@ public class BoardManager : MonoBehaviour
             }
         }
 
-        // ¸¶Ä¿µé Á¦°Å
+        // ë§ˆì»¤ë“¤ ì œê±°
         HideAllMarkers();
     }
 
     /// <summary>
-    /// ¸¶¿ì½º ÀÔ·Â Ã³¸®
+    /// ë§ˆìš°ìŠ¤ ì…ë ¥ ì²˜ë¦¬
     /// </summary>
     private void HandleMouseInput()
     {
@@ -139,14 +139,14 @@ public class BoardManager : MonoBehaviour
 
         Vector2Int boardPos = WorldToBoardPosition(mouseWorldPos);
 
-        // ¸¶¿ì½º È£¹ö Ã³¸®
+        // ë§ˆìš°ìŠ¤ í˜¸ë²„ ì²˜ë¦¬
         if (IsValidPosition(boardPos.x, boardPos.y) && boardPos != hoveredPosition)
         {
             hoveredPosition = boardPos;
             UpdateSelectedMarker(boardPos.x, boardPos.y);
         }
 
-        // Å¬¸¯ Ã³¸®
+        // í´ë¦­ ì²˜ë¦¬
         if (Input.GetMouseButtonDown(0))
         {
             HandleBoardClick(boardPos.x, boardPos.y);
@@ -154,7 +154,7 @@ public class BoardManager : MonoBehaviour
     }
 
     /// <summary>
-    /// º¸µå Å¬¸¯ Ã³¸®
+    /// ë³´ë“œ í´ë¦­ ì²˜ë¦¬
     /// </summary>
     private void HandleBoardClick(int x, int y)
     {
@@ -162,32 +162,32 @@ public class BoardManager : MonoBehaviour
 
         if (IsValidPosition(x, y))
         {
-            // À§Ä¡ ¼±ÅÃ ÀÌº¥Æ® ¹ß»ı
+            // ìœ„ì¹˜ ì„ íƒ ì´ë²¤íŠ¸ ë°œìƒ
             OnPositionSelected?.Invoke(x, y);
         }
     }
 
     /// <summary>
-    /// ÁöÁ¤ÇÑ À§Ä¡¿¡ µ¹À» ³õÀ» ¼ö ÀÖ´ÂÁö °Ë»ç
+    /// ì§€ì •í•œ ìœ„ì¹˜ì— ëŒì„ ë†“ì„ ìˆ˜ ìˆëŠ”ì§€ ê²€ì‚¬
     /// </summary>
-    /// <param name="x">xÁÂÇ¥</param>
-    /// <param name="y">yÁÂÇ¥</param>
-    /// <param name="stoneType">³õÀ» µ¹ÀÇ Å¸ÀÔ</param>
-    /// <returns>µ¹À» ³õÀ» ¼ö ÀÖ´ÂÁö ¿©ºÎ</returns>
+    /// <param name="x">xì¢Œí‘œ</param>
+    /// <param name="y">yì¢Œí‘œ</param>
+    /// <param name="stoneType">ë†“ì„ ëŒì˜ íƒ€ì…</param>
+    /// <returns>ëŒì„ ë†“ì„ ìˆ˜ ìˆëŠ”ì§€ ì—¬ë¶€</returns>
     public bool CanPlaceStone(int x, int y, StoneType stoneType)
     {
-        // ¹üÀ§ °Ë»ç
+        // ë²”ìœ„ ê²€ì‚¬
         if (!IsValidPosition(x, y)) return false;
 
-        // ÀÌ¹Ì µ¹ÀÌ ³õ¿©ÀÖ´ÂÁö °Ë»ç
+        // ì´ë¯¸ ëŒì´ ë†“ì—¬ìˆëŠ”ì§€ ê²€ì‚¬
         if (board[x, y] != StoneType.None) return false;
 
-        // ·»ÁÖ·ê °Ë»ç (Èæµ¹ÀÎ °æ¿ì¸¸)
+        // ë Œì£¼ë£° ê²€ì‚¬ (í‘ëŒì¸ ê²½ìš°ë§Œ)
         if (gameManager.isRenjuModeEnabled && stoneType == StoneType.Black)
         {
             if (!renjuRule.IsValidMove(x, y, stoneType, board))
             {
-                Debug.Log("·»ÁÖ·ê À§¹İÀ¸·Î ÇØ´ç À§Ä¡¿¡ µ¹À» ³õÀ» ¼ö ¾ø½À´Ï´Ù.");
+                Debug.Log("ë Œì£¼ë£° ìœ„ë°˜ìœ¼ë¡œ í•´ë‹¹ ìœ„ì¹˜ì— ëŒì„ ë†“ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.");
                 return false;
             }
         }
@@ -196,20 +196,20 @@ public class BoardManager : MonoBehaviour
     }
 
     /// <summary>
-    /// ½ÇÁ¦·Î µ¹À» ³õ´Â ¸Ş¼­µå
+    /// ì‹¤ì œë¡œ ëŒì„ ë†“ëŠ” ë©”ì„œë“œ
     /// </summary>
-    /// <param name="x">xÁÂÇ¥</param>
-    /// <param name="y">yÁÂÇ¥</param>
-    /// <param name="stoneType">µ¹ÀÇ Å¸ÀÔ</param>
-    /// <returns>µ¹ÀÌ ¼º°øÀûÀ¸·Î ³õ¿´´ÂÁö ¿©ºÎ</returns>
+    /// <param name="x">xì¢Œí‘œ</param>
+    /// <param name="y">yì¢Œí‘œ</param>
+    /// <param name="stoneType">ëŒì˜ íƒ€ì…</param>
+    /// <returns>ëŒì´ ì„±ê³µì ìœ¼ë¡œ ë†“ì˜€ëŠ”ì§€ ì—¬ë¶€</returns>
     public bool PlaceStone(int x, int y, StoneType stoneType)
     {
         if (!CanPlaceStone(x, y, stoneType)) return false;
 
-        // ³í¸®Àû º¸µå¿¡ µ¹ Á¤º¸ ÀúÀå
+        // ë…¼ë¦¬ì  ë³´ë“œì— ëŒ ì •ë³´ ì €ì¥
         board[x, y] = stoneType;
 
-        // ½Ã°¢Àû µ¹ ½ºÇÁ¶óÀÌÆ® »ı¼º
+        // ì‹œê°ì  ëŒ ìŠ¤í”„ë¼ì´íŠ¸ ìƒì„±
         Vector3 worldPos = BoardToWorldPosition(x, y);
         GameObject stoneObj = new GameObject($"Stone_{x}_{y}");
         stoneObj.transform.SetParent(transform);
@@ -217,24 +217,24 @@ public class BoardManager : MonoBehaviour
 
         SpriteRenderer stoneRenderer = stoneObj.AddComponent<SpriteRenderer>();
         stoneRenderer.sprite = (stoneType == StoneType.Black) ? blackStoneSprite : whiteStoneSprite;
-        stoneRenderer.sortingOrder = 1; // º¸µåº¸´Ù ¾Õ¿¡ ·»´õ¸µ
+        stoneRenderer.sortingOrder = 1; // ë³´ë“œë³´ë‹¤ ì•ì— ë Œë”ë§
 
-        // µ¹ ÄÄÆ÷³ÍÆ® ¼³Á¤
+        // ëŒ ì»´í¬ë„ŒíŠ¸ ì„¤ì •
         Stone stone = stoneObj.AddComponent<Stone>();
         stone.SetStoneType(stoneType);
         stone.SetPosition(x, y);
 
         stoneObjects[x, y] = stoneObj;
 
-        // ¸¶Áö¸· ¼ö ¸¶Ä¿ ¾÷µ¥ÀÌÆ®
+        // ë§ˆì§€ë§‰ ìˆ˜ ë§ˆì»¤ ì—…ë°ì´íŠ¸
         UpdateLastMoveMarker(x, y);
 
-        Debug.Log($"µ¹ÀÌ ³õ¿´½À´Ï´Ù: ({x}, {y}) - {stoneType}");
+        Debug.Log($"ëŒì´ ë†“ì˜€ìŠµë‹ˆë‹¤: ({x}, {y}) - {stoneType}");
         return true;
     }
 
     /// <summary>
-    /// Âø¼ö ´ë±â Ç¥½Ã
+    /// ì°©ìˆ˜ ëŒ€ê¸° í‘œì‹œ
     /// </summary>
     public void ShowPendingMove(int x, int y, StoneType stoneType)
     {
@@ -255,7 +255,7 @@ public class BoardManager : MonoBehaviour
         }
         else
         {
-            // µ¹ »ö»ó¿¡ ¸Â°Ô ½ºÇÁ¶óÀÌÆ® º¯°æ
+            // ëŒ ìƒ‰ìƒì— ë§ê²Œ ìŠ¤í”„ë¼ì´íŠ¸ ë³€ê²½
             SpriteRenderer renderer = pendingMoveMarker.GetComponent<SpriteRenderer>();
             renderer.sprite = (stoneType == StoneType.Black) ? blackStoneSprite : whiteStoneSprite;
         }
@@ -265,7 +265,7 @@ public class BoardManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Âø¼ö ´ë±â Ç¥½Ã ¼û±â±â
+    /// ì°©ìˆ˜ ëŒ€ê¸° í‘œì‹œ ìˆ¨ê¸°ê¸°
     /// </summary>
     public void HidePendingMove()
     {
@@ -276,13 +276,13 @@ public class BoardManager : MonoBehaviour
     }
 
     /// <summary>
-    /// ¼±ÅÃµÈ À§Ä¡ ¸¶Ä¿ ¾÷µ¥ÀÌÆ®
+    /// ì„ íƒëœ ìœ„ì¹˜ ë§ˆì»¤ ì—…ë°ì´íŠ¸
     /// </summary>
     private void UpdateSelectedMarker(int x, int y)
     {
         if (gameManager.GetGameState() != GameState.Playing) return;
 
-        // ÀÌ¹Ì µ¹ÀÌ ³õÀÎ À§Ä¡´Â ¸¶Ä¿ Ç¥½ÃÇÏÁö ¾ÊÀ½
+        // ì´ë¯¸ ëŒì´ ë†“ì¸ ìœ„ì¹˜ëŠ” ë§ˆì»¤ í‘œì‹œí•˜ì§€ ì•ŠìŒ
         if (board[x, y] != StoneType.None)
         {
             HideSelectedMarker();
@@ -308,7 +308,7 @@ public class BoardManager : MonoBehaviour
     }
 
     /// <summary>
-    /// ¼±ÅÃµÈ À§Ä¡ ¸¶Ä¿ ¼û±â±â
+    /// ì„ íƒëœ ìœ„ì¹˜ ë§ˆì»¤ ìˆ¨ê¸°ê¸°
     /// </summary>
     private void HideSelectedMarker()
     {
@@ -319,7 +319,7 @@ public class BoardManager : MonoBehaviour
     }
 
     /// <summary>
-    /// ¸¶Áö¸· ¼ö ¸¶Ä¿ ¾÷µ¥ÀÌÆ®
+    /// ë§ˆì§€ë§‰ ìˆ˜ ë§ˆì»¤ ì—…ë°ì´íŠ¸
     /// </summary>
     private void UpdateLastMoveMarker(int x, int y)
     {
@@ -342,7 +342,7 @@ public class BoardManager : MonoBehaviour
     }
 
     /// <summary>
-    /// ¸¶Áö¸· ¼ö ¸¶Ä¿ ¼û±â±â
+    /// ë§ˆì§€ë§‰ ìˆ˜ ë§ˆì»¤ ìˆ¨ê¸°ê¸°
     /// </summary>
     private void HideLastMoveMarker()
     {
@@ -353,7 +353,7 @@ public class BoardManager : MonoBehaviour
     }
 
     /// <summary>
-    /// ±İÁö À§Ä¡ ¸¶Ä¿µé ¾÷µ¥ÀÌÆ®
+    /// ê¸ˆì§€ ìœ„ì¹˜ ë§ˆì»¤ë“¤ ì—…ë°ì´íŠ¸
     /// </summary>
     public void UpdateForbiddenPositions()
     {
@@ -370,7 +370,7 @@ public class BoardManager : MonoBehaviour
     }
 
     /// <summary>
-    /// ±İÁö À§Ä¡ ¸¶Ä¿ »ı¼º
+    /// ê¸ˆì§€ ìœ„ì¹˜ ë§ˆì»¤ ìƒì„±
     /// </summary>
     private void CreateForbiddenMarker(int x, int y)
     {
@@ -390,7 +390,7 @@ public class BoardManager : MonoBehaviour
     }
 
     /// <summary>
-    /// ±İÁö À§Ä¡ ¸¶Ä¿µé ¼û±â±â
+    /// ê¸ˆì§€ ìœ„ì¹˜ ë§ˆì»¤ë“¤ ìˆ¨ê¸°ê¸°
     /// </summary>
     public void HideForbiddenMarkers()
     {
@@ -405,7 +405,7 @@ public class BoardManager : MonoBehaviour
     }
 
     /// <summary>
-    /// ¸ğµç ¸¶Ä¿ ¼û±â±â
+    /// ëª¨ë“  ë§ˆì»¤ ìˆ¨ê¸°ê¸°
     /// </summary>
     public void HideAllMarkers()
     {
@@ -416,28 +416,28 @@ public class BoardManager : MonoBehaviour
     }
 
     /// <summary>
-    /// º¸µå ÁÂÇ¥¸¦ ¿ùµå ÁÂÇ¥·Î º¯È¯
+    /// ë³´ë“œ ì¢Œí‘œë¥¼ ì›”ë“œ ì¢Œí‘œë¡œ ë³€í™˜
     /// </summary>
     private Vector3 BoardToWorldPosition(int x, int y)
     {
         float worldX = (x - (boardSize - 1) / 2.0f) * cellSize + boardOffset.x;
-        float worldY = ((boardSize - 1) / 2.0f - y) * cellSize + boardOffset.y; // YÃà ¹İÀü
+        float worldY = ((boardSize - 1) / 2.0f - y) * cellSize + boardOffset.y; // Yì¶• ë°˜ì „
         return transform.position + new Vector3(worldX, worldY, 0);
     }
 
     /// <summary>
-    /// ¿ùµå ÁÂÇ¥¸¦ º¸µå ÁÂÇ¥·Î º¯È¯
+    /// ì›”ë“œ ì¢Œí‘œë¥¼ ë³´ë“œ ì¢Œí‘œë¡œ ë³€í™˜
     /// </summary>
     private Vector2Int WorldToBoardPosition(Vector3 worldPos)
     {
         Vector3 localPos = worldPos - transform.position;
         int x = Mathf.RoundToInt((localPos.x - boardOffset.x) / cellSize + (boardSize - 1) / 2.0f);
-        int y = Mathf.RoundToInt((boardSize - 1) / 2.0f - (localPos.y - boardOffset.y) / cellSize); // YÃà ¹İÀü
+        int y = Mathf.RoundToInt((boardSize - 1) / 2.0f - (localPos.y - boardOffset.y) / cellSize); // Yì¶• ë°˜ì „
         return new Vector2Int(x, y);
     }
 
     /// <summary>
-    /// À¯È¿ÇÑ À§Ä¡ÀÎÁö °Ë»ç
+    /// ìœ íš¨í•œ ìœ„ì¹˜ì¸ì§€ ê²€ì‚¬
     /// </summary>
     public bool IsValidPosition(int x, int y)
     {
@@ -445,7 +445,7 @@ public class BoardManager : MonoBehaviour
     }
 
     /// <summary>
-    /// ÁöÁ¤ÇÑ À§Ä¡ÀÇ µ¹ Å¸ÀÔ ¹İÈ¯
+    /// ì§€ì •í•œ ìœ„ì¹˜ì˜ ëŒ íƒ€ì… ë°˜í™˜
     /// </summary>
     public StoneType GetStoneAt(int x, int y)
     {
@@ -454,7 +454,7 @@ public class BoardManager : MonoBehaviour
     }
 
     /// <summary>
-    /// ÇöÀç º¸µå »óÅÂ ¹İÈ¯ (º¹»çº»)
+    /// í˜„ì¬ ë³´ë“œ ìƒíƒœ ë°˜í™˜ (ë³µì‚¬ë³¸)
     /// </summary>
     public StoneType[,] GetBoardState()
     {
