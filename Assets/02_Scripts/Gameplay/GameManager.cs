@@ -21,10 +21,20 @@ public class GameManager : Singleton<GameManager>
     public RenjuRule renjuRule;                // 렌주룰 관리자 참조
 
     [Header("UI Components")]
-    public TMP_Text currentPlayerText;              // 현재 플레이어 표시 텍스트
-    public TMP_Text gameStatusText;                 // 게임 상태 표시 텍스트
+    public Image blackStonePlayerTurnImage;     // 흑돌 플레이어 차례 표시 이미지
+    public Image whiteStonePlayerTurnImage;     // 백돌 플레이어 차례 표시 이미지
+
+    public GameObject winPanel;                 // 승리 패널
+    public GameObject losePanel;                // 패배 패널
+    public GameObject drawPanel;                // 무승부 패널 (선택사항
+
     public Button confirmMoveButton;            // 착수 확정 버튼
     public Button surrenderButton;              // 항복 버튼
+
+    // TMP Text 필드 추가
+    [Header("Player Name Input")]
+    public TMP_Text player1NameText;            // 플레이어1 이름 TMP Text
+    public TMP_Text player2NameText;            // 플레이어2 이름 TMP Text
 
     [Header("Game Settings")]
     public bool isRenjuModeEnabled = true;      // 렌주룰 적용 여부
@@ -64,11 +74,21 @@ public class GameManager : Singleton<GameManager>
 
         // 각 매니저 초기화
         boardManager.InitializeBoard();
+
+        // UI에서 플레이어 이름을 읽어와서 설정
+        string player1Name = GetPlayer1NameFromUI();
+        string player2Name = GetPlayer2NameFromUI();
+
+        // PlayerManager에 플레이어 이름 설정
+        playerManager.SetPlayerNames(player1Name, player2Name);
         playerManager.RandomizePlayerStones(); // 플레이어별 돌 색깔 랜덤 할당
+
         renjuRule.Initialize();
 
+
         // UI 초기화
-        UpdateUI();
+        InitializeUI();
+        UpdatePlayerTurnDisplay();
 
         // 이벤트 등록
         boardManager.OnPositionSelected += OnPositionSelected;
@@ -76,6 +96,105 @@ public class GameManager : Singleton<GameManager>
         surrenderButton.onClick.AddListener(Surrender);
 
         Debug.Log("게임이 시작되었습니다!");
+    }
+
+    /// <summary>
+    /// UI 초기화 (게임 시작시)
+    /// </summary>
+    private void InitializeUI()
+    {
+        // 결과 패널들 숨기기
+        if (winPanel != null) winPanel.SetActive(false);
+        if (losePanel != null) losePanel.SetActive(false);
+        if (drawPanel != null) drawPanel.SetActive(false);
+
+        // 차례 표시 이미지들 초기화
+        if (blackStonePlayerTurnImage != null) blackStonePlayerTurnImage.gameObject.SetActive(false);
+        if (whiteStonePlayerTurnImage != null) whiteStonePlayerTurnImage.gameObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// 플레이어 차례 표시 업데이트
+    /// </summary>
+    private void UpdatePlayerTurnDisplay()
+    {
+        if (playerManager == null) return;
+
+        StoneType currentStone = playerManager.GetCurrentPlayer();
+
+        // 흑돌/백돌 차례 표시 이미지 업데이트
+        if (blackStonePlayerTurnImage != null)
+        {
+            blackStonePlayerTurnImage.gameObject.SetActive(currentStone == StoneType.Black);
+        }
+
+        if (whiteStonePlayerTurnImage != null)
+        {
+            whiteStonePlayerTurnImage.gameObject.SetActive(currentStone == StoneType.White);
+        }
+
+        Debug.Log($"차례 표시 업데이트: {(currentStone == StoneType.Black ? "흑돌" : "백돌")} 차례");
+    }
+
+
+    /// <summary>
+    /// 게임 결과 UI 표시
+    /// </summary>
+    /// <param name="winner">승리한 돌 타입</param>
+    /// <param name="isCurrentPlayerWinner">현재 플레이어가 승리했는지</param>
+    private void ShowGameResultUI(StoneType winner, bool isCurrentPlayerWinner)
+    {
+        // 차례 표시 이미지들 숨기기
+        if (blackStonePlayerTurnImage != null) blackStonePlayerTurnImage.gameObject.SetActive(false);
+        if (whiteStonePlayerTurnImage != null) whiteStonePlayerTurnImage.gameObject.SetActive(false);
+
+        if (winner == StoneType.None) // 무승부
+        {
+            if (drawPanel != null)
+            {
+                drawPanel.SetActive(true);
+            }
+        }
+        else // 승부 결정
+        {
+            string winnerName = playerManager.GetPlayerNameByStone(winner);
+
+            if (isCurrentPlayerWinner)
+            {
+                // 승리 패널 표시
+                if (winPanel != null)
+                {
+                    winPanel.SetActive(true);
+                }
+            }
+            else
+            {
+                // 패배 패널 표시
+                if (losePanel != null)
+                {
+                    losePanel.SetActive(true);
+                }
+            }
+        }
+    }
+
+    // UI에서 플레이어 이름을 가져오는 메서드들 추가
+    private string GetPlayer1NameFromUI()
+    {
+        if (player1NameText != null && !string.IsNullOrEmpty(player1NameText.text))
+        {
+            return player1NameText.text;
+        }
+        return "플레이어 1"; // 기본값
+    }
+
+    private string GetPlayer2NameFromUI()
+    {
+        if (player2NameText != null && !string.IsNullOrEmpty(player2NameText.text))
+        {
+            return player2NameText.text;
+        }
+        return "플레이어 2"; // 기본값
     }
 
     /// <summary>
@@ -181,7 +300,7 @@ public class GameManager : Singleton<GameManager>
     }
 
     /// <summary>
-    /// 게임 종료 처리
+    /// 게임 종료 처리 (UI 표시 방식 변경)
     /// </summary>
     /// <param name="winner">승리한 플레이어의 돌 타입</param>
     private void EndGame(StoneType winner)
@@ -190,6 +309,18 @@ public class GameManager : Singleton<GameManager>
 
         // 게임 결과 기록
         playerManager.RecordGameResult(winner);
+
+        // 현재 플레이어가 승리했는지 확인
+        bool isCurrentPlayerWinner = (winner == playerManager.GetCurrentPlayer());
+
+        // 게임 결과 UI 표시
+        ShowGameResultUI(winner, isCurrentPlayerWinner);
+
+        // 대기 중인 착수 취소
+        ClearPendingMove();
+
+        // 모든 마커 숨기기
+        boardManager.HideAllMarkers();
 
         string resultMessage = "";
         switch (winner)
@@ -205,32 +336,16 @@ public class GameManager : Singleton<GameManager>
                 break;
         }
 
-        gameStatusText.text = resultMessage;
-
-        // 대기 중인 착수 취소
-        ClearPendingMove();
-
-        // 모든 마커 숨기기
-        boardManager.HideAllMarkers();
-
         Debug.Log($"게임 종료: {resultMessage}");
     }
 
     /// <summary>
-    /// UI 업데이트
+    /// UI 업데이트 (버튼 상태만 관리)
     /// </summary>
     private void UpdateUI()
     {
-        StoneType currentStone = playerManager.GetCurrentPlayer();
-        string currentPlayerName = playerManager.GetCurrentPlayerName();
-        string stoneColor = (currentStone == StoneType.Black) ? "흑돌" : "백돌";
-
-        currentPlayerText.text = $"{currentPlayerName}의 {stoneColor} 차례";
-
-        if (currentGameState == GameState.Playing)
-        {
-            gameStatusText.text = hasPendingMove ? "착수를 확정하세요" : "게임 진행 중";
-        }
+        // 플레이어 차례 표시 업데이트
+        UpdatePlayerTurnDisplay();
 
         // 착수 확정 버튼은 대기 중인 착수가 있을 때만 활성화
         confirmMoveButton.interactable = hasPendingMove && currentGameState == GameState.Playing;

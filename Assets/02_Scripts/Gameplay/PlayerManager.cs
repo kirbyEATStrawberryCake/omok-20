@@ -1,4 +1,5 @@
 using UnityEngine;
+using TMPro;
 
 public enum PlayerID
 {
@@ -9,9 +10,9 @@ public enum PlayerID
 public class PlayerManager : MonoBehaviour
 {
     [Header("Player Settings")]
-    public string player1Name = "플레이어 1";       // 플레이어 1 이름
-    public string player2Name = "플레이어 2";       // 플레이어 2 이름
-    
+    private string player1Name = "플레이어 1";
+    private string player2Name = "플레이어 2";
+
     private StoneType currentPlayer;                // 현재 차례인 돌 타입 (항상 흑돌부터 시작)
     private PlayerID blackStonePlayer;              // 흑돌을 가진 플레이어
     private PlayerID whiteStonePlayer;              // 백돌을 가진 플레이어
@@ -29,7 +30,7 @@ public class PlayerManager : MonoBehaviour
     {
         // 초기화는 GameManager에서 호출하므로 여기서는 하지 않음
     }
-    
+
     /// <summary>
     /// 플레이어별 돌 색깔을 랜덤으로 할당하고 게임 시작
     /// </summary>
@@ -230,19 +231,21 @@ public class PlayerManager : MonoBehaviour
         draws = 0;
         Debug.Log("게임 기록이 초기화되었습니다.");
     }
-    
+
     /// <summary>
-    /// 플레이어 이름 설정
+    /// 플레이어 이름 설정 (UI에서 읽어온 이름으로 설정)
     /// </summary>
     /// <param name="player1">플레이어 1 이름</param>
     /// <param name="player2">플레이어 2 이름</param>
     public void SetPlayerNames(string player1, string player2)
     {
-        player1Name = player1;
-        player2Name = player2;
+        // 빈 문자열이나 null 체크하여 기본값 설정
+        player1Name = string.IsNullOrEmpty(player1) ? "플레이어 1" : player1;
+        player2Name = string.IsNullOrEmpty(player2) ? "플레이어 2" : player2;
+
         Debug.Log($"플레이어 설정: {player1Name} vs {player2Name}");
     }
-    
+
     /// <summary>
     /// 특정 플레이어가 흑돌을 가지고 있는지 확인
     /// </summary>

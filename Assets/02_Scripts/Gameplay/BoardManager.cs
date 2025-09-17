@@ -99,7 +99,7 @@ public class BoardManager : MonoBehaviour
 
         SpriteRenderer boardRenderer = boardObject.AddComponent<SpriteRenderer>();
         boardRenderer.sprite = boardSprite;
-        boardRenderer.sortingOrder = -10; // 가장 뒤에 렌더링
+        boardRenderer.sortingOrder = 0; // 가장 뒤에 렌더링
 
         // 보드 크기 조정
         // 보드 스프라이트는 원본 크기 유지 (격자는 별도로 계산)
