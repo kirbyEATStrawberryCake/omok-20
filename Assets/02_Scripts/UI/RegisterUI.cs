@@ -1,22 +1,58 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-public class RegisterManager : MonoBehaviour
+public class RegisterUI : MonoBehaviour
 {
+    public AuthManager authManager;
+
     public InputField emailInput;
     public InputField passwordInput;
     public InputField confirmPasswordInput;
+
     public GameObject ErrorEmailPanel;
     public GameObject ErrorPasswordPanel;
+    public GameObject AddMemberPanel;
+
+    public LoginUI loginUI;
+
+    public Image pandaImage;
+    public Image redPandaImage;
+
+    public Sprite pandaSprite;
+    public Sprite pandaGraySprite;
+
+    public Sprite redPandaSprite;
+    public Sprite redPandaGraySprite;
+
+    private string selectedProfile = ""; // 선택된 프로필사진 ("panda" or "red_panda")
 
     // 이미 등록된 이메일을 확인할 용도의 임시 데이터
     private string[] registeredEmails = { "test@test", "test2@test" };
 
     void Start()
     {
-        // 초기화, 에러 메시지 텍스트 비활성화
+        // 초기화, 에러 메시지 비활성화
         ErrorEmailPanel.SetActive(false);
         ErrorPasswordPanel.SetActive(false);
+    }
+
+    // 판다선택창
+    public void SelectPanda()
+    {
+        selectedProfile = "panda";
+
+        // 이미지 교체
+        pandaImage.sprite = pandaSprite;
+        redPandaImage.sprite = redPandaGraySprite;
+    }
+
+    public void SelectRedPanda()
+    {
+        selectedProfile = "red_panda";
+
+        // 이미지 교체
+        pandaImage.sprite = pandaGraySprite;
+        redPandaImage.sprite = redPandaSprite;
     }
 
     // 회원가입 버튼 클릭 시 호출되는 함수
@@ -46,6 +82,13 @@ public class RegisterManager : MonoBehaviour
 
         // 모든 입력이 올바르면 회원가입 성공
         Debug.Log("회원가입 성공!");
+
+        PlayerPrefs.SetString("auth_token", "토큰_" + email);
+        PlayerPrefs.SetString("profile", selectedProfile);
+        PlayerPrefs.Save();
+
+        // 회원 가입 확인 창
+        AddMemberPanel.SetActive(true);
     }
 
     // 이메일이 등록되어 있는지 확인하는 함수
@@ -67,5 +110,11 @@ public class RegisterManager : MonoBehaviour
         ErrorEmailPanel.SetActive(false);
         ErrorPasswordPanel.SetActive(false);
     }
-}
 
+    // 회원 가입 메시지 닫은 후에 로그인 화면으로 전환
+    public void OnConfirmAddMember()
+    {
+        AddMemberPanel.SetActive(false);
+        loginUI.BackToLogin(); // 로그인 화면으로 전환
+    }
+}
