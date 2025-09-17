@@ -82,12 +82,14 @@ public class SignUpRequest
     public string username;
     public string password;
     public string nickname;
+    public int profileImage;
 
-    public SignUpRequest(string username, string password, string nickname)
+    public SignUpRequest(string username, string password, string nickname, int profileImage)
     {
         this.username = username;
         this.password = password;
         this.nickname = nickname;
+        this.profileImage = profileImage;
     }
 }
 
@@ -240,12 +242,12 @@ public class GetRanking
 public enum MultiplayControllerState
 {
     MatchWaiting,
-    MatchExpanded, 
+    MatchExpanded,
     MatchFailed,
     MatchFound,
     MatchCanceled,
-    ExitRoom,   // 클라이언트가 방에서 나갈 때
-    OpponentLeft,   // 상대방이 접속을 끊거나 방을 나갔을 때
+    ExitRoom, // 클라이언트가 방에서 나갈 때
+    OpponentLeft, // 상대방이 접속을 끊거나 방을 나갔을 때
     Error
 }
 

@@ -8,6 +8,7 @@ public class SignUpTest : MonoBehaviour
     [SerializeField] private TMP_InputField _password;
     [SerializeField] private TMP_InputField _confirmPassword;
     [SerializeField] private TMP_InputField _nickname;
+    [SerializeField] private int profileImage;
     [SerializeField] private Button confirm;
     [SerializeField] private Button cancel;
 
@@ -58,7 +59,7 @@ public class SignUpTest : MonoBehaviour
                 return;
             }
 
-            authManager.SignUp(username, password, nickname,
+            authManager.SignUp(username, password, nickname, profileImage,
                 () =>
                 {
                     CleanInputFields();
