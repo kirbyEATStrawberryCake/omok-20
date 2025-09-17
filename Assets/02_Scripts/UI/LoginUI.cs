@@ -1,63 +1,52 @@
+using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class LoginUI : MonoBehaviour
 {
-    public AuthManager authManager;
+    private LoginSceneUIManager loginSceneUIManager;
 
-    public GameObject loginCanvas;
-    public GameObject registerCanvas;
-    public GameObject errorLoginPanel;
+    [SerializeField] private TMP_InputField usernameInput;
+    [SerializeField] private TMP_InputField passwordInput;
 
-    public InputField usernameInput;
-    public InputField passwordInput;
-
-    private string validUsername = "test@test";
-    private string validPassword = "1234";
-
-    public void OpenRegister()
+    private void Awake()
     {
-        loginCanvas.SetActive(false);
-        registerCanvas.SetActive(true);
+        loginSceneUIManager = GetComponent<LoginSceneUIManager>();
     }
 
-    public void BackToLogin()
+    public void OnClickLogin()
     {
-        registerCanvas.SetActive(false);
-        loginCanvas.SetActive(true);
-    }
+        string username = usernameInput.text;
+        string password = passwordInput.text;
 
-    public void TryLogin()
-    {
-        string inputUser = usernameInput.text;
-        string inputPass = passwordInput.text;
-
-        string storedToken = PlayerPrefs.GetString("auth_token", "");
-
-        if (inputUser == validUsername && inputPass == validPassword)
+        // InputField Í≥µÎ∞± Ï≤¥ÌÅ¨
+        if (string.IsNullOrEmpty(username))
         {
-            Debug.Log("∑Œ±◊¿Œ º∫∞¯!");
-
-            PlayerPrefs.SetString("login_token", "∑Œ±◊¿Œ_" + inputUser);
-            PlayerPrefs.Save();
-
-            // ¥Ÿ¿Ω »≠∏È¿∏∑Œ ¿Ãµø«œ¥¬ ƒ⁄µÂ
-            // SceneManager.LoadScene("GameScene");
+            loginSceneUIManager.OpenLoginPopup(LoginPanelType.Empty_Username);
+            return;
         }
-        else
+
+        if (string.IsNullOrEmpty(password))
         {
-            ShowError("»∏ø¯¡§∫∏∞° æ¯Ω¿¥œ¥Ÿ."); // ø°∑Ø ∏ﬁΩ√¡ˆ «•Ω√
+            loginSceneUIManager.OpenLoginPopup(LoginPanelType.Empty_Password);
+            return;
         }
-    }
 
-    public void ShowError(string message)
-    {
-        errorLoginPanel.SetActive(true);
-
-    }
-
-    public void CloseError()
-    {
-        errorLoginPanel.SetActive(false);
+        loginSceneUIManager.authManager.SignIn(username, password, () =>
+        {
+            Debug.Log("<color=green>Î°úÍ∑∏Ïù∏ ÏÑ±Í≥µ!</color>");
+            SceneManager.LoadScene("Main_Scene");
+        }, (errorType) =>
+        {
+            switch (errorType)
+            {
+                case AuthResponseType.INVALID_USERNAME:
+                    loginSceneUIManager.OpenLoginPopup(LoginPanelType.Invalid_Username, () => usernameInput.text = "");
+                    break;
+                case AuthResponseType.INVALID_PASSWORD:
+                    loginSceneUIManager.OpenLoginPopup(LoginPanelType.Invalid_Password, () => passwordInput.text = "");
+                    break;
+            }
+        });
     }
 }

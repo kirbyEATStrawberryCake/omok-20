@@ -6,8 +6,14 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/GameScene.unity
-    guid: 99c9720ab356a0642a771bea13969a05
+    path: Assets/01_Scenes/Login_Scene.unity
+    guid: 8782b062e75b12d4b84952586399a113
+  - enabled: 1
+    path: Assets/01_Scenes/Main_Scene.unity
+    guid: e05f6f2a28e585f468b2a7394b33939b
+  - enabled: 1
+    path: Assets/01_Scenes/Game_Scene.unity
+    guid: 7cdec5cc4ca08c94c9029fef46f9f62d
   m_configObjects:
     com.unity.adaptiveperformance.simulator.provider_settings: {fileID: 11400000, guid: 2d04be7243e553747b82b22223808356, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
