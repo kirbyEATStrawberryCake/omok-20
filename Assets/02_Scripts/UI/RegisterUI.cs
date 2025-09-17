@@ -1,120 +1,110 @@
+using System;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class RegisterUI : MonoBehaviour
 {
-    public AuthManager authManager;
+    private LoginSceneUIManager loginSceneUIManager;
 
-    public InputField emailInput;
-    public InputField passwordInput;
-    public InputField confirmPasswordInput;
+    [Header("Input Fields")] [SerializeField]
+    private TMP_InputField emailInput;
 
-    public GameObject ErrorEmailPanel;
-    public GameObject ErrorPasswordPanel;
-    public GameObject AddMemberPanel;
+    [SerializeField] private TMP_InputField passwordInput;
+    [SerializeField] private TMP_InputField confirmPasswordInput;
+    [SerializeField] private TMP_InputField nicknameInput;
 
-    public LoginUI loginUI;
+    [Header("프로필 이미지")] [SerializeField] private Image pandaImage;
+    [SerializeField] private Image redPandaImage;
+    [SerializeField] private Sprite pandaSprite;
+    [SerializeField] private Sprite pandaGraySprite;
+    [SerializeField] private Sprite redPandaSprite;
+    [SerializeField] private Sprite redPandaGraySprite;
 
-    public Image pandaImage;
-    public Image redPandaImage;
+    // private string selectedProfile = ""; // 선택된 프로필사진 ("panda" or "red_panda")
+    private int selectedProfile = 0; // 선택된 프로필사진(0 : None, 1 : Panda, 2 : Red Panda)
 
-    public Sprite pandaSprite;
-    public Sprite pandaGraySprite;
-
-    public Sprite redPandaSprite;
-    public Sprite redPandaGraySprite;
-
-    private string selectedProfile = ""; // 선택된 프로필사진 ("panda" or "red_panda")
-
-    // 이미 등록된 이메일을 확인할 용도의 임시 데이터
-    private string[] registeredEmails = { "test@test", "test2@test" };
-
-    void Start()
+    private void Awake()
     {
-        // 초기화, 에러 메시지 비활성화
-        ErrorEmailPanel.SetActive(false);
-        ErrorPasswordPanel.SetActive(false);
+        loginSceneUIManager = GetComponent<LoginSceneUIManager>();
     }
 
-    // 판다선택창
-    public void SelectPanda()
+    /// <summary>
+    /// 프로필 선택
+    /// </summary>
+    public void SelectCharacter(bool isPanda)
     {
-        selectedProfile = "panda";
-
-        // 이미지 교체
-        pandaImage.sprite = pandaSprite;
-        redPandaImage.sprite = redPandaGraySprite;
+        // selectedProfile = isPanda ? "panda" : "red_panda";
+        selectedProfile = isPanda ? 1 : 2;
+        pandaImage.sprite = isPanda ? pandaSprite : pandaGraySprite;
+        redPandaImage.sprite = isPanda ? redPandaGraySprite : redPandaSprite;
     }
 
-    public void SelectRedPanda()
-    {
-        selectedProfile = "red_panda";
-
-        // 이미지 교체
-        pandaImage.sprite = pandaGraySprite;
-        redPandaImage.sprite = redPandaSprite;
-    }
-
-    // 회원가입 버튼 클릭 시 호출되는 함수
+    /// <summary>
+    /// 회원가입 버튼 클릭 시 호출되는 함수
+    /// </summary>
     public void OnRegisterButton()
     {
-        // 오류 메시지 초기화
-        ErrorEmailPanel.SetActive(false);
-        ErrorPasswordPanel.SetActive(false);
-
         string email = emailInput.text;
         string password = passwordInput.text;
         string confirmPassword = confirmPasswordInput.text;
+        string nickname = nicknameInput.text;
 
-        // 이메일 중복 체크
-        if (IsEmailRegistered(email))
+        // InputField 공백 체크
+        if (string.IsNullOrEmpty(email))
         {
-            ErrorEmailPanel.SetActive(true);
+            loginSceneUIManager.OpenSignUpPopup(SignUpPanelType.Empty_Username);
+            return;
+        }
+
+        if (string.IsNullOrEmpty(password) || string.IsNullOrEmpty(confirmPassword))
+        {
+            loginSceneUIManager.OpenSignUpPopup(SignUpPanelType.Empty_Password);
+            return;
+        }
+
+        if (string.IsNullOrEmpty(nickname))
+        {
+            loginSceneUIManager.OpenSignUpPopup(SignUpPanelType.Empty_Nickname);
+            return;
+        }
+
+        // 프로필 이미지를 선택했는지 체크
+        if (selectedProfile != 1 && selectedProfile != 2)
+        {
+            loginSceneUIManager.OpenSignUpPopup(SignUpPanelType.Fail_NotSelectedProfileImage);
             return;
         }
 
         // 패스워드 일치 체크
         if (password != confirmPassword)
         {
-            ErrorPasswordPanel.SetActive(true);
+            loginSceneUIManager.OpenSignUpPopup(SignUpPanelType.Fail_Password_NotMatch,
+                () =>
+                {
+                    passwordInput.text = "";
+                    confirmPasswordInput.text = "";
+                });
             return;
         }
 
+        loginSceneUIManager.authManager.SignUp(email, password, nickname, selectedProfile,
+            () =>
+            {
+                loginSceneUIManager.OpenSignUpPopup(SignUpPanelType.Success,
+                    () => loginSceneUIManager.OpenLoginPanel());
+            }, (errorType) =>
+            {
+                switch (errorType)
+                {
+                    case AuthResponseType.DUPLICATED_USERNAME:
+                        loginSceneUIManager.OpenSignUpPopup(SignUpPanelType.Fail_Username,
+                            () => emailInput.text = "");
+                        break;
+                }
+            });
+
         // 모든 입력이 올바르면 회원가입 성공
         Debug.Log("회원가입 성공!");
-
-        PlayerPrefs.SetString("auth_token", "토큰_" + email);
-        PlayerPrefs.SetString("profile", selectedProfile);
-        PlayerPrefs.Save();
-
-        // 회원 가입 확인 창
-        AddMemberPanel.SetActive(true);
-    }
-
-    // 이메일이 등록되어 있는지 확인하는 함수
-    private bool IsEmailRegistered(string email)
-    {
-        foreach (string registeredEmail in registeredEmails)
-        {
-            if (registeredEmail == email)
-            {
-                return true; // 이미 등록된 이메일이 있을 경우
-            }
-        }
-        return false; // 등록된 이메일이 없으면 false 반환
-    }
-
-    // 오류 메시지 닫기
-    public void CloseError()
-    {
-        ErrorEmailPanel.SetActive(false);
-        ErrorPasswordPanel.SetActive(false);
-    }
-
-    // 회원 가입 메시지 닫은 후에 로그인 화면으로 전환
-    public void OnConfirmAddMember()
-    {
-        AddMemberPanel.SetActive(false);
-        loginUI.BackToLogin(); // 로그인 화면으로 전환
     }
 }

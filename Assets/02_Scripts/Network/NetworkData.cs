@@ -82,12 +82,14 @@ public class SignUpRequest
     public string username;
     public string password;
     public string nickname;
+    public int profileImage;
 
-    public SignUpRequest(string username, string password, string nickname)
+    public SignUpRequest(string username, string password, string nickname, int profileImage)
     {
         this.username = username;
         this.password = password;
         this.nickname = nickname;
+        this.profileImage = profileImage;
     }
 }
 
