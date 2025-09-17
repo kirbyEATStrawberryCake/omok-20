@@ -239,11 +239,14 @@ public class GetRanking
 
 public enum MultiplayControllerState
 {
-    CreateRoom, // 방 생성
-    JoinRoom,   // 생성된 방 참여
+    MatchWaiting,
+    MatchExpanded, 
+    MatchFailed,
+    MatchFound,
+    MatchCanceled,
     ExitRoom,   // 클라이언트가 방에서 나갈 때
-    OpponentJoined, // 상대방이 들어왔을 때
-    OpponentLeft   // 상대방이 접속을 끊거나 방을 나갔을 때
+    OpponentLeft,   // 상대방이 접속을 끊거나 방을 나갔을 때
+    Error
 }
 
 #endregion

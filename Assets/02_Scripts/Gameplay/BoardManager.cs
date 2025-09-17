@@ -4,41 +4,64 @@ using System;
 
 public class BoardManager : MonoBehaviour
 {
+    [Header("Sprites")]
+    public Sprite boardSprite;                  // 오목판 스프라이트
+    public Sprite blackStoneSprite;             // 흑돌 스프라이트
+    public Sprite whiteStoneSprite;             // 백돌 스프라이트
+    public Sprite forbiddenMarkerSprite;        // 금지 위치 마커 스프라이트
+    public Sprite selectedMarkerSprite;         // 선택한 위치 표시 마커 스프라이트
+    public Sprite lastMoveMarkerSprite;         // 마지막 착수 위치 표시 마커 스프라이트
+    public Sprite pendingMoveSprite;            // 착수 대기 표시 스프라이트
+
     [Header("Board Settings")]
-    public GameObject stonePrefab;              // 돌 프리팹
-    public Transform boardParent;               // 오목판 부모 오브젝트
     public int boardSize = 15;                  // 오목판 크기 (15x15)
-    public float cellSize = 1.0f;               // 각 칸의 크기
+    public float cellSize = 0.494f;               // 각 칸의 크기
+    public Vector2 boardOffset = Vector2.zero;  // 보드 오프셋
 
-    private StoneType[,] board;                 // 오목판 배열 (논리적 보드)
-    private GameObject[,] stoneObjects;         // 돌 오브젝트 배열 (시각적 보드)
-    private Stack<Move> moveHistory;            // 수 기록을 위한 스택
+    [Header("Marker Settings")]
+    public float markerAlpha = 0.7f;            // 마커 투명도
+    public Color forbiddenColor = Color.red;    // 금지 위치 색상
+    public Color selectedColor = Color.yellow;   // 선택 위치 색상
+    public Color lastMoveColor = Color.green;   // 마지막 수 색상
+    public Color pendingMoveColor = Color.cyan; // 착수 대기 색상
 
-    // 돌이 놓였을 때 발생하는 이벤트
-    public event Action<int, int, StoneType> OnStonePlace;
+    protected StoneType[,] board;                 // 오목판 배열 (논리적 보드)
+    private GameObject[,] stoneObjects;         // 돌 오브젝트 배열
+    private GameObject boardObject;             // 보드 스프라이트 오브젝트
+
+    // 매니저 참조 (효율적인 접근)
+    private GameManager gameManager;
+    private RenjuRule renjuRule;
+
+    // 마커 관리
+    private List<GameObject> forbiddenMarkers;  // 금지 위치 마커들
+    private GameObject selectedMarker;          // 현재 선택된 위치 마커
+    private GameObject lastMoveMarker;          // 마지막 수 마커
+    private GameObject pendingMoveMarker;       // 착수 대기 마커
+
+    // 마우스 위치 추적
+    private Vector2Int hoveredPosition = new Vector2Int(-1, -1);
+
+    // 위치가 선택되었을 때 발생하는 이벤트
+    public event Action<int, int> OnPositionSelected;
 
     /// <summary>
-    /// 한 수를 나타내는 구조체
+    /// GameManager 참조 설정
     /// </summary>
-    [System.Serializable]
-    public struct Move
+    public void SetGameManager(GameManager manager)
     {
-        public int x, y;                        // 돌의 위치
-        public StoneType stoneType;             // 돌의 종류
-        public GameObject stoneObject;          // 돌 오브젝트 참조
-
-        public Move(int x, int y, StoneType type, GameObject obj)
-        {
-            this.x = x;
-            this.y = y;
-            this.stoneType = type;
-            this.stoneObject = obj;
-        }
+        gameManager = manager;
+        renjuRule = gameManager.renjuRule; // GameManager를 통해 RenjuRule 참조 획득
     }
 
     void Start()
     {
         InitializeBoard();
+    }
+
+    void Update()
+    {
+        HandleMouseInput();
     }
 
     /// <summary>
@@ -49,15 +72,38 @@ public class BoardManager : MonoBehaviour
         // 배열 초기화
         board = new StoneType[boardSize, boardSize];
         stoneObjects = new GameObject[boardSize, boardSize];
-        moveHistory = new Stack<Move>();
+        forbiddenMarkers = new List<GameObject>();
 
-        // 기존 돌들 제거
+        // 기존 오브젝트들 제거
         ClearBoard();
 
-        // 마우스 클릭 감지를 위한 콜라이더 설정
-        SetupBoardCollider();
+        // 보드 스프라이트 생성
+        CreateBoardSprite();
 
         Debug.Log("오목판이 초기화되었습니다.");
+    }
+
+    /// <summary>
+    /// 보드 스프라이트 생성
+    /// </summary>
+    private void CreateBoardSprite()
+    {
+        if (boardObject != null)
+        {
+            DestroyImmediate(boardObject);
+        }
+
+        boardObject = new GameObject("Board");
+        boardObject.transform.SetParent(transform);
+        boardObject.transform.localPosition = Vector3.zero;
+
+        SpriteRenderer boardRenderer = boardObject.AddComponent<SpriteRenderer>();
+        boardRenderer.sprite = boardSprite;
+        boardRenderer.sortingOrder = -10; // 가장 뒤에 렌더링
+
+        // 보드 크기 조정
+        // 보드 스프라이트는 원본 크기 유지 (격자는 별도로 계산)
+        boardObject.transform.localScale = Vector3.one;
     }
 
     /// <summary>
@@ -78,60 +124,57 @@ public class BoardManager : MonoBehaviour
                 }
             }
         }
-        moveHistory.Clear();
+
+        // 마커들 제거
+        HideAllMarkers();
     }
 
     /// <summary>
-    /// 보드 클릭 감지를 위한 콜라이더 설정
+    /// 마우스 입력 처리
     /// </summary>
-    private void SetupBoardCollider()
+    private void HandleMouseInput()
     {
-        BoxCollider boardCollider = GetComponent<BoxCollider>();
-        if (boardCollider == null)
+        Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        mouseWorldPos.z = 0;
+
+        Vector2Int boardPos = WorldToBoardPosition(mouseWorldPos);
+
+        // 마우스 호버 처리
+        if (IsValidPosition(boardPos.x, boardPos.y) && boardPos != hoveredPosition)
         {
-            boardCollider = gameObject.AddComponent<BoxCollider>();
+            hoveredPosition = boardPos;
+            UpdateSelectedMarker(boardPos.x, boardPos.y);
         }
 
-        // 콜라이더 크기를 보드 크기에 맞춤
-        boardCollider.size = new Vector3(boardSize * cellSize, 0.1f, boardSize * cellSize);
+        // 클릭 처리
+        if (Input.GetMouseButtonDown(0))
+        {
+            HandleBoardClick(boardPos.x, boardPos.y);
+        }
     }
 
     /// <summary>
-    /// 마우스 클릭 처리
+    /// 보드 클릭 처리
     /// </summary>
-    void OnMouseDown()
+    private void HandleBoardClick(int x, int y)
     {
-        // 게임 매니저에서 게임 상태 확인
-        GameManager gameManager = FindObjectOfType<GameManager>();
         if (gameManager.GetGameState() != GameState.Playing) return;
 
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        RaycastHit hit;
-
-        if (Physics.Raycast(ray, out hit))
+        if (IsValidPosition(x, y))
         {
-            // 클릭한 위치를 보드 좌표로 변환
-            Vector3 localPos = transform.InverseTransformPoint(hit.point);
-            int x = Mathf.RoundToInt(localPos.x / cellSize + (boardSize - 1) / 2.0f);
-            int y = Mathf.RoundToInt(localPos.z / cellSize + (boardSize - 1) / 2.0f);
-
-            // 현재 플레이어의 돌 타입 가져오기
-            PlayerManager playerManager = FindObjectOfType<PlayerManager>();
-            StoneType currentStone = playerManager.GetCurrentPlayer();
-
-            // 돌 놓기 시도
-            TryPlaceStone(x, y, currentStone);
+            // 위치 선택 이벤트 발생
+            OnPositionSelected?.Invoke(x, y);
         }
     }
 
     /// <summary>
-    /// 지정한 위치에 돌 놓기 시도
+    /// 지정한 위치에 돌을 놓을 수 있는지 검사
     /// </summary>
     /// <param name="x">x좌표</param>
     /// <param name="y">y좌표</param>
     /// <param name="stoneType">놓을 돌의 타입</param>
-    /// <returns>돌이 성공적으로 놓였는지 여부</returns>
-    public bool TryPlaceStone(int x, int y, StoneType stoneType)
+    /// <returns>돌을 놓을 수 있는지 여부</returns>
+    public bool CanPlaceStone(int x, int y, StoneType stoneType)
     {
         // 범위 검사
         if (!IsValidPosition(x, y)) return false;
@@ -140,9 +183,6 @@ public class BoardManager : MonoBehaviour
         if (board[x, y] != StoneType.None) return false;
 
         // 렌주룰 검사 (흑돌인 경우만)
-        RenjuRule renjuRule = FindObjectOfType<RenjuRule>();
-        GameManager gameManager = FindObjectOfType<GameManager>();
-
         if (gameManager.isRenjuModeEnabled && stoneType == StoneType.Black)
         {
             if (!renjuRule.IsValidMove(x, y, stoneType, board))
@@ -152,8 +192,6 @@ public class BoardManager : MonoBehaviour
             }
         }
 
-        // 돌 놓기
-        PlaceStone(x, y, stoneType);
         return true;
     }
 
@@ -163,66 +201,239 @@ public class BoardManager : MonoBehaviour
     /// <param name="x">x좌표</param>
     /// <param name="y">y좌표</param>
     /// <param name="stoneType">돌의 타입</param>
-    private void PlaceStone(int x, int y, StoneType stoneType)
+    /// <returns>돌이 성공적으로 놓였는지 여부</returns>
+    public bool PlaceStone(int x, int y, StoneType stoneType)
     {
+        if (!CanPlaceStone(x, y, stoneType)) return false;
+
         // 논리적 보드에 돌 정보 저장
         board[x, y] = stoneType;
 
-        // 시각적 돌 오브젝트 생성
-        Vector3 worldPos = GetWorldPosition(x, y);
-        GameObject stoneObj = Instantiate(stonePrefab, worldPos, Quaternion.identity, boardParent);
+        // 시각적 돌 스프라이트 생성
+        Vector3 worldPos = BoardToWorldPosition(x, y);
+        GameObject stoneObj = new GameObject($"Stone_{x}_{y}");
+        stoneObj.transform.SetParent(transform);
+        stoneObj.transform.position = worldPos;
+
+        SpriteRenderer stoneRenderer = stoneObj.AddComponent<SpriteRenderer>();
+        stoneRenderer.sprite = (stoneType == StoneType.Black) ? blackStoneSprite : whiteStoneSprite;
+        stoneRenderer.sortingOrder = 1; // 보드보다 앞에 렌더링
 
         // 돌 컴포넌트 설정
-        Stone stone = stoneObj.GetComponent<Stone>();
-        if (stone != null)
-        {
-            stone.SetStoneType(stoneType);
-            stone.SetPosition(x, y);
-        }
+        Stone stone = stoneObj.AddComponent<Stone>();
+        stone.SetStoneType(stoneType);
+        stone.SetPosition(x, y);
 
         stoneObjects[x, y] = stoneObj;
 
-        // 수 기록 저장
-        moveHistory.Push(new Move(x, y, stoneType, stoneObj));
-
-        // 이벤트 발생
-        OnStonePlace?.Invoke(x, y, stoneType);
+        // 마지막 수 마커 업데이트
+        UpdateLastMoveMarker(x, y);
 
         Debug.Log($"돌이 놓였습니다: ({x}, {y}) - {stoneType}");
+        return true;
     }
 
     /// <summary>
-    /// 마지막에 놓은 돌 제거 (무르기)
+    /// 착수 대기 표시
     /// </summary>
-    public void UndoLastMove()
+    public void ShowPendingMove(int x, int y, StoneType stoneType)
     {
-        if (moveHistory.Count > 0)
+        HidePendingMove();
+
+        if (pendingMoveMarker == null)
         {
-            Move lastMove = moveHistory.Pop();
+            pendingMoveMarker = new GameObject("PendingMoveMarker");
+            pendingMoveMarker.transform.SetParent(transform);
 
-            // 논리적 보드에서 제거
-            board[lastMove.x, lastMove.y] = StoneType.None;
+            SpriteRenderer renderer = pendingMoveMarker.AddComponent<SpriteRenderer>();
+            renderer.sprite = (stoneType == StoneType.Black) ? blackStoneSprite : whiteStoneSprite;
+            renderer.sortingOrder = 4;
 
-            // 시각적 오브젝트 제거
-            if (lastMove.stoneObject != null)
-            {
-                DestroyImmediate(lastMove.stoneObject);
-            }
-
-            stoneObjects[lastMove.x, lastMove.y] = null;
-
-            Debug.Log($"돌이 제거되었습니다: ({lastMove.x}, {lastMove.y})");
+            Color color = pendingMoveColor;
+            color.a = markerAlpha;
+            renderer.color = color;
         }
+        else
+        {
+            // 돌 색상에 맞게 스프라이트 변경
+            SpriteRenderer renderer = pendingMoveMarker.GetComponent<SpriteRenderer>();
+            renderer.sprite = (stoneType == StoneType.Black) ? blackStoneSprite : whiteStoneSprite;
+        }
+
+        pendingMoveMarker.transform.position = BoardToWorldPosition(x, y);
+        pendingMoveMarker.SetActive(true);
+    }
+
+    /// <summary>
+    /// 착수 대기 표시 숨기기
+    /// </summary>
+    public void HidePendingMove()
+    {
+        if (pendingMoveMarker != null)
+        {
+            pendingMoveMarker.SetActive(false);
+        }
+    }
+
+    /// <summary>
+    /// 선택된 위치 마커 업데이트
+    /// </summary>
+    private void UpdateSelectedMarker(int x, int y)
+    {
+        if (gameManager.GetGameState() != GameState.Playing) return;
+
+        // 이미 돌이 놓인 위치는 마커 표시하지 않음
+        if (board[x, y] != StoneType.None)
+        {
+            HideSelectedMarker();
+            return;
+        }
+
+        if (selectedMarker == null)
+        {
+            selectedMarker = new GameObject("SelectedMarker");
+            selectedMarker.transform.SetParent(transform);
+
+            SpriteRenderer renderer = selectedMarker.AddComponent<SpriteRenderer>();
+            renderer.sprite = selectedMarkerSprite;
+            renderer.sortingOrder = 5;
+
+            Color color = selectedColor;
+            color.a = markerAlpha;
+            renderer.color = color;
+        }
+
+        selectedMarker.transform.position = BoardToWorldPosition(x, y);
+        selectedMarker.SetActive(true);
+    }
+
+    /// <summary>
+    /// 선택된 위치 마커 숨기기
+    /// </summary>
+    private void HideSelectedMarker()
+    {
+        if (selectedMarker != null)
+        {
+            selectedMarker.SetActive(false);
+        }
+    }
+
+    /// <summary>
+    /// 마지막 수 마커 업데이트
+    /// </summary>
+    private void UpdateLastMoveMarker(int x, int y)
+    {
+        if (lastMoveMarker == null)
+        {
+            lastMoveMarker = new GameObject("LastMoveMarker");
+            lastMoveMarker.transform.SetParent(transform);
+
+            SpriteRenderer renderer = lastMoveMarker.AddComponent<SpriteRenderer>();
+            renderer.sprite = lastMoveMarkerSprite;
+            renderer.sortingOrder = 2;
+
+            Color color = lastMoveColor;
+            color.a = markerAlpha;
+            renderer.color = color;
+        }
+
+        lastMoveMarker.transform.position = BoardToWorldPosition(x, y);
+        lastMoveMarker.SetActive(true);
+    }
+
+    /// <summary>
+    /// 마지막 수 마커 숨기기
+    /// </summary>
+    private void HideLastMoveMarker()
+    {
+        if (lastMoveMarker != null)
+        {
+            lastMoveMarker.SetActive(false);
+        }
+    }
+
+    /// <summary>
+    /// 금지 위치 마커들 업데이트
+    /// </summary>
+    public void UpdateForbiddenPositions()
+    {
+        HideForbiddenMarkers();
+
+        if (renjuRule == null) return;
+
+        var forbiddenPositions = renjuRule.GetForbiddenPositions(board);
+
+        foreach (var pos in forbiddenPositions)
+        {
+            CreateForbiddenMarker(pos.x, pos.y);
+        }
+    }
+
+    /// <summary>
+    /// 금지 위치 마커 생성
+    /// </summary>
+    private void CreateForbiddenMarker(int x, int y)
+    {
+        GameObject marker = new GameObject($"ForbiddenMarker_{x}_{y}");
+        marker.transform.SetParent(transform);
+        marker.transform.position = BoardToWorldPosition(x, y);
+
+        SpriteRenderer renderer = marker.AddComponent<SpriteRenderer>();
+        renderer.sprite = forbiddenMarkerSprite;
+        renderer.sortingOrder = 3;
+
+        Color color = forbiddenColor;
+        color.a = markerAlpha;
+        renderer.color = color;
+
+        forbiddenMarkers.Add(marker);
+    }
+
+    /// <summary>
+    /// 금지 위치 마커들 숨기기
+    /// </summary>
+    public void HideForbiddenMarkers()
+    {
+        foreach (GameObject marker in forbiddenMarkers)
+        {
+            if (marker != null)
+            {
+                DestroyImmediate(marker);
+            }
+        }
+        forbiddenMarkers.Clear();
+    }
+
+    /// <summary>
+    /// 모든 마커 숨기기
+    /// </summary>
+    public void HideAllMarkers()
+    {
+        HideSelectedMarker();
+        HideLastMoveMarker();
+        HideForbiddenMarkers();
+        HidePendingMove();
     }
 
     /// <summary>
     /// 보드 좌표를 월드 좌표로 변환
     /// </summary>
-    private Vector3 GetWorldPosition(int x, int y)
+    private Vector3 BoardToWorldPosition(int x, int y)
     {
-        float worldX = (x - (boardSize - 1) / 2.0f) * cellSize;
-        float worldZ = (y - (boardSize - 1) / 2.0f) * cellSize;
-        return transform.position + new Vector3(worldX, 0, worldZ);
+        float worldX = (x - (boardSize - 1) / 2.0f) * cellSize + boardOffset.x;
+        float worldY = ((boardSize - 1) / 2.0f - y) * cellSize + boardOffset.y; // Y축 반전
+        return transform.position + new Vector3(worldX, worldY, 0);
+    }
+
+    /// <summary>
+    /// 월드 좌표를 보드 좌표로 변환
+    /// </summary>
+    private Vector2Int WorldToBoardPosition(Vector3 worldPos)
+    {
+        Vector3 localPos = worldPos - transform.position;
+        int x = Mathf.RoundToInt((localPos.x - boardOffset.x) / cellSize + (boardSize - 1) / 2.0f);
+        int y = Mathf.RoundToInt((boardSize - 1) / 2.0f - (localPos.y - boardOffset.y) / cellSize); // Y축 반전
+        return new Vector2Int(x, y);
     }
 
     /// <summary>
@@ -238,11 +449,7 @@ public class BoardManager : MonoBehaviour
     /// </summary>
     public StoneType GetStoneAt(int x, int y)
     {
-        //에러 메세지로 변경
-        if (!IsValidPosition(x, y))
-        {
-            return StoneType.Error;
-        }
+        if (!IsValidPosition(x, y)) return StoneType.None;
         return board[x, y];
     }
 
