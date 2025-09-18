@@ -62,6 +62,7 @@ public enum StatsResponseType
 /// <summary>
 /// 유저 식별 정보 저장용 클래스
 /// </summary>
+[Serializable]
 public class Identity
 {
     public string id; // 고유 식별 id
@@ -110,6 +111,7 @@ public class SignInRequest
 /// <summary>
 /// 포인트 정보 저장용 클래스
 /// </summary>
+[Serializable]
 public class Rank
 {
     public int points; // 승급 포인트
@@ -179,6 +181,7 @@ public class GameResultResponse
 /// <summary>
 /// 기본 유저 전적 저장용 클래스
 /// </summary>
+[Serializable]
 public class Record
 {
     public int totalGames; // 총 게임
@@ -190,6 +193,7 @@ public class Record
 /// <summary>
 /// 전적 수신용 클래스
 /// </summary>
+[Serializable]
 public class GetRecord
 {
     public Identity identity;
@@ -216,11 +220,13 @@ public class UserInfo_Network
 /// <summary>
 /// 랭킹 정보 저장용 클래스
 /// </summary>
+[Serializable]
 public class RankingUser
 {
     public int rank; // 등수
     public Identity identity;
     public int grade; // 등급
+    public int profileImage;
     public Record record;
 }
 
