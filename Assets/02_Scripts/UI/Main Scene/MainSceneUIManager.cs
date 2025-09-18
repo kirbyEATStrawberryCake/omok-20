@@ -132,11 +132,22 @@ public class MainSceneUIManager : Singleton<MainSceneUIManager>
         profileObject.SetActive(true);
     }
 
+    /// <summary>
+    /// 한 개짜리 버튼 팝업 열기
+    /// </summary>
+    /// <param name="message">팝업창에 띄울 메세지</param>
+    /// <param name="onConfirm">버튼을 눌렀을 때 실행할 액션</param>
     public void OpenOneButtonPopup(string message, Action onConfirm = null)
     {
         oneButtonPopup.OpenWithSetMessageAndButtonEvent(message, onConfirm);
     }
 
+    /// <summary>
+    /// 두 개짜리 버튼 팝업 열기
+    /// </summary>
+    /// <param name="message">팝업창에 띄울 메세지</param>
+    /// <param name="onConfirm">확인 버튼을 눌렀을 때 실행할 액션</param>
+    /// <param name="onCancel">취소 버튼을 눌렀을 때 실행할 액션</param>
     public void OpenTwoButtonPopup(string message, Action onConfirm = null, Action onCancel = null)
     {
         twoButtonPopup.OpenWithSetMessageAndButtonEvent(message, onConfirm, onCancel);

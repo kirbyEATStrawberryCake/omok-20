@@ -1,56 +1,41 @@
+using System;
 using UnityEngine;
 
 public enum StoneType
 {
-    None = 0,   // ºó °ø°£
-    Black = 1,  // Èæµ¹
-    White = 2,   // ¹éµ¹
-    Error = 3 // ¿¡·¯ (ÀÌ°Ô ¶ß¸é ¹®Á¦°¡ ÀÖ´Â »óÈ²ÀÔ´Ï´Ù)
+    None = 0, // ë¹ˆ ê³µê°„
+    Black = 1, // í‘ëŒ
+    White = 2, // ë°±ëŒ
+    Error = 3 // ì—ëŸ¬ (ì´ê²Œ ëœ¨ë©´ ë¬¸ì œê°€ ìˆëŠ” ìƒí™©ì…ë‹ˆë‹¤)
 }
 
 public class Stone : MonoBehaviour
 {
-    [Header("Animation Settings")]
-    public float placementAnimationTime = 0.3f;     // µ¹ÀÌ ³õÀÏ ¶§ ¾Ö´Ï¸ŞÀÌ¼Ç ½Ã°£
-    public float hoverScaleMultiplier = 1.1f;       // È£¹ö½Ã Å©±â ¹èÀ²
+    [Header("Animation Settings")] public float placementAnimationTime = 0.3f; // ëŒì´ ë†“ì¼ ë•Œ ì• ë‹ˆë©”ì´ì…˜ ì‹œê°„
+    public float hoverScaleMultiplier = 1.1f; // í˜¸ë²„ì‹œ í¬ê¸° ë°°ìœ¨
 
-    private StoneType stoneType;                    // ÀÌ µ¹ÀÇ Å¸ÀÔ
-    private Vector2Int boardPosition;               // ¿À¸ñÆÇ¿¡¼­ÀÇ À§Ä¡ (x, y)
-    private SpriteRenderer spriteRenderer;          // µ¹ÀÇ ½ºÇÁ¶óÀÌÆ® ·»´õ·¯
-    private Vector3 originalScale;                  // ¿ø·¡ Å©±â ÀúÀå
-    private bool isAnimating = false;               // ¾Ö´Ï¸ŞÀÌ¼Ç ÁøÇà Áß ¿©ºÎ
+    private StoneType stoneType; // ì´ ëŒì˜ íƒ€ì…
+    private Vector2Int boardPosition; // ì˜¤ëª©íŒì—ì„œì˜ ìœ„ì¹˜ (x, y)
+    private SpriteRenderer spriteRenderer; // ëŒì˜ ìŠ¤í”„ë¼ì´íŠ¸ ë Œë”ëŸ¬
+    private Vector3 originalScale; // ì›ë˜ í¬ê¸° ì €ì¥
+    private bool isAnimating = false; // ì• ë‹ˆë©”ì´ì…˜ ì§„í–‰ ì¤‘ ì—¬ë¶€
 
     void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
         originalScale = transform.localScale;
 
-        // ½ÃÀÛÇÒ ¶§´Â Å©±â¸¦ 0À¸·Î ¼³Á¤ (¾Ö´Ï¸ŞÀÌ¼Ç È¿°ú)
+        // ì‹œì‘í•  ë•ŒëŠ” í¬ê¸°ë¥¼ 0ìœ¼ë¡œ ì„¤ì • (ì• ë‹ˆë©”ì´ì…˜ íš¨ê³¼)
         transform.localScale = Vector3.zero;
     }
 
-    /// <summary>
-    /// µ¹ÀÇ Å¸ÀÔ ¼³Á¤
-    /// </summary>
-    /// <param name="type">¼³Á¤ÇÒ µ¹ÀÇ Å¸ÀÔ</param>
-    public void SetStoneType(StoneType type)
+    private void OnEnable()
     {
-        stoneType = type;
         PlayPlacementAnimation();
     }
 
     /// <summary>
-    /// µ¹ÀÇ ¿À¸ñÆÇ À§Ä¡ ¼³Á¤
-    /// </summary>
-    /// <param name="x">xÁÂÇ¥</param>
-    /// <param name="y">yÁÂÇ¥</param>
-    public void SetPosition(int x, int y)
-    {
-        boardPosition = new Vector2Int(x, y);
-    }
-
-    /// <summary>
-    /// µ¹ÀÌ ³õÀÏ ¶§ÀÇ ¾Ö´Ï¸ŞÀÌ¼Ç Àç»ı
+    /// ëŒì´ ë†“ì¼ ë•Œì˜ ì• ë‹ˆë©”ì´ì…˜ ì¬ìƒ
     /// </summary>
     private void PlayPlacementAnimation()
     {
@@ -60,7 +45,7 @@ public class Stone : MonoBehaviour
     }
 
     /// <summary>
-    /// Å©±â º¯È­ ¾Ö´Ï¸ŞÀÌ¼Ç ÄÚ·çÆ¾
+    /// í¬ê¸° ë³€í™” ì• ë‹ˆë©”ì´ì…˜ ì½”ë£¨í‹´
     /// </summary>
     private System.Collections.IEnumerator ScaleAnimation()
     {
@@ -70,7 +55,7 @@ public class Stone : MonoBehaviour
         Vector3 startScale = Vector3.zero;
         Vector3 endScale = originalScale;
 
-        // Åº¼º È¿°ú¸¦ À§ÇÑ ¿À¹ö½ºÄÉÀÏ
+        // íƒ„ì„± íš¨ê³¼ë¥¼ ìœ„í•œ ì˜¤ë²„ìŠ¤ì¼€ì¼
         Vector3 overScale = originalScale * 1.2f;
 
         while (elapsedTime < placementAnimationTime)
@@ -78,7 +63,7 @@ public class Stone : MonoBehaviour
             elapsedTime += Time.deltaTime;
             float t = elapsedTime / placementAnimationTime;
 
-            // Åº¼º ¾Ö´Ï¸ŞÀÌ¼Ç Ä¿ºê (Ã³À½¿¡ Å©°Ô ³ªÅ¸³µ´Ù°¡ ¿ø·¡ Å©±â·Î)
+            // íƒ„ì„± ì• ë‹ˆë©”ì´ì…˜ ì»¤ë¸Œ (ì²˜ìŒì— í¬ê²Œ ë‚˜íƒ€ë‚¬ë‹¤ê°€ ì›ë˜ í¬ê¸°ë¡œ)
             if (t < 0.7f)
             {
                 float scaleT = t / 0.7f;
@@ -100,32 +85,16 @@ public class Stone : MonoBehaviour
     }
 
     /// <summary>
-    /// µ¹ Å¸ÀÔ ¹İÈ¯
-    /// </summary>
-    public StoneType GetStoneType()
-    {
-        return stoneType;
-    }
-
-    /// <summary>
-    /// ¿À¸ñÆÇ¿¡¼­ÀÇ À§Ä¡ ¹İÈ¯
-    /// </summary>
-    public Vector2Int GetBoardPosition()
-    {
-        return boardPosition;
-    }
-
-    /// <summary>
-    /// ¸¶¿ì½º ¿À¹ö ½Ã ÇÏÀÌ¶óÀÌÆ® È¿°ú
+    /// ë§ˆìš°ìŠ¤ ì˜¤ë²„ ì‹œ í•˜ì´ë¼ì´íŠ¸ íš¨ê³¼
     /// </summary>
     void OnMouseEnter()
     {
         if (isAnimating) return;
 
-        // Å©±â¸¦ »ìÂ¦ Å°¿ö¼­ ÇÏÀÌ¶óÀÌÆ® È¿°ú
+        // í¬ê¸°ë¥¼ ì‚´ì§ í‚¤ì›Œì„œ í•˜ì´ë¼ì´íŠ¸ íš¨ê³¼
         StartCoroutine(HoverAnimation(originalScale * hoverScaleMultiplier));
 
-        // Åõ¸íµµ º¯°æÀ¸·Î ÇÏÀÌ¶óÀÌÆ®
+        // íˆ¬ëª…ë„ ë³€ê²½ìœ¼ë¡œ í•˜ì´ë¼ì´íŠ¸
         if (spriteRenderer != null)
         {
             Color currentColor = spriteRenderer.color;
@@ -135,16 +104,16 @@ public class Stone : MonoBehaviour
     }
 
     /// <summary>
-    /// ¸¶¿ì½º°¡ ¹ş¾î³µÀ» ¶§ ¿ø·¡ »óÅÂ·Î º¹¿ø
+    /// ë§ˆìš°ìŠ¤ê°€ ë²—ì–´ë‚¬ì„ ë•Œ ì›ë˜ ìƒíƒœë¡œ ë³µì›
     /// </summary>
     void OnMouseExit()
     {
         if (isAnimating) return;
 
-        // ¿ø·¡ Å©±â·Î º¹¿ø
+        // ì›ë˜ í¬ê¸°ë¡œ ë³µì›
         StartCoroutine(HoverAnimation(originalScale));
 
-        // Åõ¸íµµ ¿ø»óº¹±¸
+        // íˆ¬ëª…ë„ ì›ìƒë³µêµ¬
         if (spriteRenderer != null)
         {
             Color currentColor = spriteRenderer.color;
@@ -154,7 +123,7 @@ public class Stone : MonoBehaviour
     }
 
     /// <summary>
-    /// È£¹ö ¾Ö´Ï¸ŞÀÌ¼Ç ÄÚ·çÆ¾
+    /// í˜¸ë²„ ì• ë‹ˆë©”ì´ì…˜ ì½”ë£¨í‹´
     /// </summary>
     private System.Collections.IEnumerator HoverAnimation(Vector3 targetScale)
     {

@@ -3,145 +3,94 @@ using UnityEngine;
 public class RenjuRule : MonoBehaviour
 {
     [Header("Renju Rule Settings")]
-    public bool enableForbiddenMoves = true;    // ±Ý¼ö Àû¿ë ¿©ºÎ
-    public bool showForbiddenPositions = false; // ±Ý¼ö À§Ä¡ ½Ã°¢Àû Ç¥½Ã ¿©ºÎ
+    public bool enableForbiddenMoves = true;    // ï¿½Ý¼ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+    public bool showForbiddenPositions = false; // ï¿½Ý¼ï¿½ ï¿½ï¿½Ä¡ ï¿½Ã°ï¿½ï¿½ï¿½ Ç¥ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 
-    // ¸Å´ÏÀú ÂüÁ¶ (È¿À²ÀûÀÎ Á¢±Ù)
-    private GameManager gameManager;
-    private BoardManager boardManager;
+    // ï¿½Å´ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (È¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
+    private GamePlayManager gamePlayManager => GamePlayManager.Instance;
+    private BoardManager boardManager => gamePlayManager.boardManager;
 
-    // 8¹æÇâ º¤ÅÍ (»óÇÏÁÂ¿ì, ´ë°¢¼±)
+    // 8ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ï¿½Â¿ï¿½, ï¿½ë°¢ï¿½ï¿½)
     private readonly int[,] directions = {
-        {-1, -1}, {-1, 0}, {-1, 1},  // ¿ÞÂÊ À§, À§, ¿À¸¥ÂÊ À§
-        {0, -1},           {0, 1},    // ¿ÞÂÊ,     ¿À¸¥ÂÊ
-        {1, -1},  {1, 0},  {1, 1}     // ¿ÞÂÊ ¾Æ·¡, ¾Æ·¡, ¿À¸¥ÂÊ ¾Æ·¡
+        {-1, -1}, {-1, 0}, {-1, 1},  // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½, ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
+        {0, -1},           {0, 1},    // ï¿½ï¿½ï¿½ï¿½,     ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        {1, -1},  {1, 0},  {1, 1}     // ï¿½ï¿½ï¿½ï¿½ ï¿½Æ·ï¿½, ï¿½Æ·ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Æ·ï¿½
     };
-
-    /// <summary>
-    /// GameManager ÂüÁ¶ ¼³Á¤
-    /// </summary>
-    public void SetGameManager(GameManager manager)
-    {
-        gameManager = manager;
-        boardManager = gameManager.boardManager; // GameManager¸¦ ÅëÇØ BoardManager ÂüÁ¶ È¹µæ
-    }
 
     void Start()
     {
-        // ÃÊ±âÈ­´Â GameManager¿¡¼­ È£ÃâÇÏ¹Ç·Î ¿©±â¼­´Â ÇÏÁö ¾ÊÀ½
+        // ï¿½Ê±ï¿½È­ï¿½ï¿½ GameManagerï¿½ï¿½ï¿½ï¿½ È£ï¿½ï¿½ï¿½Ï¹Ç·ï¿½ ï¿½ï¿½ï¿½â¼­ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     }
 
     /// <summary>
-    /// ·»ÁÖ·ê ÃÊ±âÈ­
+    /// ï¿½ï¿½ï¿½Ö·ï¿½ ï¿½Ê±ï¿½È­
     /// </summary>
     public void Initialize()
     {
         if (boardManager == null)
         {
-            Debug.LogError("BoardManager ÂüÁ¶°¡ ¼³Á¤µÇÁö ¾Ê¾Ò½À´Ï´Ù!");
+            Debug.LogError("BoardManager ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ê¾Ò½ï¿½ï¿½Ï´ï¿½!");
         }
 
-        Debug.Log("·»ÁÖ·êÀÌ ÃÊ±âÈ­µÇ¾ú½À´Ï´Ù.");
+        Debug.Log("ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ ï¿½Ê±ï¿½È­ï¿½Ç¾ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.");
     }
 
     /// <summary>
-    /// À¯È¿ÇÑ ¼öÀÎÁö °Ë»ç (·»ÁÖ·ê Àû¿ë)
+    /// ï¿½ï¿½È¿ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ë»ï¿½ (ï¿½ï¿½ï¿½Ö·ï¿½ ï¿½ï¿½ï¿½ï¿½)
     /// </summary>
-    /// <param name="x">³õÀ¸·Á´Â À§Ä¡ xÁÂÇ¥</param>
-    /// <param name="y">³õÀ¸·Á´Â À§Ä¡ yÁÂÇ¥</param>
-    /// <param name="stoneType">³õÀ¸·Á´Â µ¹ÀÇ Å¸ÀÔ</param>
-    /// <param name="board">ÇöÀç º¸µå »óÅÂ</param>
-    /// <returns>À¯È¿ÇÑ ¼öÀÎÁö ¿©ºÎ</returns>
+    /// <param name="x">ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ xï¿½ï¿½Ç¥</param>
+    /// <param name="y">ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ yï¿½ï¿½Ç¥</param>
+    /// <param name="stoneType">ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Å¸ï¿½ï¿½</param>
+    /// <param name="board">ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½</param>
+    /// <returns>ï¿½ï¿½È¿ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½</returns>
     public bool IsValidMove(int x, int y, StoneType stoneType, StoneType[,] board)
     {
-        // ¹éµ¹Àº ·»ÁÖ·êÀÇ ¿µÇâÀ» ¹ÞÁö ¾ÊÀ½
+        // ï¿½éµ¹ï¿½ï¿½ ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         if (stoneType != StoneType.Black) return true;
 
-        // ±Ý¼ö°¡ ºñÈ°¼ºÈ­µÈ °æ¿ì ¸ðµç ¼ö Çã¿ë
+        // ï¿½Ý¼ï¿½ï¿½ï¿½ ï¿½ï¿½È°ï¿½ï¿½È­ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½
         if (!enableForbiddenMoves) return true;
 
-        // ÀÓ½Ã·Î µ¹À» ³õ°í ±Ý¼ö °Ë»ç
+        // ï¿½Ó½Ã·ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ý¼ï¿½ ï¿½Ë»ï¿½
         board[x, y] = stoneType;
 
         bool isValid = true;
 
-        // »ï»ï ±Ý¼ö °Ë»ç
+        // ï¿½ï¿½ï¿½ ï¿½Ý¼ï¿½ ï¿½Ë»ï¿½
         if (IsDoubleThree(x, y, board))
         {
             isValid = false;
-            Debug.Log($"»ï»ï ±Ý¼ö: ({x}, {y})");
+            Debug.Log($"ï¿½ï¿½ï¿½ ï¿½Ý¼ï¿½: ({x}, {y})");
         }
 
-        // »ç»ç ±Ý¼ö °Ë»ç
+        // ï¿½ï¿½ï¿½ ï¿½Ý¼ï¿½ ï¿½Ë»ï¿½
         if (isValid && IsDoubleFour(x, y, board))
         {
             isValid = false;
-            Debug.Log($"»ç»ç ±Ý¼ö: ({x}, {y})");
+            Debug.Log($"ï¿½ï¿½ï¿½ ï¿½Ý¼ï¿½: ({x}, {y})");
         }
 
-        // Àå¸ñ ±Ý¼ö °Ë»ç (6¸ñ ÀÌ»ó)
+        // ï¿½ï¿½ï¿½ ï¿½Ý¼ï¿½ ï¿½Ë»ï¿½ (6ï¿½ï¿½ ï¿½Ì»ï¿½)
         if (isValid && IsOverline(x, y, board))
         {
             isValid = false;
-            Debug.Log($"Àå¸ñ ±Ý¼ö: ({x}, {y})");
+            Debug.Log($"ï¿½ï¿½ï¿½ ï¿½Ý¼ï¿½: ({x}, {y})");
         }
 
-        // ÀÓ½Ã·Î ³õÀº µ¹ Á¦°Å
+        // ï¿½Ó½Ã·ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         board[x, y] = StoneType.None;
 
         return isValid;
     }
 
     /// <summary>
-    /// ½Â¸® Á¶°Ç °Ë»ç (5¸ñ)
-    /// </summary>
-    /// <param name="x">¸¶Áö¸·¿¡ ³õÀº µ¹ÀÇ xÁÂÇ¥</param>
-    /// <param name="y">¸¶Áö¸·¿¡ ³õÀº µ¹ÀÇ yÁÂÇ¥</param>
-    /// <param name="stoneType">µ¹ÀÇ Å¸ÀÔ</param>
-    /// <returns>½Â¸®Çß´ÂÁö ¿©ºÎ</returns>
-    public bool CheckWinCondition(int x, int y, StoneType stoneType)
-    {
-        StoneType[,] board = boardManager.GetBoardState();
-
-        // 4¹æÇâ(°¡·Î, ¼¼·Î, ´ë°¢¼± 2°³)À¸·Î 5¸ñ °Ë»ç
-        for (int dir = 0; dir < 4; dir++)
-        {
-            int dx = directions[dir, 0];
-            int dy = directions[dir, 1];
-
-            int count = 1; // ÇöÀç ³õÀº µ¹ Æ÷ÇÔ
-
-            // ÇÑ ¹æÇâÀ¸·Î ¿¬¼ÓµÈ µ¹ °³¼ö ¼¼±â
-            count += CountConsecutiveStones(x, y, dx, dy, stoneType, board);
-
-            // ¹Ý´ë ¹æÇâÀ¸·Î ¿¬¼ÓµÈ µ¹ °³¼ö ¼¼±â
-            count += CountConsecutiveStones(x, y, -dx, -dy, stoneType, board);
-
-            // Á¤È®È÷ 5°³ÀÏ ¶§ ½Â¸® (6°³ ÀÌ»óÀº Èæµ¹ÀÇ °æ¿ì Àå¸ñÀ¸·Î ÆÐ¹è)
-            if (count == 5)
-            {
-                return true;
-            }
-
-            // Èæµ¹ÀÌ 6°³ ÀÌ»ó ¸¸µé¸é ÆÐ¹è (Àå¸ñ)
-            if (count >= 6 && stoneType == StoneType.Black && enableForbiddenMoves)
-            {
-                Debug.Log("Èæµ¹ Àå¸ñÀ¸·Î ÆÐ¹è!");
-                return false; // ½ÇÁ¦·Î´Â »ó´ë¹æ ½Â¸®·Î Ã³¸®ÇØ¾ß ÇÔ
-            }
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// »ï»ï ±Ý¼ö °Ë»ç
+    /// ï¿½ï¿½ï¿½ ï¿½Ý¼ï¿½ ï¿½Ë»ï¿½
     /// </summary>
     private bool IsDoubleThree(int x, int y, StoneType[,] board)
     {
         int threeCount = 0;
 
-        // 4¹æÇâ¿¡¼­ È°»ï(¿­¸° 3¸ñ) °Ë»ç
+        // 4ï¿½ï¿½ï¿½â¿¡ï¿½ï¿½ È°ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½ 3ï¿½ï¿½) ï¿½Ë»ï¿½
         for (int dir = 0; dir < 4; dir++)
         {
             int dx = directions[dir, 0];
@@ -153,17 +102,17 @@ public class RenjuRule : MonoBehaviour
             }
         }
 
-        return threeCount >= 2; // 2°³ ÀÌ»óÀÇ È°»ïÀÌ ÀÖÀ¸¸é »ï»ï
+        return threeCount >= 2; // 2ï¿½ï¿½ ï¿½Ì»ï¿½ï¿½ï¿½ È°ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
     }
 
     /// <summary>
-    /// »ç»ç ±Ý¼ö °Ë»ç
+    /// ï¿½ï¿½ï¿½ ï¿½Ý¼ï¿½ ï¿½Ë»ï¿½
     /// </summary>
     private bool IsDoubleFour(int x, int y, StoneType[,] board)
     {
         int fourCount = 0;
 
-        // 4¹æÇâ¿¡¼­ 4¸ñ °Ë»ç
+        // 4ï¿½ï¿½ï¿½â¿¡ï¿½ï¿½ 4ï¿½ï¿½ ï¿½Ë»ï¿½
         for (int dir = 0; dir < 4; dir++)
         {
             int dx = directions[dir, 0];
@@ -175,21 +124,21 @@ public class RenjuRule : MonoBehaviour
             }
         }
 
-        return fourCount >= 2; // 2°³ ÀÌ»óÀÇ 4¸ñÀÌ ÀÖÀ¸¸é »ç»ç
+        return fourCount >= 2; // 2ï¿½ï¿½ ï¿½Ì»ï¿½ï¿½ï¿½ 4ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
     }
 
     /// <summary>
-    /// Àå¸ñ(6¸ñ ÀÌ»ó) °Ë»ç
+    /// ï¿½ï¿½ï¿½(6ï¿½ï¿½ ï¿½Ì»ï¿½) ï¿½Ë»ï¿½
     /// </summary>
     private bool IsOverline(int x, int y, StoneType[,] board)
     {
-        // 4¹æÇâ¿¡¼­ 6°³ ÀÌ»ó ¿¬¼Ó °Ë»ç
+        // 4ï¿½ï¿½ï¿½â¿¡ï¿½ï¿½ 6ï¿½ï¿½ ï¿½Ì»ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ë»ï¿½
         for (int dir = 0; dir < 4; dir++)
         {
             int dx = directions[dir, 0];
             int dy = directions[dir, 1];
 
-            int count = 1; // ÇöÀç µ¹ Æ÷ÇÔ
+            int count = 1; // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
             count += CountConsecutiveStones(x, y, dx, dy, StoneType.Black, board);
             count += CountConsecutiveStones(x, y, -dx, -dy, StoneType.Black, board);
 
@@ -203,22 +152,22 @@ public class RenjuRule : MonoBehaviour
     }
 
     /// <summary>
-    /// È°»ï(¿­¸° 3¸ñ) °Ë»ç
+    /// È°ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½ 3ï¿½ï¿½) ï¿½Ë»ï¿½
     /// </summary>
     private bool IsOpenThree(int x, int y, int dx, int dy, StoneType[,] board)
     {
-        int count = 1; // ÇöÀç µ¹ Æ÷ÇÔ
+        int count = 1; // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 
-        // ÇÑ ¹æÇâÀ¸·Î ¿¬¼ÓµÈ Èæµ¹ ¼¼±â
+        // ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Óµï¿½ ï¿½æµ¹ ï¿½ï¿½ï¿½ï¿½
         count += CountConsecutiveStones(x, y, dx, dy, StoneType.Black, board);
 
-        // ¹Ý´ë ¹æÇâÀ¸·Î ¿¬¼ÓµÈ Èæµ¹ ¼¼±â
+        // ï¿½Ý´ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Óµï¿½ ï¿½æµ¹ ï¿½ï¿½ï¿½ï¿½
         count += CountConsecutiveStones(x, y, -dx, -dy, StoneType.Black, board);
 
-        // 3°³ÀÌ°í ¾çÂÊ ³¡ÀÌ ºñ¾îÀÖ¾î¾ß È°»ï
+        // 3ï¿½ï¿½ï¿½Ì°ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ö¾ï¿½ï¿½ È°ï¿½ï¿½
         if (count == 3)
         {
-            // ¾çÂÊ ³¡ÀÌ ºñ¾îÀÖ´ÂÁö È®ÀÎ
+            // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ö´ï¿½ï¿½ï¿½ È®ï¿½ï¿½
             int frontX = x + dx * (CountConsecutiveStones(x, y, dx, dy, StoneType.Black, board) + 1);
             int frontY = y + dy * (CountConsecutiveStones(x, y, dx, dy, StoneType.Black, board) + 1);
 
@@ -235,32 +184,32 @@ public class RenjuRule : MonoBehaviour
     }
 
     /// <summary>
-    /// 4¸ñ °Ë»ç
+    /// 4ï¿½ï¿½ ï¿½Ë»ï¿½
     /// </summary>
     private bool IsFour(int x, int y, int dx, int dy, StoneType[,] board)
     {
-        int count = 1; // ÇöÀç µ¹ Æ÷ÇÔ
+        int count = 1; // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 
-        // ÇÑ ¹æÇâÀ¸·Î ¿¬¼ÓµÈ Èæµ¹ ¼¼±â
+        // ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Óµï¿½ ï¿½æµ¹ ï¿½ï¿½ï¿½ï¿½
         count += CountConsecutiveStones(x, y, dx, dy, StoneType.Black, board);
 
-        // ¹Ý´ë ¹æÇâÀ¸·Î ¿¬¼ÓµÈ Èæµ¹ ¼¼±â
+        // ï¿½Ý´ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Óµï¿½ ï¿½æµ¹ ï¿½ï¿½ï¿½ï¿½
         count += CountConsecutiveStones(x, y, -dx, -dy, StoneType.Black, board);
 
         return count == 4;
     }
 
     /// <summary>
-    /// Æ¯Á¤ ¹æÇâÀ¸·Î ¿¬¼ÓµÈ µ¿ÀÏÇÑ µ¹ÀÇ °³¼ö¸¦ ¼¼´Â ¸Þ¼­µå
+    /// Æ¯ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Óµï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Þ¼ï¿½ï¿½ï¿½
     /// </summary>
-    /// <param name="startX">½ÃÀÛ xÁÂÇ¥</param>
-    /// <param name="startY">½ÃÀÛ yÁÂÇ¥</param>
-    /// <param name="dx">x¹æÇâ Áõ°¡·®</param>
-    /// <param name="dy">y¹æÇâ Áõ°¡·®</param>
-    /// <param name="stoneType">Ã£À» µ¹ÀÇ Å¸ÀÔ</param>
-    /// <param name="board">º¸µå »óÅÂ</param>
-    /// <returns>¿¬¼ÓµÈ µ¹ÀÇ °³¼ö</returns>
-    private int CountConsecutiveStones(int startX, int startY, int dx, int dy, StoneType stoneType, StoneType[,] board)
+    /// <param name="startX">ï¿½ï¿½ï¿½ï¿½ xï¿½ï¿½Ç¥</param>
+    /// <param name="startY">ï¿½ï¿½ï¿½ï¿½ yï¿½ï¿½Ç¥</param>
+    /// <param name="dx">xï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</param>
+    /// <param name="dy">yï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</param>
+    /// <param name="stoneType">Ã£ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Å¸ï¿½ï¿½</param>
+    /// <param name="board">ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½</param>
+    /// <returns>ï¿½ï¿½ï¿½Óµï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½</returns>
+    public int CountConsecutiveStones(int startX, int startY, int dx, int dy, StoneType stoneType, StoneType[,] board)
     {
         int count = 0;
         int x = startX + dx;
@@ -277,7 +226,7 @@ public class RenjuRule : MonoBehaviour
     }
 
     /// <summary>
-    /// À¯È¿ÇÑ º¸µå À§Ä¡ÀÎÁö È®ÀÎ
+    /// ï¿½ï¿½È¿ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ï¿½ï¿½ È®ï¿½ï¿½
     /// </summary>
     private bool IsValidPosition(int x, int y)
     {
@@ -285,10 +234,10 @@ public class RenjuRule : MonoBehaviour
     }
 
     /// <summary>
-    /// ¸ðµç ±Ý¼ö À§Ä¡ ¹ÝÈ¯ (AI³ª ÈùÆ® ½Ã½ºÅÛ¿ë)
+    /// ï¿½ï¿½ï¿½ ï¿½Ý¼ï¿½ ï¿½ï¿½Ä¡ ï¿½ï¿½È¯ (AIï¿½ï¿½ ï¿½ï¿½Æ® ï¿½Ã½ï¿½ï¿½Û¿ï¿½)
     /// </summary>
-    /// <param name="board">ÇöÀç º¸µå »óÅÂ</param>
-    /// <returns>±Ý¼ö À§Ä¡ ¸®½ºÆ®</returns>
+    /// <param name="board">ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½</param>
+    /// <returns>ï¿½Ý¼ï¿½ ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½ï¿½Æ®</returns>
     public System.Collections.Generic.List<Vector2Int> GetForbiddenPositions(StoneType[,] board)
     {
         var forbiddenPositions = new System.Collections.Generic.List<Vector2Int>();
@@ -313,30 +262,12 @@ public class RenjuRule : MonoBehaviour
     }
 
     /// <summary>
-    /// ·»ÁÖ·ê ¼³Á¤ º¯°æ
+    /// ï¿½ï¿½ï¿½Ö·ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     /// </summary>
-    /// <param name="enableForbidden">±Ý¼ö ±ÔÄ¢ È°¼ºÈ­ ¿©ºÎ</param>
+    /// <param name="enableForbidden">ï¿½Ý¼ï¿½ ï¿½ï¿½Ä¢ È°ï¿½ï¿½È­ ï¿½ï¿½ï¿½ï¿½</param>
     public void SetRenjuRuleEnabled(bool enableForbidden)
     {
         enableForbiddenMoves = enableForbidden;
-        Debug.Log($"·»ÁÖ·ê ±Ý¼ö: {(enableForbidden ? "È°¼ºÈ­" : "ºñÈ°¼ºÈ­")}");
-    }
-
-    /// <summary>
-    /// Æ¯Á¤ À§Ä¡°¡ ½ÂºÎ¼öÀÎÁö È®ÀÎ (5¸ñÀ» ¸¸µé ¼ö ÀÖ´Â ¼ö)
-    /// </summary>
-    /// <param name="x">°Ë»çÇÒ xÁÂÇ¥</param>
-    /// <param name="y">°Ë»çÇÒ yÁÂÇ¥</param>
-    /// <param name="stoneType">µ¹ Å¸ÀÔ</param>
-    /// <param name="board">º¸µå »óÅÂ</param>
-    /// <returns>½ÂºÎ¼öÀÎÁö ¿©ºÎ</returns>
-    public bool IsWinningMove(int x, int y, StoneType stoneType, StoneType[,] board)
-    {
-        // ÀÓ½Ã·Î µ¹À» ³õ°í ½Â¸® Á¶°Ç °Ë»ç
-        board[x, y] = stoneType;
-        bool isWinning = CheckWinCondition(x, y, stoneType);
-        board[x, y] = StoneType.None; // ¿ø»óº¹±¸
-
-        return isWinning;
+        Debug.Log($"ï¿½ï¿½ï¿½Ö·ï¿½ ï¿½Ý¼ï¿½: {(enableForbidden ? "È°ï¿½ï¿½È­" : "ï¿½ï¿½È°ï¿½ï¿½È­")}");
     }
 }

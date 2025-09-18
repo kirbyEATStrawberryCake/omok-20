@@ -32,7 +32,7 @@ public abstract class Singleton<T> : MonoBehaviour where T : MonoBehaviour
         if (instance == null)
         {
             instance = this as T;
-            DontDestroyOnLoad(gameObject);
+            
             // 씬 전환시에 호출되는 액션 메서드 할당 
             SceneManager.sceneLoaded += OnSceneLoad;
         }
