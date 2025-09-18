@@ -31,16 +31,16 @@ public class LoginSceneUIManager : Singleton<LoginSceneUIManager>
     private GameObject SignUpPanel;
 
     [SerializeField] [Tooltip("로그인 씬에서 사용할 버튼 1개짜리 팝업")]
-    private GameObject popupPanelObject;
+    private GameObject popupPanel;
 
-    private OneButtonPanel popupPanel;
+    private OneButtonPanel popup;
     public AuthManager authManager { get; private set; }
 
     protected override void Awake()
     {
         base.Awake();
         authManager = GetComponent<AuthManager>();
-        popupPanel = popupPanelObject.GetComponent<OneButtonPanel>();
+        popup = popupPanel.GetComponent<OneButtonPanel>();
     }
 
     protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
@@ -91,7 +91,7 @@ public class LoginSceneUIManager : Singleton<LoginSceneUIManager>
                 break;
         }
 
-        popupPanel.SetMessageAndButtonEvent(message, onConfirm);
+        popup.SetMessageAndButtonEvent(message, onConfirm);
     }
 
     /// <summary>
@@ -127,6 +127,6 @@ public class LoginSceneUIManager : Singleton<LoginSceneUIManager>
                 break;
         }
 
-        popupPanel.SetMessageAndButtonEvent(message, onConfirm);
+        popup.SetMessageAndButtonEvent(message, onConfirm);
     }
 }
