@@ -6,8 +6,9 @@ public class ViewInfoTest : MonoBehaviour
 {
     [SerializeField] private Button points;
     [SerializeField] private Button grade;
+    [SerializeField] private Button userInfo;
     [SerializeField] private Button record;
-    [SerializeField] private Button Ranking;
+    [SerializeField] private Button ranking;
 
     [SerializeField] private GameObject rankingObject;
     [SerializeField] private Transform rankingContentObject;
@@ -82,6 +83,36 @@ public class ViewInfoTest : MonoBehaviour
                     }
                 });
         });
+        
+        userInfo.onClick.AddListener(() =>
+        {
+            statsManager.GetUserInfo((response) =>
+                {
+                    var nickname = response.nickname;
+                    var profileImage = response.profileImage;
+                    var grade = response.grade;
+                    messageTest.ClearAllMessage();
+                    messageTest.SetMessage(1, "### 기본 정보 가져오기 성공 ! ###", Color.green);
+                    messageTest.SetMessage(3, $"{grade}급 {nickname}, {profileImage}", Color.black);
+                    Debug.Log($"<color=green>### 기본 정보 가져오기 성공 ! ###</color>");
+                },
+                (errorType) =>
+                {
+                    switch (errorType)
+                    {
+                        case StatsResponseType.CANNOT_FOUND_USER:
+                            messageTest.SetMessage(1, "기본 정보 가져오기 실패 : \n유저를 찾지 못했습니다.", Color.red);
+                            Debug.LogWarning("기본 정보 가져오기 실패 : 유저를 찾지 못했습니다.");
+                            break;
+                        case StatsResponseType.NOT_LOGGED_IN:
+                            messageTest.SetMessage(1, "기본 정보 가져오기 실패 : \n로그인 상태가 아닙니다.", Color.red);
+                            Debug.LogWarning("기본 정보 가져오기 실패 : 로그인 상태가 아닙니다.");
+                            break;
+                    }
+                });
+        });
+        
+        
 
         record.onClick.AddListener(() =>
         {
@@ -111,7 +142,7 @@ public class ViewInfoTest : MonoBehaviour
                 });
         });
 
-        Ranking.onClick.AddListener(() =>
+        ranking.onClick.AddListener(() =>
         {
             statsManager.GetRanking((response) =>
                 {

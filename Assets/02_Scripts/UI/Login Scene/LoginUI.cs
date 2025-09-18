@@ -6,8 +6,8 @@ public class LoginUI : MonoBehaviour
 {
     private LoginSceneUIManager loginSceneUIManager => LoginSceneUIManager.Instance;
 
-    [SerializeField] private TMP_InputField usernameInput;
-    [SerializeField] private TMP_InputField passwordInput;
+    [SerializeField][Tooltip("ID(이메일) InputField")] private TMP_InputField usernameInput;
+    [SerializeField][Tooltip("비밀번호 InputField")] private TMP_InputField passwordInput;
 
     private void OnEnable()
     {
