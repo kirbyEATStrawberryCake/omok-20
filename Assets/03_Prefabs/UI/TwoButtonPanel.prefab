@@ -152,7 +152,7 @@ GameObject:
   - component: {fileID: 2267739391850596684}
   - component: {fileID: 4409266241363605012}
   m_Layer: 5
-  m_Name: '[Button] Button 1'
+  m_Name: '[Button] Cancel'
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -381,7 +381,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uD655\uC778"
+  m_text: "\uCDE8\uC18C"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 6d5a3baef93c1d04d8b5373617d50a52, type: 2}
   m_sharedMaterial: {fileID: -5964054793901177232, guid: 6d5a3baef93c1d04d8b5373617d50a52, type: 2}
@@ -604,7 +604,7 @@ GameObject:
   - component: {fileID: 3470363030081043}
   - component: {fileID: 9055731936040011613}
   m_Layer: 5
-  m_Name: '[Button] Button 2'
+  m_Name: '[Button] Confirm'
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -859,6 +859,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 656e5ec8ad1a2c2439d637b94d409dc8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TwoButtonPanel
-  button1: {fileID: 7066883233417247116}
-  button2: {fileID: 5098090182618944319}
+  buttonConfirm: {fileID: 5098090182618944319}
+  buttonCancel: {fileID: 7066883233417247116}
   message: {fileID: 2415945001890898542}

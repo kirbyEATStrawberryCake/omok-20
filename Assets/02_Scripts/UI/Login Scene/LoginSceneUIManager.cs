@@ -22,6 +22,7 @@ public enum SignUpPanelType
     Fail_NotSelectedProfileImage
 }
 
+[RequireComponent(typeof(AuthManager))]
 public class LoginSceneUIManager : Singleton<LoginSceneUIManager>
 {
     [SerializeField] [Tooltip("로그인 화면 패널")]
