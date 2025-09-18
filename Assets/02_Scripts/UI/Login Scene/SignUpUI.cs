@@ -6,22 +6,37 @@ public class SignUpUI : MonoBehaviour
 {
     private LoginSceneUIManager loginSceneUIManager => LoginSceneUIManager.Instance;
 
-    [Header("Input Fields")] [SerializeField]
+    [Header("Input Fields")] [SerializeField] [Tooltip("유저 ID(이메일) InputField")]
     private TMP_InputField usernameInput;
 
-    [SerializeField] private TMP_InputField passwordInput;
-    [SerializeField] private TMP_InputField confirmPasswordInput;
-    [SerializeField] private TMP_InputField nicknameInput;
+    [SerializeField] [Tooltip("패스워드 InputField")]
+    private TMP_InputField passwordInput;
 
-    [Header("프로필 이미지")] [SerializeField] private Image pandaImage;
-    [SerializeField] private Image redPandaImage;
-    [SerializeField] private Sprite pandaSprite;
-    [SerializeField] private Sprite pandaGreySprite;
-    [SerializeField] private Sprite redPandaSprite;
-    [SerializeField] private Sprite redPandaGreySprite;
+    [SerializeField] [Tooltip("패스워드 확인 InputField")]
+    private TMP_InputField confirmPasswordInput;
+
+    [SerializeField] [Tooltip("닉네임 InputField")]
+    private TMP_InputField nicknameInput;
+
+    [Header("프로필 이미지")] [SerializeField] [Tooltip("판다 이미지(프로필 이미지)")]
+    private Image pandaImage;
+
+    [SerializeField] [Tooltip("레드 판다 이미지(프로필 이미지)")]
+    private Image redPandaImage;
+
+    [SerializeField] [Tooltip("판다 스프라이트")] private Sprite pandaSprite;
+
+    [SerializeField] [Tooltip("판다 스프라이트(회색, Unselected)")]
+    private Sprite pandaGreySprite;
+
+    [SerializeField] [Tooltip("레드 판다 스프라이트")]
+    private Sprite redPandaSprite;
+
+    [SerializeField] [Tooltip("레드 판다 스프라이트(회색, Unselected)")]
+    private Sprite redPandaGreySprite;
 
     // private string selectedProfile = ""; // 선택된 프로필사진 ("panda" or "red_panda")
-    private int selectedProfile = 0; // 선택된 프로필사진(0 : None, 1 : Panda, 2 : Red Panda)
+    private int selectedProfile = 0; // 선택된 프로필사진(0 : Panda, 1 : Panda, 2 : Red Panda)
 
     private void OnEnable()
     {

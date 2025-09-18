@@ -24,9 +24,15 @@ public enum SignUpPanelType
 
 public class LoginSceneUIManager : Singleton<LoginSceneUIManager>
 {
-    [SerializeField] private GameObject LoginUIPanel;
-    [SerializeField] private GameObject SignUpPanel;
-    [SerializeField] private GameObject popupPanelObject;
+    [SerializeField] [Tooltip("로그인 화면 패널")]
+    private GameObject LoginUIPanel;
+
+    [SerializeField] [Tooltip("회원가입 화면 패널")]
+    private GameObject SignUpPanel;
+
+    [SerializeField] [Tooltip("로그인 씬에서 사용할 버튼 1개짜리 팝업")]
+    private GameObject popupPanelObject;
+
     private OneButtonPanel popupPanel;
     public AuthManager authManager { get; private set; }
 
