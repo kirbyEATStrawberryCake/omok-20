@@ -325,7 +325,7 @@ public class GomokuAI
     private int Minimax(BoardManager_AI board, int depth, int alpha, int beta, bool maximizingPlayer)
     {
         // 1. 종료 조건: 깊이 제한에 도달했거나, 게임이 끝났거나, 오목판이 다 찼으면 (더이상 둘 공간이 없으면)
-        if (depth == 0 || GameManager.Instance.currentGameState == GameState.GameOver || board.IsBoardFull())
+        if (depth == 0 || GamePlayManager.Instance.currentGameState == GameState.GameOver || board.IsBoardFull())
         {
             // 전체 보드의 형세를 평가
             return EvaluateBoard(board);

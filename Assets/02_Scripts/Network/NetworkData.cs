@@ -73,6 +73,7 @@ public class Identity
 /// <summary>
 /// 회원가입 요청
 /// </summary>
+[Serializable]
 public class SignUpRequest
 {
     public string username;
@@ -92,6 +93,7 @@ public class SignUpRequest
 /// <summary>
 /// 로그인 요청
 /// </summary>
+[Serializable]
 public class SignInRequest
 {
     public string username;
@@ -122,6 +124,7 @@ public class Rank
 /// <summary>
 /// 점수 갱신 클래스
 /// </summary>
+[Serializable]
 public class SetRank
 {
     public string message;
@@ -131,6 +134,7 @@ public class SetRank
 /// <summary>
 /// 승급 포인트 수신용 클래스
 /// </summary>
+[Serializable]
 public class GetPoints
 {
     public Identity identity;
@@ -140,6 +144,7 @@ public class GetPoints
 /// <summary>
 /// 등급 수신용 클래스
 /// </summary>
+[Serializable]
 public class GetGrade
 {
     public Identity identity;
@@ -153,6 +158,7 @@ public class GetGrade
 /// <summary>
 /// 게임 결과 송신용 클래스
 /// </summary>
+[Serializable]
 public class GameResultRequest
 {
     public string gameResult; // "win" 또는 "lose"
@@ -166,6 +172,7 @@ public class GameResultRequest
 /// <summary>
 /// 게임 결과 수신용 클래스
 /// </summary>
+[Serializable]
 public class GameResultResponse
 {
     public string message;
@@ -204,6 +211,7 @@ public class GetRecord
 
 #region 유저 정보 수신
 
+[Serializable]
 public class UserInfo_Network
 {
     public string id;
@@ -233,6 +241,7 @@ public class RankingUser
 /// <summary>
 /// 랭킹 수신용 클래스
 /// </summary>
+[Serializable]
 public class GetRanking
 {
     public RankingUser[] ranking;
@@ -242,6 +251,7 @@ public class GetRanking
 
 #region 멀티플레이
 
+[Serializable]
 public enum MultiplayControllerState
 {
     MatchWaiting,

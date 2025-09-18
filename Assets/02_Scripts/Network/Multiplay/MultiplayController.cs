@@ -1,6 +1,7 @@
 using System;
 using Newtonsoft.Json;
 using SocketIOClient;
+using SocketIOClient.Newtonsoft.Json;
 using UnityEngine;
 
 [Serializable]
@@ -20,6 +21,8 @@ public class MatchFoundData
     [JsonProperty("username")] public string username;
     [JsonProperty("nickname")] public string nickname;
     [JsonProperty("grade")] public int grade;
+    [JsonProperty("profileImage")] public int profileImage;
+    [JsonProperty("isPlayer1First")] public bool isPlayer1First;
 }
 
 [Serializable]
@@ -44,10 +47,12 @@ public class BlockData
 public class MultiplayController : IDisposable
 {
     private SocketIOUnity socket;
-    private bool isConnected = false;
+    public bool isConnected { get; private set; } = false;
 
     // 사용자 정보
     public UserInfo CurrentUserInfo { get; private set; }
+
+    public bool amIFirstPlayer { get; private set; }
 
     // Room 상태 변화에 따른 액션
     private Action<MultiplayControllerState, string> onMultiplayStateChanged;
@@ -55,13 +60,16 @@ public class MultiplayController : IDisposable
     // 게임 진행 상황에서 돌의 위치를 업데이트하는 액션
     public Action<int, int> onBlockDataChanged;
 
-    public MultiplayController(Action<MultiplayControllerState, string> onMultiplayStateChanged)
+    public MultiplayController(Action<MultiplayControllerState, string> onMultiplayStateChanged,
+        Action<int, int> onBlockDataChanged)
     {
         this.onMultiplayStateChanged = onMultiplayStateChanged;
+        this.onBlockDataChanged = onBlockDataChanged;
 
         var uri = new Uri(NetworkManager.SocketServerURL);
         socket = new SocketIOUnity(uri,
             new SocketIOOptions { Transport = SocketIOClient.Transport.TransportProtocol.WebSocket });
+        socket.JsonSerializer = new NewtonsoftJsonSerializer();
 
         // 연결 상태 이벤트
         socket.OnConnected += (sender, e) =>
@@ -81,7 +89,7 @@ public class MultiplayController : IDisposable
         socket.OnUnityThread("opponentLeft", OpponentLeft);
 
         socket.OnUnityThread("doOpponent", DoOpponent);
-        
+
         socket.OnUnityThread("matchWaiting", MatchWaiting);
         socket.OnUnityThread("matchExpanded", MatchExpanded);
         socket.OnUnityThread("matchFound", MatchFound);
@@ -154,6 +162,15 @@ public class MultiplayController : IDisposable
     private void MatchFound(SocketIOResponse response)
     {
         var data = response.GetValue<MatchFoundData>();
+
+        Debug.Log($"서버에서 받은 isPlayer1First: {data.isPlayer1First}");
+        Debug.Log($"받은 전체 데이터: {JsonConvert.SerializeObject(data)}");
+
+        amIFirstPlayer = data.isPlayer1First;
+
+        Debug.Log($"내가 선공인가?: {amIFirstPlayer}");
+
+        amIFirstPlayer = data.isPlayer1First;
 
         onMultiplayStateChanged?.Invoke(MultiplayControllerState.MatchFound, data.roomId);
     }
