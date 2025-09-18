@@ -6,24 +6,26 @@ using UnityEngine.UI;
 
 public class TwoButtonPanel : MonoBehaviour
 {
-    [SerializeField] private Button button1;
-    [SerializeField] private Button button2;
+    [SerializeField] [Tooltip("확인 버튼")] private Button buttonConfirm;
+    [SerializeField] [Tooltip("취소 버튼")] private Button buttonCancel;
 
-    [SerializeField] private TextMeshProUGUI message;
+    [SerializeField] [Tooltip("팝업 창에 띄울 메세지")]
+    private TextMeshProUGUI message;
 
-    private void SetButtonEvent(int buttonNum, UnityAction onClick = null)
+    private void SetButtonEvent(UnityAction onConfirm = null, UnityAction onCancel = null)
     {
-        if (onClick == null) return;
+        if (onConfirm == null && onCancel == null) return;
 
-        if (buttonNum == 1)
+        if (onConfirm != null)
         {
-            button1.onClick.RemoveAllListeners();
-            button1.onClick.AddListener(onClick);
+            buttonConfirm.onClick.RemoveAllListeners();
+            buttonConfirm.onClick.AddListener(onConfirm);
         }
-        else if (buttonNum == 2)
+
+        if (onCancel != null)
         {
-            button2.onClick.RemoveAllListeners();
-            button2.onClick.AddListener(onClick);
+            buttonCancel.onClick.RemoveAllListeners();
+            buttonCancel.onClick.AddListener(onCancel);
         }
     }
 
@@ -36,15 +38,21 @@ public class TwoButtonPanel : MonoBehaviour
     /// 외부에서 OneButtonPanel의 메세지와 버튼 클릭 시 수행할 액션을 설정하는 메소드
     /// </summary>
     /// <param name="message">메세지</param>
-    /// <param name="onConfirm"></param>
-    public void SetMessageAndButtonEvent(int buttonNum, string message, Action onConfirm = null)
+    /// <param name="onConfirm">확인 버튼을 눌렀을 때 실행할 액션</param>
+    /// <param name="onCancel">취소 버튼을 눌렀을 때 실행할 액션</param>
+    public void OpenWithSetMessageAndButtonEvent(string message, Action onConfirm = null, Action onCancel = null)
     {
         SetMessage(message);
-        SetButtonEvent(buttonNum, () =>
-        {
-            onConfirm?.Invoke();
-            gameObject.SetActive(false);
-        });
+        SetButtonEvent(() =>
+            {
+                onConfirm?.Invoke();
+                gameObject.SetActive(false);
+            },
+            () =>
+            {
+                onCancel?.Invoke();
+                gameObject.SetActive(false);
+            });
         gameObject.SetActive(true);
     }
 }

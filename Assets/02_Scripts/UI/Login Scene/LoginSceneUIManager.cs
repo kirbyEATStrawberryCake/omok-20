@@ -25,7 +25,7 @@ public enum SignUpPanelType
 public class LoginSceneUIManager : Singleton<LoginSceneUIManager>
 {
     [SerializeField] [Tooltip("로그인 화면 패널")]
-    private GameObject LoginUIPanel;
+    private GameObject LoginPanel;
 
     [SerializeField] [Tooltip("회원가입 화면 패널")]
     private GameObject SignUpPanel;
@@ -54,7 +54,7 @@ public class LoginSceneUIManager : Singleton<LoginSceneUIManager>
     /// </summary>
     public void OpenLoginPanel()
     {
-        LoginUIPanel.SetActive(true);
+        LoginPanel.SetActive(true);
         SignUpPanel.SetActive(false);
     }
 
@@ -63,7 +63,7 @@ public class LoginSceneUIManager : Singleton<LoginSceneUIManager>
     /// </summary>
     public void OpenSignUpPanel()
     {
-        LoginUIPanel.SetActive(false);
+        LoginPanel.SetActive(false);
         SignUpPanel.SetActive(true);
     }
 
@@ -91,7 +91,7 @@ public class LoginSceneUIManager : Singleton<LoginSceneUIManager>
                 break;
         }
 
-        popup.SetMessageAndButtonEvent(message, onConfirm);
+        popup.OpenWithSetMessageAndButtonEvent(message, onConfirm);
     }
 
     /// <summary>
@@ -127,6 +127,6 @@ public class LoginSceneUIManager : Singleton<LoginSceneUIManager>
                 break;
         }
 
-        popup.SetMessageAndButtonEvent(message, onConfirm);
+        popup.OpenWithSetMessageAndButtonEvent(message, onConfirm);
     }
 }
