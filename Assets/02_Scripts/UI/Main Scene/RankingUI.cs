@@ -29,4 +29,12 @@ public class RankingUI : MonoBehaviour
                     () => { mainSceneUIManager.OpenMainPanel(); });
             });
     }
+    
+    public void OnClickBackButton()
+    {
+        mainSceneUIManager.OpenTwoButtonPopup("랭킹을 종료하시겠습니까?", () =>
+        {
+            mainSceneUIManager.OpenMainPanel();
+        });
+    }
 }
