@@ -49,7 +49,6 @@ public class MainSceneUIManager : Singleton<MainSceneUIManager>
     private TwoButtonPanel twoButtonPopup;
 
     public StatsManager statsManager { get; private set; }
-    public MultiplayController multiplayController { get; private set; }
 
     // 테스트용
     public string username;
@@ -61,44 +60,6 @@ public class MainSceneUIManager : Singleton<MainSceneUIManager>
         statsManager = GetComponent<StatsManager>();
         oneButtonPopup = oneButtonPopupPanel.GetComponent<OneButtonPanel>();
         twoButtonPopup = twoButtonPopupPanel.GetComponent<TwoButtonPanel>();
-        
-        multiplayController = new MultiplayController((state, response) =>
-        {
-            switch (state)
-            {
-                case MultiplayControllerState.MatchWaiting:
-                    // messageTest?.ClearAllMessage();
-                    // messageTest?.SetMessage(1, "매칭을 시작합니다.", Color.cyan);
-                    Debug.Log("<color=cyan>매칭을 시작합니다.</color>");
-                    break;
-                case MultiplayControllerState.MatchFound:
-                    // messageTest?.ClearAllMessage();
-                    // messageTest?.SetMessage(1, "매칭 성공! " + response, Color.cyan);
-                    // this.roomId = response;
-                    Debug.Log("<color=cyan>매칭 성공!</color>");
-                    break;
-                case MultiplayControllerState.MatchCanceled:
-                    // messageTest?.ClearAllMessage();
-                    // messageTest?.SetMessage(1, "매칭을 취소합니다.", Color.cyan);
-                    Debug.Log("<color=cyan>매칭을 취소합니다.</color>");
-                    break;
-                case MultiplayControllerState.ExitRoom:
-                    // messageTest?.ClearAllMessage();
-                    // messageTest?.SetMessage(1, "방에서 나갑니다.", Color.magenta);
-                    Debug.Log("<color=magenta>방에서 나갑니다.</color>");
-                    break;
-                case MultiplayControllerState.OpponentLeft:
-                    // messageTest?.ClearAllMessage();
-                    // messageTest?.SetMessage(1, "상대방이 나갔습니다.", Color.cyan);
-                    Debug.Log("<color=cyan>상대방이 나갔습니다.</color>");
-                    break;
-                case MultiplayControllerState.Error:
-                    // messageTest?.ClearAllMessage();
-                    // messageTest?.SetMessage(1, "에러! " + response, Color.red);
-                    Debug.Log($"<color=red>에러! {response}</color>");
-                    break;
-            }
-        });
     }
 
     private void Start()
