@@ -46,6 +46,37 @@ public class StatsManager : MonoBehaviour
                 }
             });
     }
+    /// <summary>
+    /// 사용자 기본 정보 가져오기
+    /// </summary>
+    /// <param name="onSuccess">사용자 기본 정보 가져오기 성공 시 실행할 액션</param>
+    /// <param name="onFail">사용자 기본 정보 가져오기 실패 시 실행할 액션</param>
+    public void GetUserInfo(Action<UserInfo_Network> onSuccess, Action<StatsResponseType> onFail)
+    {
+        StartCoroutine(GetUserInfoCoroutine(onSuccess, onFail));
+    }
+
+    private IEnumerator GetUserInfoCoroutine(Action<UserInfo_Network> onSuccess, Action<StatsResponseType> onFail)
+    {
+        yield return networkManager.SendGetRequest<StatsResponse, UserInfo_Network>("/stats/getUserInfo", (response) =>
+            {
+                if (response.connectionResult == NetworkManager.NetworkConnectionResult.NetworkError)
+                {
+                    Debug.LogError($"네트워크 연결 실패");
+                    // TODO: 네트워크 연결 실패
+                    return;
+                }
+
+                switch (response.data.result)
+                {
+                    case StatsResponseType.NOT_LOGGED_IN:
+                        onFail?.Invoke(response.data.result);
+                        break;
+                }
+            },
+            (result) => { onSuccess?.Invoke(result); });
+    }
+    
 
     /// <summary>
     /// 사용자 전적 가져오기

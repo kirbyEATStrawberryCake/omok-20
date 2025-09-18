@@ -9,7 +9,6 @@ using System;
 /// <summary>
 /// 인증 응답
 /// </summary>
-[System.Serializable]
 public class AuthResponse
 {
     public AuthResponseType result;
@@ -27,7 +26,6 @@ public enum AuthResponseType
 /// <summary>
 /// 포인트 응답
 /// </summary>
-[System.Serializable]
 public class PointsResponse
 {
     public PointsResponseType result;
@@ -44,7 +42,6 @@ public enum PointsResponseType
 /// <summary>
 /// 사용자 전적 응답
 /// </summary>
-[System.Serializable]
 public class StatsResponse
 {
     public StatsResponseType result;
@@ -65,7 +62,6 @@ public enum StatsResponseType
 /// <summary>
 /// 유저 식별 정보 저장용 클래스
 /// </summary>
-[System.Serializable]
 public class Identity
 {
     public string id; // 고유 식별 id
@@ -76,7 +72,6 @@ public class Identity
 /// <summary>
 /// 회원가입 요청
 /// </summary>
-[System.Serializable]
 public class SignUpRequest
 {
     public string username;
@@ -96,7 +91,6 @@ public class SignUpRequest
 /// <summary>
 /// 로그인 요청
 /// </summary>
-[System.Serializable]
 public class SignInRequest
 {
     public string username;
@@ -116,7 +110,6 @@ public class SignInRequest
 /// <summary>
 /// 포인트 정보 저장용 클래스
 /// </summary>
-[System.Serializable]
 public class Rank
 {
     public int points; // 승급 포인트
@@ -127,7 +120,6 @@ public class Rank
 /// <summary>
 /// 점수 갱신 클래스
 /// </summary>
-[System.Serializable]
 public class SetRank
 {
     public string message;
@@ -137,7 +129,6 @@ public class SetRank
 /// <summary>
 /// 승급 포인트 수신용 클래스
 /// </summary>
-[System.Serializable]
 public class GetPoints
 {
     public Identity identity;
@@ -147,7 +138,6 @@ public class GetPoints
 /// <summary>
 /// 등급 수신용 클래스
 /// </summary>
-[System.Serializable]
 public class GetGrade
 {
     public Identity identity;
@@ -161,7 +151,6 @@ public class GetGrade
 /// <summary>
 /// 게임 결과 송신용 클래스
 /// </summary>
-[System.Serializable]
 public class GameResultRequest
 {
     public string gameResult; // "win" 또는 "lose"
@@ -175,7 +164,6 @@ public class GameResultRequest
 /// <summary>
 /// 게임 결과 수신용 클래스
 /// </summary>
-[System.Serializable]
 public class GameResultResponse
 {
     public string message;
@@ -191,7 +179,6 @@ public class GameResultResponse
 /// <summary>
 /// 기본 유저 전적 저장용 클래스
 /// </summary>
-[System.Serializable]
 public class Record
 {
     public int totalGames; // 총 게임
@@ -203,11 +190,23 @@ public class Record
 /// <summary>
 /// 전적 수신용 클래스
 /// </summary>
-[System.Serializable]
 public class GetRecord
 {
     public Identity identity;
     public Record record;
+}
+
+#endregion
+
+#region 유저 정보 수신
+
+public class UserInfo_Network
+{
+    public string id;
+    public string username;
+    public string nickname;
+    public int profileImage;
+    public int grade;
 }
 
 #endregion
@@ -217,7 +216,6 @@ public class GetRecord
 /// <summary>
 /// 랭킹 정보 저장용 클래스
 /// </summary>
-[System.Serializable]
 public class RankingUser
 {
     public int rank; // 등수
@@ -229,7 +227,6 @@ public class RankingUser
 /// <summary>
 /// 랭킹 수신용 클래스
 /// </summary>
-[System.Serializable]
 public class GetRanking
 {
     public RankingUser[] ranking;
