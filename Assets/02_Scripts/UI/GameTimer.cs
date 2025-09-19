@@ -32,9 +32,6 @@ public class GameTimer : MonoBehaviour
         // GameLogic 이벤트 구독
         gameLogic.OnPlayerStonesRandomized += OnPlayerStonesRandomized;
         gameLogic.OnPlayerTurnChanged += OnPlayerTurnChanged;
-
-        // BoardManager 이벤트 구독 (착수 시 타이머 리셋)
-        gamePlayManager.boardManager.OnPlaceStone += OnStonePlace;
     }
 
     private void OnDisable()
@@ -50,11 +47,6 @@ public class GameTimer : MonoBehaviour
         {
             gameLogic.OnPlayerStonesRandomized -= OnPlayerStonesRandomized;
             gameLogic.OnPlayerTurnChanged -= OnPlayerTurnChanged;
-        }
-
-        if (gamePlayManager?.boardManager != null)
-        {
-            gamePlayManager.boardManager.OnPlaceStone -= OnStonePlace;
         }
     }
 
