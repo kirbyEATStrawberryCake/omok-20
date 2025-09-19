@@ -36,6 +36,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
     private GameObject gameResultPopupPanel;
 
     private GamePlayManager gamePlayManager => GamePlayManager.Instance;
+    [SerializeField] private BoardManager boardManager;
 
     private OneButtonPanel oneConfirmButtonPopup;
     private OneButtonPanel oneCancelButtonPopup;
@@ -68,6 +69,10 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
         {
             gamePlayManager.multiplayManager.MatchFoundCallback += UpdatePlayerProfileInMultiPlay;
         }
+        if (boardManager != null)
+        {
+            boardManager.OnPendingMoveStateChanged += UpdateConfirmMoveButtonState;
+        }
     }
 
     private void OnDisable()
@@ -79,7 +84,43 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
         {
             gamePlayManager.multiplayManager.MatchFoundCallback -= UpdatePlayerProfileInMultiPlay;
         }
+        if (boardManager != null)
+        {
+            boardManager.OnPendingMoveStateChanged -= UpdateConfirmMoveButtonState;
+        }
     }
+
+    private void Start()
+    {
+        //게임 시작 시 버튼 초기 상태 설정
+        UpdateConfirmMoveButtonState(false);
+    }
+
+    /// <summary>
+    /// BoardManager의 상태에 따라 착수 버튼의 활성화 여부를 결정합니다.
+    /// </summary>
+    /// <param name="hasPendingMove">착수 대기 중인 돌이 있는지 여부</param>
+    private void UpdateConfirmMoveButtonState(bool hasPendingMove)
+    {
+        if (confirmMoveButton == null) return;
+
+        bool isMyTurn = true; // 기본적으로 내 턴이라고 가정
+
+        // AI 턴인지 확인
+        if (GamePlayManager.Instance.IsCurrentTurnAI())
+        {
+            isMyTurn = false;
+        }
+        // 멀티플레이어 모드에서 상대방 턴인지 확인
+        else if (GameModeManager.Mode == GameMode.MultiPlayer && gamePlayManager.gameLogic.currentTurnPlayer == PlayerType.Opponent)
+        {
+            isMyTurn = false;
+        }
+
+        // 내 턴이고, 착수 대기 중인 돌이 있을 때만 버튼 활성화
+        confirmMoveButton.interactable = isMyTurn && hasPendingMove;
+    }
+
 
     protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
     {

@@ -52,6 +52,9 @@ public class BoardManager : MonoBehaviour
     // 위치가 선택되었을 때 발생하는 이벤트
     public event UnityAction<int, int> OnPlaceStone;
 
+    // 착수 대기 상태가 변경될 때 발생하는 이벤트
+    public event Action<bool> OnPendingMoveStateChanged;
+
     #region 유니티 이벤트
 
     private void Awake()
@@ -240,6 +243,8 @@ public class BoardManager : MonoBehaviour
             hasPendingMove = false;
             selectedMarker?.SetActive(false);
         }
+        // 이벤트 호출 추가
+        OnPendingMoveStateChanged?.Invoke(hasPendingMove);
     }
 
     /// <summary>
@@ -311,6 +316,7 @@ public class BoardManager : MonoBehaviour
         {
             hasPendingMove = false;
             pendingMoveStone?.SetActive(false);
+            OnPendingMoveStateChanged?.Invoke(false);
             return;
         }
 
@@ -332,6 +338,16 @@ public class BoardManager : MonoBehaviour
         }
 
         OnPlaceStone?.Invoke(x, y); // 착수 이벤트 발생
+    }
+
+    // ▼▼▼ [수정] 턴이 변경될 때도 이벤트를 호출하여 버튼 상태를 갱신합니다. ▼▼▼
+    private void OnPlayerTurnChanged(StoneType currentStone)
+    {
+        // 턴이 바뀌면 대기 중인 착수 취소
+        hasPendingMove = false;
+        pendingMoveStone?.SetActive(false);
+
+        OnPendingMoveStateChanged?.Invoke(false);
     }
 
     /// <summary>

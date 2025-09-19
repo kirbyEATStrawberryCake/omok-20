@@ -1,3 +1,4 @@
+
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
@@ -100,21 +101,17 @@ public class GameTimer : MonoBehaviour
 
     private void OnPlayerTurnChanged(StoneType currentStone)
     {
-        // OnPlaceStone 이벤트가 없으면 턴 변경 시에만 타이머 처리
-        if (gamePlayManager.boardManager == null)
-        {
-            ResetTimer();
-            StartTimer();
-            return;
-        }
-
-        // OnPlaceStone 이벤트가 있는 경우, 착수 후에 타이머가 처리되므로 여기서는 시작만
+        // 턴이 변경될 때마다 타이머 리셋 및 시작
+        ResetTimer();
         StartTimer();
+
+        Debug.Log($"턴 변경됨 - 현재 턴: {currentStone}, 타이머 리셋 및 시작");
     }
 
     private void OnStonePlace(int x, int y)
     {
-        // 착수가 이루어지면 타이머 리셋 및 정지 (다음 턴까지)
+        // 실제 착수가 이루어졌을 때만 타이머 리셋 및 정지
+        Debug.Log($"착수 완료: ({x}, {y}) - 타이머 리셋 및 정지");
         ResetTimer();
         StopTimer();
     }
@@ -171,6 +168,9 @@ public class GameTimer : MonoBehaviour
         Debug.Log($"시간 초과! 현재 턴 플레이어: {gameLogic.currentTurnPlayer}");
 
         OnTimeUp?.Invoke();
+
+        // 다음 턴을 위해 타이머 리셋
+        ResetTimer();
 
         // 강제로 턴 넘기기
         ForceSkipTurn();
