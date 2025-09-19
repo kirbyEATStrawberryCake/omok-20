@@ -217,10 +217,15 @@ public class BoardManager : MonoBehaviour
     /// <summary>
     /// 보드 클릭 처리
     /// </summary>
-    private void HandleBoardClick(int x, int y)
+    public void HandleBoardClick(int x, int y)
     {
         if (gamePlayManager.currentGameState != GameState.Playing) return;
         if (!IsValidPosition(x, y)) return;
+        if (GamePlayManager.Instance.IsCurrentTurnAI())
+        {
+            Debug.Log("AI 차례일 때는 플레이어의 마우스 입력을 무시합니다.");
+            // 여기에 AI 차례일때는 플레이어의 마우스 입력을 무시하도록 하는 내용이 필요합니다..!
+        }
 
         // 해당 위치에 돌을 놓을 수 있는지 검사
         if (CanPlaceStone(x, y))
@@ -281,7 +286,7 @@ public class BoardManager : MonoBehaviour
     /// <summary>
     /// 보드 좌표를 월드 좌표로 변환
     /// </summary>
-    private Vector3 BoardToWorldPosition(int x, int y)
+    public Vector3 BoardToWorldPosition(int x, int y)
     {
         float worldX = (x - (boardSize - 1) / 2.0f) * cellSize + boardOffset.x;
         float worldY = ((boardSize - 1) / 2.0f - y) * cellSize + boardOffset.y; // Y축 반전
@@ -434,5 +439,49 @@ public class BoardManager : MonoBehaviour
         StoneType[,] boardCopy = new StoneType[boardSize, boardSize];
         Array.Copy(board, boardCopy, board.Length);
         return boardCopy;
+    }
+    
+    /// <summary>
+    /// 해당 위치에 돌이 없는지 확인
+    /// </summary>
+    /// <param name="x"></param>
+    /// <param name="y"></param>
+    /// <returns></returns>
+    public bool IsEmpty(int x, int y)
+    {
+        return IsValidPosition(x, y) && board[x, y] == StoneType.None;
+    }
+    
+    /// <summary>
+    /// 논리적 보드에 돌 정보 저장
+    /// </summary>
+    /// <param name="x"></param>
+    /// <param name="y"></param>
+    /// <param name="stone"></param>
+    /// <exception cref="ArgumentOutOfRangeException"></exception>
+    public void PlaceStone_Logical(int x, int y, StoneType stone)
+    {
+        if (!IsValidPosition(x, y))
+            throw new ArgumentOutOfRangeException($"({x},{y}) is outside board.");
+        board[x, y] = stone;
+    }
+
+    /// <summary>
+    /// 보드에 돌을 놓을 공간이 없는지 확인
+    /// </summary>
+    /// <returns></returns>
+    public bool IsBoardFull()
+    {
+        for (int x = 0; x < boardSize; x++)
+        {
+            for (int y = 0; y < boardSize; y++)
+            {
+                if (board[x, y] == StoneType.None)
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 }
