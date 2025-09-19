@@ -18,9 +18,19 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
     [Space(7)] [SerializeField] private Button confirmMoveButton; // 착수 확정 버튼
     [SerializeField] private Button surrenderButton; // 항복 버튼
 
-    private Sprite pandaSprite;
-    private Sprite redPandaSprite;
+    [Header("플레이어 프로필 이미지")]
+    [SerializeField] private Image leftProfileImage;
+    [SerializeField] private Image rightProfileImage;
 
+    [Header("프로필용 스프라이트")]
+    [SerializeField] private Sprite pandaSprite;
+    [SerializeField] private Sprite redPandaSprite;
+    
+    [SerializeField] private Sprite winPandaProfileSprite;
+    [SerializeField] private Sprite losePandaProfileSprite;
+
+    [SerializeField] private Sprite winRedpandaProfileSprite;
+    [SerializeField] private Sprite loseRedpandaProfileSprite;
 
     [Header("팝업")]
     [SerializeField] [Tooltip("게임 씬에서 사용할 확인 버튼 1개짜리 팝업")]
@@ -205,7 +215,52 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
                 }
             });
         }
+        // 오목 결과에 따라 프로필 변경하는 메서드 호출
+        UpdateProfileImagesOnResult(result);
     }
+
+    // 오목 결과에 따라 프로필 사진이 변경됨
+    private void UpdateProfileImagesOnResult(GameResult result)
+    {
+        if (leftProfileImage == null || rightProfileImage == null)
+        {
+            Debug.LogWarning("Profile images not assigned!");
+            return;
+        }
+
+        switch (result)
+        {
+            case GameResult.Player1Win:
+                leftProfileImage.sprite = winPandaProfileSprite;
+                rightProfileImage.sprite = loseRedpandaProfileSprite;
+                break;
+
+            case GameResult.Player2Win:
+                leftProfileImage.sprite = losePandaProfileSprite;
+                rightProfileImage.sprite = winRedpandaProfileSprite;
+                break;
+
+            case GameResult.Victory: // 내가 승리 (멀티)
+                leftProfileImage.sprite = winPandaProfileSprite;
+                rightProfileImage.sprite = loseRedpandaProfileSprite;
+                break;
+
+            case GameResult.Defeat: // 내가 패배 (멀티)
+                leftProfileImage.sprite = losePandaProfileSprite;
+                rightProfileImage.sprite = winRedpandaProfileSprite;
+                break;
+
+            case GameResult.Draw:
+                leftProfileImage.sprite = winPandaProfileSprite;
+                rightProfileImage.sprite = winRedpandaProfileSprite;
+                break;
+
+            default:
+                Debug.Log("No profile update for result: " + result);
+                break;
+        }
+    }
+
 
     /// <summary>
     /// 항복 버튼을 눌렀을 때 호출되는 메소드
