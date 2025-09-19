@@ -42,22 +42,31 @@ public class SoundManager : MonoBehaviour
     }
 
     //// 효과음 착수 시 나는 소리 (아직 안함)
-    //public void PlaySFX(AudioClip clip)
-    //{
+    public void PlaySFX(AudioClip clip)
+    {
+        if (bgmSource == null) return;
+        bgmSource.clip = clip;
+        bgmSource.Play();
 
-    //}
+    }
 
     // BGM 볼륨 설정
     public void SetBGMVolume(float volume)
     {
-        audioMixer.SetFloat(bgmParameter, Mathf.Log10(volume) * 20);
-        PlayerPrefs.SetFloat("BGM", volume);
+        if (volume <= 0.0001f)
+            audioMixer.SetFloat(sfxParameter, -80);
+        else
+            audioMixer.SetFloat(sfxParameter, Mathf.Log10(volume) * 20);
+        PlayerPrefs.SetFloat("SFX", volume);
     }
 
     // SFX 볼륨 설정
     public void SetSFXVolume(float volume)
     {
-        audioMixer.SetFloat(sfxParameter, Mathf.Log10(volume) * 20);
+        if (volume <= 0.0001f)
+            audioMixer.SetFloat(sfxParameter, -80);
+        else
+            audioMixer.SetFloat(sfxParameter, Mathf.Log10(volume) * 20);
         PlayerPrefs.SetFloat("SFX", volume);
     }
 }
