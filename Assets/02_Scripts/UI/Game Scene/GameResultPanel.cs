@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
@@ -63,11 +63,13 @@ public class GameResultPanel : MonoBehaviour
             case GameResult.Player1Win:
                 titleImage.sprite = titleImages[0];
                 changedPoint.text = "플레이어1이 이겼습니다.";
+                pointsToNextLevel.text = "";
                 scorePanel.SetActive(false);
                 break;
             case GameResult.Player2Win:
                 titleImage.sprite = titleImages[0];
                 changedPoint.text = "플레이어2가 이겼습니다.";
+                pointsToNextLevel.text = "";
                 scorePanel.SetActive(false);
                 break;
             case GameResult.Disconnect:
@@ -101,12 +103,34 @@ public class GameResultPanel : MonoBehaviour
         plusPointPanel.SetActive(point > 0);
 
         float progress = Mathf.Abs((float)point) / maxPointsForGrade;
-        if (point < 0) minusPoint.fillAmount = progress;                
+        if (point < 0) minusPoint.fillAmount = progress;
         else if (point > 0) plusPoint.fillAmount = progress;
     }
 
     /// <summary>
-    /// 외부에서 OneButtonPanel의 메세지와 버튼 클릭 시 수행할 액션을 설정하는 메소드
+    /// 외부에서 OneButtonPanel의 메세지와 버튼 클릭 시 수행할 액션을 설정하는 메소드(싱글플레이용)
+    /// </summary>
+    /// <param name="result">승리 결과</param>
+    /// <param name="onClickExit">종료 버튼을 눌렀을 때 실행할 액션</param>
+    /// <param name="onClickRematch">재대국 버튼을 눌렀을 때 실행할 액션</param>
+    public void OpenWithButtonEvent(GameResult result, Action onClickExit,
+        Action onClickRematch)
+    {
+        SetMessage(result);
+        SetButtonEvent(() =>
+        {
+            onClickExit?.Invoke();
+            gameObject.SetActive(false);
+        }, () =>
+        {
+            onClickRematch?.Invoke();
+            gameObject.SetActive(false);
+        });
+        gameObject.SetActive(true);
+    }
+
+    /// <summary>
+    /// 외부에서 OneButtonPanel의 메세지와 버튼 클릭 시 수행할 액션을 설정하는 메소드(멀티플레이용)
     /// </summary>
     /// <param name="response">게임 결과에 따른 서버 반환값</param>
     /// <param name="result">승리 결과</param>

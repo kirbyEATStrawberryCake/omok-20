@@ -96,6 +96,9 @@ public class MultiplayController : IDisposable
         socket.OnUnityThread("matchFailed", MatchFailed);
         socket.OnUnityThread("matchCanceled", MatchCanceled);
 
+        socket.OnUnityThread("rematchSuccess", RematchSuccess);
+        socket.OnUnityThread("rematchFail", RematchFail);
+
         socket.OnUnityThread("matchError", MatchError);
         socket.OnUnityThread("authRequired", AuthRequired);
         socket.OnUnityThread("serverError", ServerError);
@@ -182,6 +185,20 @@ public class MultiplayController : IDisposable
         var data = response.GetValue<MessageData>();
 
         onMultiplayStateChanged?.Invoke(MultiplayControllerState.MatchCanceled, data.message);
+    }
+
+    private void RematchSuccess(SocketIOResponse response)
+    {
+        var data = response.GetValue<MessageData>();
+
+        onMultiplayStateChanged?.Invoke(MultiplayControllerState.RematchSuccess, data.message);
+    }
+
+    private void RematchFail(SocketIOResponse response)
+    {
+        var data = response.GetValue<MessageData>();
+
+        onMultiplayStateChanged?.Invoke(MultiplayControllerState.RematchFail, data.message);
     }
 
     #endregion

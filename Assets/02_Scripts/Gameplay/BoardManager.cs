@@ -103,7 +103,7 @@ public class BoardManager : MonoBehaviour
     /// <summary>
     /// 오목판 정리
     /// </summary>
-    private void ClearBoard()
+    public void ClearBoard()
     {
         for (int x = 0; x < boardSize; x++)
         {
@@ -298,15 +298,21 @@ public class BoardManager : MonoBehaviour
     #region 착수
 
     /// <summary>
-    /// 실제로 돌을 놓는 메서드(착수 버튼에서 호출)
+    /// 착수 버튼에서 호출
     /// </summary>
-    public void PlaceStone()
+    public void OnClickPlaceStone()
+    {
+        PlaceStone(pendingMove.x, pendingMove.y);
+    }
+
+    /// <summary>
+    /// 실제로 돌을 놓는 메서드
+    /// </summary>
+    public void PlaceStone(int x, int y)
     {
         if (GameModeManager.Mode == GameMode.MultiPlayer && gameLogic.currentTurnPlayer == PlayerType.Opponent) return;
         if (!hasPendingMove) return;
 
-        int x = pendingMove.x;
-        int y = pendingMove.y;
         if (!CanPlaceStone(x, y))
         {
             hasPendingMove = false;
