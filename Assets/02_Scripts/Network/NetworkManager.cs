@@ -65,6 +65,45 @@ public class NetworkManager : Singleton<NetworkManager>
         return SendPostRequest<TResponse>(endpoint, emptyJson, onComplete);
     }
 
+    public IEnumerator PostRequestWithSuccess<TRequest, TResponse, TSuccess>(string endpoint, TRequest requestData,
+        Action<NetworkResponse<TResponse>> onComplete, Action<TSuccess> onSuccess) where TRequest : class
+        where TResponse : class
+        where TSuccess : class
+    {
+        string jsonData = JsonUtility.ToJson(requestData);
+        using UnityWebRequest www = new UnityWebRequest(ServerURL + endpoint, UnityWebRequest.kHttpVerbPOST);
+        www.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(jsonData));
+        www.downloadHandler = new DownloadHandlerBuffer();
+        www.SetRequestHeader("Content-Type", "application/json");
+
+        yield return www.SendWebRequest();
+
+        NetworkResponse<TResponse> response = new NetworkResponse<TResponse>();
+
+        if (www.result == UnityWebRequest.Result.ConnectionError)
+        {
+            // 네트워크 연결 실패
+            response.connectionResult = NetworkConnectionResult.NetworkError;
+            onComplete?.Invoke(response);
+        }
+        else
+        {
+            response.connectionResult = NetworkConnectionResult.Success;
+            if (www.responseCode == 200)
+            {
+                // 성공 시 데이터 파싱하여 onSuccess 호출
+                var result = JsonUtility.FromJson<TSuccess>(www.downloadHandler.text);
+                onSuccess?.Invoke(result);
+            }
+            else
+            {
+                // 실패 시 에러 응답 파싱
+                response.data = JsonUtility.FromJson<TResponse>(www.downloadHandler.text);
+                onComplete?.Invoke(response);
+            }
+        }
+    }
+
     /// <summary>
     /// 공통 POST 요청 메서드
     /// </summary>

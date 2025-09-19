@@ -131,15 +131,20 @@ MonoBehaviour:
   exitButton: {fileID: 8373180919825981993}
   rematchButton: {fileID: 1857260950238775928}
   titleImage: {fileID: 4546956558598321682}
-  changedPoint: {fileID: 3347816027301662913}
-  pointsToNextLevel: {fileID: 8607273681064751710}
   titleImages:
   - {fileID: 21300000, guid: e6b4005ef6551fb488be853489652c4f, type: 3}
   - {fileID: 21300000, guid: 94e6ba07d4e75bd4bb9c8ea67418b67f, type: 3}
   - {fileID: 21300000, guid: 1d7c388e574536b4cb268c446b28ab4d, type: 3}
+  pointPanelSprite1to4: {fileID: 21300000, guid: d551a6fccd09fd142a74447fd7aa72f7, type: 3}
+  pointPanelSprite5to9: {fileID: 21300000, guid: 8faf28efb395b3a44959cca52c61dece, type: 3}
+  pointPanelSprite10to18: {fileID: 21300000, guid: 0637b4abe895ffc4886b33ece221d825, type: 3}
   scorePanel: {fileID: 4647667400062668255}
+  minusPointPanel: {fileID: 3498958940474346439}
+  plusPointPanel: {fileID: 325072625289081121}
   minusPoint: {fileID: 3435811009811989198}
   plusPoint: {fileID: 1264077654151373709}
+  changedPoint: {fileID: 3347816027301662913}
+  pointsToNextLevel: {fileID: 8607273681064751710}
 --- !u!1 &2488911675161436039
 GameObject:
   m_ObjectHideFlags: 0

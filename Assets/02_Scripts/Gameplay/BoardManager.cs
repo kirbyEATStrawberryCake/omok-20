@@ -105,9 +105,18 @@ public class BoardManager : MonoBehaviour
     /// </summary>
     private void ClearBoard()
     {
-        while (stoneParent.childCount > 0)
+        for (int x = 0; x < boardSize; x++)
         {
-            Destroy(stoneParent.GetChild(0).gameObject);
+            for (int y = 0; y < boardSize; y++)
+            {
+                board[x, y] = StoneType.None;
+
+                if (stoneObjects[x, y] != null)
+                {
+                    Destroy(stoneObjects[x, y]);
+                    stoneObjects[x, y] = null;
+                }
+            }
         }
 
         HideAllMarkers();
@@ -208,10 +217,15 @@ public class BoardManager : MonoBehaviour
     /// <summary>
     /// 보드 클릭 처리
     /// </summary>
-    private void HandleBoardClick(int x, int y)
+    public void HandleBoardClick(int x, int y)
     {
         if (gamePlayManager.currentGameState != GameState.Playing) return;
         if (!IsValidPosition(x, y)) return;
+        if (GamePlayManager.Instance.IsCurrentTurnAI())
+        {
+            Debug.Log("AI 차례일 때는 플레이어의 마우스 입력을 무시합니다.");
+            // 여기에 AI 차례일때는 플레이어의 마우스 입력을 무시하도록 하는 내용이 필요합니다..!
+        }
 
         // 해당 위치에 돌을 놓을 수 있는지 검사
         if (CanPlaceStone(x, y))
@@ -272,7 +286,7 @@ public class BoardManager : MonoBehaviour
     /// <summary>
     /// 보드 좌표를 월드 좌표로 변환
     /// </summary>
-    private Vector3 BoardToWorldPosition(int x, int y)
+    public Vector3 BoardToWorldPosition(int x, int y)
     {
         float worldX = (x - (boardSize - 1) / 2.0f) * cellSize + boardOffset.x;
         float worldY = ((boardSize - 1) / 2.0f - y) * cellSize + boardOffset.y; // Y축 반전
@@ -306,8 +320,8 @@ public class BoardManager : MonoBehaviour
 
         // 시각적 돌 스프라이트 생성 및 마지막 수 마커 업데이트 
         PlaceStoneVisual(x, y, stoneType);
-        
-        Debug.Log($"돌이 놓였습니다: ({x}, {y}) - {stoneType}");
+
+        Debug.Log($"<color=green>돌 생성: ({x}, {y}) - {stoneType}</color>");
 
         hasPendingMove = false;
         pendingMoveStone?.SetActive(false); // 착수 대기 표시 숨기기
@@ -316,6 +330,22 @@ public class BoardManager : MonoBehaviour
         {
             gamePlayManager.multiplayManager.GoStone(x, y);
         }
+
+        OnPlaceStone?.Invoke(x, y); // 착수 이벤트 발생
+    }
+
+    /// <summary>
+    /// 멀티플레이에서 상대가 돌을 놓으면 실행할 메소드
+    /// </summary>
+    public void PlaceOpponentStone(int x, int y)
+    {
+        if (!CanPlaceStone(x, y)) return;
+
+        // 논리적 보드에 돌 정보 저장
+        var opponentStoneType = gameLogic.currentStone;
+        board[x, y] = opponentStoneType;
+
+        PlaceStoneVisual(x, y, opponentStoneType);
 
         OnPlaceStone?.Invoke(x, y); // 착수 이벤트 발생
     }
@@ -336,32 +366,6 @@ public class BoardManager : MonoBehaviour
         UpdateLastMoveMarker(x, y);
         if (gamePlayManager.ShowForbiddenPositions && gamePlayManager.IsRenjuModeEnabled)
             UpdateForbiddenPositions();
-    }
-
-    public void PlaceOpponentStone(int x, int y)
-    {
-        Debug.Log($"상대방 돌 생성: ({x}, {y})");
-
-        if (!CanPlaceStone(x, y)) return;
-
-        // 논리적 보드에 돌 정보 저장
-        var opponentStoneType = gameLogic.currentStone;
-        board[x, y] = opponentStoneType;
-
-        // 시각적 돌 생성
-        Vector3 worldPos = BoardToWorldPosition(x, y);
-        var stoneObj = Instantiate(
-            opponentStoneType == StoneType.Black ? stonePrefab_Black : stonePrefab_White,
-            worldPos, Quaternion.identity, stoneParent);
-        stoneObj.name = $"OpponentStone_{x}_{y}";
-        stoneObjects[x, y] = stoneObj;
-
-        // 마지막 수 마커 업데이트
-        UpdateLastMoveMarker(x, y);
-        if (gamePlayManager.ShowForbiddenPositions && gamePlayManager.IsRenjuModeEnabled)
-            UpdateForbiddenPositions();
-
-        OnPlaceStone?.Invoke(x, y); // 착수 이벤트 발생
     }
 
     #endregion
@@ -429,5 +433,49 @@ public class BoardManager : MonoBehaviour
         StoneType[,] boardCopy = new StoneType[boardSize, boardSize];
         Array.Copy(board, boardCopy, board.Length);
         return boardCopy;
+    }
+    
+    /// <summary>
+    /// 해당 위치에 돌이 없는지 확인
+    /// </summary>
+    /// <param name="x"></param>
+    /// <param name="y"></param>
+    /// <returns></returns>
+    public bool IsEmpty(int x, int y)
+    {
+        return IsValidPosition(x, y) && board[x, y] == StoneType.None;
+    }
+    
+    /// <summary>
+    /// 논리적 보드에 돌 정보 저장
+    /// </summary>
+    /// <param name="x"></param>
+    /// <param name="y"></param>
+    /// <param name="stone"></param>
+    /// <exception cref="ArgumentOutOfRangeException"></exception>
+    public void PlaceStone_Logical(int x, int y, StoneType stone)
+    {
+        if (!IsValidPosition(x, y))
+            throw new ArgumentOutOfRangeException($"({x},{y}) is outside board.");
+        board[x, y] = stone;
+    }
+
+    /// <summary>
+    /// 보드에 돌을 놓을 공간이 없는지 확인
+    /// </summary>
+    /// <returns></returns>
+    public bool IsBoardFull()
+    {
+        for (int x = 0; x < boardSize; x++)
+        {
+            for (int y = 0; y < boardSize; y++)
+            {
+                if (board[x, y] == StoneType.None)
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 }

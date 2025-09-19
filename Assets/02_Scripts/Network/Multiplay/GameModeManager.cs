@@ -1,7 +1,8 @@
 ﻿public enum GameMode
 {
     SinglePlayer,
-    MultiPlayer
+    MultiPlayer,
+    AI
 }
 
 public static class GameModeManager

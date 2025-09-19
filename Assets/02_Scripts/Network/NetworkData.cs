@@ -119,6 +119,7 @@ public class Rank
     public int points; // 승급 포인트
     public int grade; // 등급
     public bool gradeChanged; // 등급 변경 여부
+    public int maxPointsForGrade; // 승급시 필요한 포인트
 }
 
 /// <summary>
