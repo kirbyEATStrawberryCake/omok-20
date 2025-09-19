@@ -1,5 +1,4 @@
 using System;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
@@ -40,8 +39,7 @@ public class GamePlayManager : Singleton<GamePlayManager>
     [SerializeField] private bool showForbiddenPositions = true; // 금지 위치 표시 여부
     public bool ShowForbiddenPositions => showForbiddenPositions;
 
-    public GameState currentGameState = GameState.Default; // 현재 게임 상태
-    private int totalMoves; // 총 수 카운트
+    public GameState currentGameState { get; private set; } = GameState.Default; // 현재 게임 상태
 
     public event UnityAction OnGameStart;
     public event UnityAction<GameResult> OnGameEnd;
@@ -57,10 +55,9 @@ public class GamePlayManager : Singleton<GamePlayManager>
 
     private void Start()
     {
-        // 에디터 테스트용
+        // 싱글모드 테스트용
         // GameModeManager.Mode = GameMode.SinglePlayer;
-        OnSceneLoad(SceneManager.GetActiveScene(), LoadSceneMode.Single);
-        // 에디터 테스트용
+        // OnSceneLoad(SceneManager.GetActiveScene(), LoadSceneMode.Single);
     }
 
     private void OnEnable()
@@ -94,6 +91,7 @@ public class GamePlayManager : Singleton<GamePlayManager>
     protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
     {
         if (scene.name != "Game_Scene") return;
+        currentGameState = GameState.Default;
 
         if (GameModeManager.Mode == GameMode.SinglePlayer)
         {
