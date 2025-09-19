@@ -1,8 +1,10 @@
 using System;
+using System.Diagnostics;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
+using Debug = UnityEngine.Debug;
 
 public enum GameState
 {
@@ -31,11 +33,14 @@ public class GamePlayManager : Singleton<GamePlayManager>
     public RenjuRule renjuRule { get; private set; } // 렌주룰 관리자 참조
     public GameSceneUIManager uiManager => GameSceneUIManager.Instance;
     public MultiplayManager multiplayManager => MultiplayManager.Instance;
+    
+    public GomokuAIDebugger gomokuAIDebugger { get; private set; } // 오목 AI 디버거(착수 후보, 가중치 시각화) 참조
 
     [Header("Game Settings")]
     [SerializeField] private bool isRenjuModeEnabled = true; // 렌주룰 적용 여부
 
     public bool IsRenjuModeEnabled => isRenjuModeEnabled;
+    private bool isAITurnHandled = false; // AI 의 턴이 실행됐는지
 
     [SerializeField] private bool showForbiddenPositions = true; // 금지 위치 표시 여부
     public bool ShowForbiddenPositions => showForbiddenPositions;
@@ -52,6 +57,7 @@ public class GamePlayManager : Singleton<GamePlayManager>
     {
         base.Awake();
         boardManager = GameObject.FindFirstObjectByType<BoardManager>();
+        gomokuAIDebugger = GameObject.FindFirstObjectByType<GomokuAIDebugger>();
         renjuRule = GetComponent<RenjuRule>();
     }
 
@@ -88,7 +94,9 @@ public class GamePlayManager : Singleton<GamePlayManager>
 
     protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
     {
-        if(scene.name != "Game_Scene") return;
+        // 테스트 때문에 잠시 주석처리했습니다.
+        // TODO : 주석처리 한것 해제해야 합니다
+        //if(scene.name != "Game_Scene") return;
         
         if (GameModeManager.Mode == GameMode.SinglePlayer)
         {
@@ -167,5 +175,70 @@ public class GamePlayManager : Singleton<GamePlayManager>
         Debug.Log(message);
         currentGameState = GameState.GameOver;
         OnGameEnd?.Invoke(result);
+    }
+    
+    private void Update()
+    {
+        // ������ ���� ���� ���� �� ó��
+        if (currentGameState != GameState.Playing) return;
+
+        // ���� ���� �÷��̾ AI���� Ȯ��
+        if (IsCurrentTurnAI()) // AI 차례
+        {
+            if (!isAITurnHandled)// AI 턴을 처리하지 않았으면
+            {
+                // AI 턴 처리
+                HandleAITurn();
+                isAITurnHandled = true; // 체크
+            }
+        }
+        else // 플레이어 차례
+        {
+            // ���콺 �Է� ó�� (BoardManager�� update ���� ó��)
+            isAITurnHandled = false; // AI 턴 처리 체크해제
+        }
+        
+        // 게임중이 아니면 무시
+        if (currentGameState != GameState.Playing) return;
+    }
+    
+    /// <summary>
+    /// ���� ���� �÷��̾ AI���� Ȯ��
+    /// </summary>
+    public bool IsCurrentTurnAI()
+    {
+        // 현재 차례가 AI 인지 체크
+        return gameLogic.currentTurnPlayer == PlayerType.AI;
+    }
+
+    /// <summary>
+    /// AI 착수 딜레이 주기
+    /// </summary>
+    private void HandleAITurn()
+    {
+        if (!IsInvoking("ExecuteAITurn"))
+        {
+            Invoke("ExecuteAITurn", 1f); // 1초의 딜레이로 AI가 생각하는 것 처럼 보이게 하기
+        }
+    }
+
+    /// <summary>
+    /// AI 의 착수를 실행
+    /// </summary>
+    private void ExecuteAITurn()
+    {
+        Stopwatch watch = new Stopwatch(); // Stopwatch ��ü ����
+        watch.Start(); // ���� ����
+        
+        Vector2Int aiMove = gomokuAIDebugger.GetNextMoveFromAI(); // AI�� ������ ��ġ�� ��.
+
+        // AI가 선택한 위치를 클릭.
+        boardManager.HandleBoardClick(aiMove.x, aiMove.y);
+
+        // 실제 착수 실행
+        boardManager.PlaceStone();
+        
+        watch.Stop(); // ���� ����
+        Debug.Log("�ڵ� ���� �ð�: " + watch.ElapsedMilliseconds + "ms"); // ��� �ð� ��� 
     }
 }
