@@ -6,7 +6,7 @@ using UnityEngine.SceneManagement;
 
 public enum GameState
 {
-    Default,   // 초기 상태
+    Default, // 초기 상태
     Playing, // 게임 진행 중
     GameOver, // 게임 종료
     Paused // 게임 일시정지
@@ -58,8 +58,7 @@ public class GamePlayManager : Singleton<GamePlayManager>
     private void Start()
     {
         // 에디터 테스트용
-        GameModeManager.Mode = GameMode.SinglePlayer;
-        // GameModeManager.Mode = GameMode.MultiPlayer;
+        // GameModeManager.Mode = GameMode.SinglePlayer;
         OnSceneLoad(SceneManager.GetActiveScene(), LoadSceneMode.Single);
         // 에디터 테스트용
     }
@@ -68,18 +67,24 @@ public class GamePlayManager : Singleton<GamePlayManager>
     {
         gameLogic.Initialize();
         gameLogic.WinConditionChecked += EndGame;
-        multiplayManager.MatchFoundCallback += StartGame;
-        multiplayManager.ExitRoomCallback += EndGame;
-        multiplayManager.OpponentLeftCallback += EndGame;
+        if (GameModeManager.Mode == GameMode.MultiPlayer)
+        {
+            multiplayManager.MatchFoundCallback += StartGame;
+            multiplayManager.ExitRoomCallback += EndGame;
+            multiplayManager.OpponentLeftCallback += EndGame;
+        }
     }
 
     private void OnDisable()
     {
         gameLogic.Cleanup();
         gameLogic.WinConditionChecked -= EndGame;
-        multiplayManager.MatchFoundCallback -= StartGame;
-        multiplayManager.ExitRoomCallback -= EndGame;
-        multiplayManager.OpponentLeftCallback -= EndGame;
+        if (GameModeManager.Mode == GameMode.MultiPlayer)
+        {
+            multiplayManager.MatchFoundCallback -= StartGame;
+            multiplayManager.ExitRoomCallback -= EndGame;
+            multiplayManager.OpponentLeftCallback -= EndGame;
+        }
     }
 
     #endregion
@@ -88,12 +93,13 @@ public class GamePlayManager : Singleton<GamePlayManager>
 
     protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
     {
-        if(scene.name != "Game_Scene") return;
-        
+        if (scene.name != "Game_Scene") return;
+
         if (GameModeManager.Mode == GameMode.SinglePlayer)
         {
             StartGame();
         }
+        // 멀티플레이는 MultiplayManager에서 담당
     }
 
     #endregion
@@ -101,7 +107,7 @@ public class GamePlayManager : Singleton<GamePlayManager>
     private void StartGame()
     {
         if (currentGameState != GameState.Default) return;
-        
+
         currentGameState = GameState.Playing;
         OnGameStart?.Invoke();
     }

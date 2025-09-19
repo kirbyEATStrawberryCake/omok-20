@@ -12,12 +12,12 @@ public class StatsManager : MonoBehaviour
     /// <param name="gameResult">게임 결과</param>
     /// <param name="onSuccess">게임 결과 업데이트 성공 시 실행할 액션</param>
     /// <param name="onFail">게임 결과 업데이트 실패 시 실행할 액션</param>
-    public void UpdateGameResult(GameResult gameResult, Action onSuccess, Action<StatsResponseType> onFail)
+    public void UpdateGameResult(GameResult gameResult, Action<GameResultResponse> onSuccess, Action<StatsResponseType> onFail)
     {
         StartCoroutine(UpdateGameResultCoroutine(gameResult, onSuccess, onFail));
     }
 
-    private IEnumerator UpdateGameResultCoroutine(GameResult gameResult, Action onSuccess, Action<StatsResponseType> onFail)
+    private IEnumerator UpdateGameResultCoroutine(GameResult gameResult, Action<GameResultResponse> onSuccess, Action<StatsResponseType> onFail)
     {
         string requestData ="";
         switch (gameResult)
@@ -34,7 +34,7 @@ public class StatsManager : MonoBehaviour
                 break;
         }
         GameResultRequest gameResultRequest = new(requestData);
-        yield return networkManager.PostRequest<GameResultRequest, StatsResponse>(
+        yield return networkManager.PostRequestWithSuccess<GameResultRequest, StatsResponse, GameResultResponse>(
             "/stats/updateGameResult",
             gameResultRequest,
             (response) =>
@@ -48,15 +48,16 @@ public class StatsManager : MonoBehaviour
 
                 switch (response.data.result)
                 {
-                    case StatsResponseType.SUCCESS:
-                        onSuccess?.Invoke();
-                        break;
                     case StatsResponseType.CANNOT_FOUND_USER:
                     case StatsResponseType.INVALID_GAME_RESULT:
                     case StatsResponseType.NOT_LOGGED_IN:
                         onFail?.Invoke(response.data.result);
                         break;
                 }
+            },
+            (result) =>
+            {
+                onSuccess?.Invoke(result);
             });
     }
     /// <summary>
