@@ -31,7 +31,7 @@ public class GamePlayManager : Singleton<GamePlayManager>
     public RenjuRule renjuRule { get; private set; } // 렌주룰 관리자 참조
     public GameSceneUIManager uiManager => GameSceneUIManager.Instance;
     public MultiplayManager multiplayManager => MultiplayManager.Instance;
-    
+
     public GomokuAIDebugger gomokuAIDebugger { get; private set; } // 오목 AI 디버거(착수 후보, 가중치 시각화) 참조
 
     [Header("Game Settings")]
@@ -53,16 +53,16 @@ public class GamePlayManager : Singleton<GamePlayManager>
     protected override void Awake()
     {
         base.Awake();
-        boardManager = GameObject.FindFirstObjectByType<BoardManager>();
-        gomokuAIDebugger = GameObject.FindFirstObjectByType<GomokuAIDebugger>();
+        boardManager = FindFirstObjectByType<BoardManager>();
+        gomokuAIDebugger = FindFirstObjectByType<GomokuAIDebugger>();
         renjuRule = GetComponent<RenjuRule>();
     }
 
     private void Start()
     {
         // 싱글모드 테스트용
-        // GameModeManager.Mode = GameMode.SinglePlayer;
-        // OnSceneLoad(SceneManager.GetActiveScene(), LoadSceneMode.Single);
+        GameModeManager.Mode = GameMode.SinglePlayer;
+        OnSceneLoad(SceneManager.GetActiveScene(), LoadSceneMode.Single);
     }
 
     private void OnEnable()
@@ -177,8 +177,18 @@ public class GamePlayManager : Singleton<GamePlayManager>
         currentGameState = GameState.GameOver;
         OnGameEnd?.Invoke(result);
     }
-    
-    private void Update()
+
+    public void ResterGame()
+    {
+        if (currentGameState != GameState.GameOver) return;
+
+        currentGameState = GameState.Default;
+        boardManager?.InitializeBoard();
+        gameLogic?.ResetGame();
+        StartGame();
+    }
+
+    /*private void Update()
     {
         // ������ ���� ���� ���� �� ó��
         if (currentGameState != GameState.Playing) return;
@@ -198,11 +208,8 @@ public class GamePlayManager : Singleton<GamePlayManager>
             // ���콺 �Է� ó�� (BoardManager�� update ���� ó��)
             isAITurnHandled = false; // AI 턴 처리 체크해제
         }
-        
-        // 게임중이 아니면 무시
-        if (currentGameState != GameState.Playing) return;
     }
-    
+
     /// <summary>
     /// ���� ���� �÷��̾ AI���� Ȯ��
     /// </summary>
@@ -230,7 +237,7 @@ public class GamePlayManager : Singleton<GamePlayManager>
     {
         Stopwatch watch = new Stopwatch(); // Stopwatch ��ü ����
         watch.Start(); // ���� ����
-        
+
         Vector2Int aiMove = gomokuAIDebugger.GetNextMoveFromAI(); // AI�� ������ ��ġ�� ��.
 
         // AI가 선택한 위치를 클릭.
@@ -238,8 +245,8 @@ public class GamePlayManager : Singleton<GamePlayManager>
 
         // 실제 착수 실행
         boardManager.PlaceStone();
-        
+
         watch.Stop(); // ���� ����
-        Debug.Log("�ڵ� ���� �ð�: " + watch.ElapsedMilliseconds + "ms"); // ��� �ð� ��� 
-    }
+        Debug.Log("�ڵ� ���� �ð�: " + watch.ElapsedMilliseconds + "ms"); // ��� �ð� ���
+    }*/
 }

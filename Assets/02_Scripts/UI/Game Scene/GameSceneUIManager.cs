@@ -200,7 +200,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
         if (gameResultPopup != null)
         {
             gameResultPopup.OpenWithButtonEvent(result, () => { SceneController.LoadScene(SceneType.Main); },
-                () => { SceneController.LoadScene(SceneType.Game); });
+                () => { gamePlayManager.ResterGame(); });
         }
     }
 
