@@ -18,6 +18,7 @@ public class MultiplayManager : Singleton<MultiplayManager>
     public MatchFoundData matchFoundData { get; private set; }
 
     public event UnityAction MatchFoundCallback;
+    public event UnityAction<GameResultResponse, GameResult> MatchResultCallback;
     public event UnityAction<GameResult> ExitRoomCallback;
     public event UnityAction<GameResult> OpponentLeftCallback;
 
@@ -25,15 +26,7 @@ public class MultiplayManager : Singleton<MultiplayManager>
     {
         base.Awake();
 
-        // 멀티모드 테스트
-        GameModeManager.Mode = GameMode.MultiPlayer;
-
         if (GameModeManager.Mode == GameMode.SinglePlayer) return;
-
-        // 멀티모드 테스트
-        // AuthManager authManager = gameObject.AddComponent<AuthManager>();
-        // authManager.SignIn(username, password, () => Debug.Log("로그인 성공"), (e) => Debug.Log("로그인 실패"));
-        // 멀티모드 테스트
 
         statsManager = GetComponent<StatsManager>();
 
@@ -55,7 +48,6 @@ public class MultiplayManager : Singleton<MultiplayManager>
                     case MultiplayControllerState.MatchFound:
                         // 매칭 중임을 알리는 팝업을 강제로 닫음
                         gameSceneUIManager?.CloseOneButtonPopup();
-
                         this.roomId = response;
                         MatchFoundCallback?.Invoke();
                         Debug.Log("<color=green>매칭 성공!</color>");
@@ -87,27 +79,27 @@ public class MultiplayManager : Singleton<MultiplayManager>
             },
             DoOpponent);
 
-        // 소켓 연결
-        // multiplayController.Connect(username);
         multiplayController.Connect(GameManager.Instance.username);
     }
 
     private void OnEnable()
     {
         if (GameModeManager.Mode == GameMode.SinglePlayer) return;
+
         GamePlayManager.Instance.OnGameEnd += EndGame;
     }
 
     private void OnDisable()
     {
         if (GameModeManager.Mode == GameMode.SinglePlayer) return;
+
         GamePlayManager.Instance.OnGameEnd -= EndGame;
     }
 
     protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
     {
         if (scene.name != "Game_Scene") return;
-        // 싱글 플레이로 진입 시 무시
+        
         if (GameModeManager.Mode == GameMode.SinglePlayer) return;
 
         StartCoroutine(WaitForConnectionAndRequestMatch());
@@ -124,6 +116,9 @@ public class MultiplayManager : Singleton<MultiplayManager>
         multiplayController.RequestMatch();
     }
 
+    /// <summary>
+    /// 매칭 완료시 서버에서 보낸 상대방 정보를 저장하는 메소드
+    /// </summary>
     public void SetOpponentData(MatchFoundData data)
     {
         matchFoundData = data;
@@ -160,7 +155,11 @@ public class MultiplayManager : Singleton<MultiplayManager>
     private void EndGame(GameResult result)
     {
         statsManager.UpdateGameResult(result,
-            () => { Debug.Log($"<color=green>### 게임 결과({result.ToString()}) 등록 성공 ! ###</color>"); },
+            (response) =>
+            {
+                MatchResultCallback?.Invoke(response, result);
+                Debug.Log($"<color=green>### 게임 결과({result.ToString()}) 등록 성공 ! ###</color>");                
+            },
             (errorType) =>
             {
                 switch (errorType)

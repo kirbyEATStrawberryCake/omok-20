@@ -61,7 +61,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
 
     private void OnEnable()
     {
-        gamePlayManager.OnGameEnd += EndGameUI;
+        gamePlayManager.multiplayManager.MatchResultCallback += EndGameUI;
         gamePlayManager.gameLogic.OnPlayerStonesRandomized += InitPlayerTurnDisplay;
         gamePlayManager.gameLogic.OnPlayerTurnChanged += UpdatePlayerTurnDisplay;
         if (GameModeManager.Mode == GameMode.MultiPlayer)
@@ -72,7 +72,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
 
     private void OnDisable()
     {
-        gamePlayManager.OnGameEnd -= EndGameUI;
+        gamePlayManager.multiplayManager.MatchResultCallback -= EndGameUI;
         gamePlayManager.gameLogic.OnPlayerStonesRandomized -= InitPlayerTurnDisplay;
         gamePlayManager.gameLogic.OnPlayerTurnChanged -= UpdatePlayerTurnDisplay;
         if (GameModeManager.Mode == GameMode.MultiPlayer)
@@ -171,23 +171,29 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
         GameManager gameManager = GameManager.Instance;
         player1ProfileImage.sprite = gameManager.profileImage == 1 ? pandaSprite : redPandaSprite;
         player1GradeAndNickname.text = $"{gameManager.grade}급 {gameManager.nickname}";
-        Debug.Log($"{gameManager.grade}급 {gameManager.nickname} {gameManager.profileImage}");
         // 상대의 프로필은 서버에서 받아온 정보를 사용하여 프로필 업데이트
         MatchFoundData opponentData = MultiplayManager.Instance.matchFoundData;
         player2ProfileImage.sprite = opponentData.profileImage == 1 ? pandaSprite : redPandaSprite;
         player2GradeAndNickname.text = $"{opponentData.grade}급 {opponentData.nickname}";
-        Debug.Log($"{opponentData.grade}급 {opponentData.nickname} {opponentData.profileImage}");
     }
 
     /// <summary>
     /// 게임이 끝날때 호출되는 메소드
     /// </summary>
+    /// <param name="response">게임 결과에 따른 서버 반환값</param>
     /// <param name="result">게임 결과</param>
-    private void EndGameUI(GameResult result)
+    private void EndGameUI(GameResultResponse response, GameResult result)
     {
         if (gameResultPopup != null)
         {
-            gameResultPopup.OpenWithButtonEvent(result, () => { SceneManager.LoadScene("Main_Scene"); }, () =>
+            if (response.rank.gradeChanged)
+            {
+                string message = $"{response.rank.grade} 등급으로 ";
+                message += result == GameResult.Victory ? "승급했습니다." : "강등됐습니다.";
+                oneConfirmButtonPopup.OpenWithSetMessageAndButtonEvent(message);
+            }
+                
+            gameResultPopup.OpenWithButtonEvent(response, result, () => { SceneManager.LoadScene("Main_Scene"); }, () =>
             {
                 if (GameModeManager.Mode == GameMode.SinglePlayer)
                 {
