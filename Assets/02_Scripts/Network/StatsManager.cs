@@ -9,21 +9,34 @@ public class StatsManager : MonoBehaviour
     /// <summary>
     /// 게임 결과 업데이트
     /// </summary>
-    /// <param name="isWin">승리 여부</param>
+    /// <param name="gameResult">게임 결과</param>
     /// <param name="onSuccess">게임 결과 업데이트 성공 시 실행할 액션</param>
     /// <param name="onFail">게임 결과 업데이트 실패 시 실행할 액션</param>
-    public void UpdateGameResult(bool isWin, Action onSuccess, Action<StatsResponseType> onFail)
+    public void UpdateGameResult(GameResult gameResult, Action onSuccess, Action<StatsResponseType> onFail)
     {
-        StartCoroutine(UpdateGameResultCoroutine(isWin, onSuccess, onFail));
+        StartCoroutine(UpdateGameResultCoroutine(gameResult, onSuccess, onFail));
     }
 
-    private IEnumerator UpdateGameResultCoroutine(bool isWin, Action onSuccess, Action<StatsResponseType> onFail)
+    private IEnumerator UpdateGameResultCoroutine(GameResult gameResult, Action onSuccess, Action<StatsResponseType> onFail)
     {
-        string requestData = isWin ? "win" : "lose";
-        GameResultRequest gameResult = new(requestData);
+        string requestData ="";
+        switch (gameResult)
+        {
+            case GameResult.Victory:
+            case GameResult.Disconnect:
+                requestData = "win";
+                break;
+            case GameResult.Defeat:
+                requestData = "lose";
+                break;
+            case GameResult.Draw:
+                requestData = "draw";
+                break;
+        }
+        GameResultRequest gameResultRequest = new(requestData);
         yield return networkManager.PostRequest<GameResultRequest, StatsResponse>(
             "/stats/updateGameResult",
-            gameResult,
+            gameResultRequest,
             (response) =>
             {
                 if (response.connectionResult == NetworkManager.NetworkConnectionResult.NetworkError)

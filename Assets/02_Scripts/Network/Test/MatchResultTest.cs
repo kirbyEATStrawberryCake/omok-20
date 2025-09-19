@@ -16,7 +16,7 @@ public class MatchResultTest : MonoBehaviour
 
         win.onClick.AddListener(() =>
         {
-            statsManager.UpdateGameResult(true,
+            statsManager.UpdateGameResult(GameResult.Victory,
                 () =>
                 {
                     messageTest.ClearAllMessage();
@@ -45,7 +45,7 @@ public class MatchResultTest : MonoBehaviour
 
         lose.onClick.AddListener(() =>
         {
-            statsManager.UpdateGameResult(false, () =>
+            statsManager.UpdateGameResult(GameResult.Defeat, () =>
                 {
                     messageTest.ClearAllMessage();
                     messageTest.SetMessage(2, "### 게임 결과(패배) 등록 성공 ! ###", Color.green);

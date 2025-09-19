@@ -13,26 +13,24 @@ public class BoardManager : MonoBehaviour
 
     [Header("Sprites")]
     [SerializeField] private Sprite blackStoneSprite; // 흑돌 스프라이트
-
     [SerializeField] private Sprite whiteStoneSprite; // 백돌 스프라이트
 
-    [Header("Board Settings")] public int boardSize { get; private set; } = 15; // 오목판 크기 (15x15)
-
+    [Header("Board Settings")] 
     [SerializeField] private float cellSize = 0.494f; // 각 칸의 크기
+    public int boardSize { get; private set; } = 15; // 오목판 크기 (15x15)
     [SerializeField] private Vector2 boardOffset = Vector2.zero; // 보드 오프셋
 
     [Header("Maker Object")]
     [SerializeField] private GameObject selectedMarker; // 현재 선택된 위치 마커
-
     [SerializeField] private GameObject lastMoveMarker; // 마지막 수 마커
     [SerializeField] private GameObject pendingMoveStone; // 착수 대기 마커
 
     [Header("Marker Settings")]
     [SerializeField] private GameObject stonePrefab_White;
-
     [SerializeField] private GameObject stonePrefab_Black;
     [SerializeField] private Transform stoneParent; // 돌을 생성할 부모 오브젝트
-    [Space(10)] [SerializeField] private GameObject forbiddenMarkerPrefab; // 금지 마크 프리팹
+    [Space(10)] 
+    [SerializeField] private GameObject forbiddenMarkerPrefab; // 금지 마크 프리팹
     [SerializeField] private Transform forbiddenMarkerParent; // 금지 마크를 생성할 부모 오브젝트
 
     protected StoneType[,] board; // 오목판 배열 (논리적 보드)

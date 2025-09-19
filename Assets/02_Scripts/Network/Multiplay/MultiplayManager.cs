@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 
+[RequireComponent(typeof(StatsManager))]
 public class MultiplayManager : Singleton<MultiplayManager>
 {
     // 테스트용
@@ -14,15 +15,21 @@ public class MultiplayManager : Singleton<MultiplayManager>
     public MultiplayController multiplayController { get; private set; }
 
     private GameSceneUIManager gameSceneUIManager => GameSceneUIManager.Instance;
+    private StatsManager statsManager;
     private string roomId;
 
     public event UnityAction MatchFoundCallback;
+    public event UnityAction<GameResult> ExitRoomCallback;
+    public event UnityAction<GameResult> OpponentLeftCallback;
 
     protected override void Awake()
     {
         base.Awake();
         // TODO: 멀티모드 테스트
         GameModeManager.Mode = GameMode.MultiPlayer;
+
+        statsManager = GetComponent<StatsManager>();
+
         AuthManager authManager = gameObject.AddComponent<AuthManager>();
         authManager.SignIn(username, password, () => Debug.Log("로그인 성공"), (e) => Debug.Log("로그인 실패"));
 
@@ -35,6 +42,7 @@ public class MultiplayManager : Singleton<MultiplayManager>
                         gameSceneUIManager?.OpenOneCancelButtonPopup("매칭 찾는 중...",
                             () => multiplayController.CancelMatch());
                         Debug.Log("<color=cyan>매칭 찾는 중...</color>");
+                        // TODO: 사용자가 매칭 중임을 알 수 있도록 로직 추가
                         break;
                     case MultiplayControllerState.MatchExpanded:
                         // 매칭 확장
@@ -45,7 +53,7 @@ public class MultiplayManager : Singleton<MultiplayManager>
                         gameSceneUIManager?.CloseOneButtonPopup();
 
                         this.roomId = response;
-                        MatchFoundCallback.Invoke();
+                        MatchFoundCallback?.Invoke();
                         Debug.Log("<color=green>매칭 성공!</color>");
                         break;
                     case MultiplayControllerState.MatchCanceled:
@@ -59,18 +67,14 @@ public class MultiplayManager : Singleton<MultiplayManager>
                         // TODO: AI대전으로 전환
                         break;
                     case MultiplayControllerState.ExitRoom:
-                        // messageTest?.ClearAllMessage();
-                        // messageTest?.SetMessage(1, "방에서 나갑니다.", Color.magenta);
                         Debug.Log("<color=magenta>방에서 나갑니다.</color>");
+                        ExitRoomCallback?.Invoke(GameResult.Defeat);
                         break;
                     case MultiplayControllerState.OpponentLeft:
-                        // messageTest?.ClearAllMessage();
-                        // messageTest?.SetMessage(1, "상대방이 나갔습니다.", Color.cyan);
                         Debug.Log("<color=cyan>상대방이 나갔습니다.</color>");
+                        OpponentLeftCallback?.Invoke(GameResult.Disconnect);
                         break;
                     case MultiplayControllerState.Error:
-                        // messageTest?.ClearAllMessage();
-                        // messageTest?.SetMessage(1, "에러! " + response, Color.red);
                         gameSceneUIManager?.OpenOneConfirmButtonPopup($"오류가 발생했습니다.\n {response}",
                             () => SceneManager.LoadScene("Main_Scene"));
                         Debug.Log($"<color=red>에러! {response}</color>");
@@ -81,6 +85,16 @@ public class MultiplayManager : Singleton<MultiplayManager>
 
         // 소켓 연결
         multiplayController.Connect(username);
+    }
+
+    private void OnEnable()
+    {
+        GamePlayManager.Instance.OnGameEnd += EndGame;
+    }
+
+    private void OnDisable()
+    {
+        GamePlayManager.Instance.OnGameEnd -= EndGame;
     }
 
     protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
@@ -103,6 +117,9 @@ public class MultiplayManager : Singleton<MultiplayManager>
         multiplayController.RequestMatch();
     }
 
+    /// <summary>
+    /// 착수 정보를 서버로 보냄
+    /// </summary>
     public void GoStone(int x = -1, int y = -1)
     {
         if (x == -1 || y == -1)
@@ -116,10 +133,37 @@ public class MultiplayManager : Singleton<MultiplayManager>
         multiplayController?.DoPlayer(roomId, x, y);
     }
 
+    /// <summary>
+    /// 상대방이 착수한 정보를 받아서 BoardManager로 넘겨줌
+    /// </summary>
     private void DoOpponent(int x, int y)
     {
         Debug.Log("<color=yellow>x : " + x + ", y : " + y + "</color>");
         GamePlayManager.Instance.boardManager.PlaceOpponentStone(x, y);
+    }
+
+    /// <summary>
+    /// 게임이 끝났을 때 서버로 게임 결과를 전송
+    /// </summary>
+    private void EndGame(GameResult result)
+    {
+        statsManager.UpdateGameResult(result,
+            () => { Debug.Log($"<color=green>### 게임 결과({result.ToString()}) 등록 성공 ! ###</color>"); },
+            (errorType) =>
+            {
+                switch (errorType)
+                {
+                    case StatsResponseType.INVALID_GAME_RESULT:
+                        Debug.LogError("<color=red>경기 결과 등록 실패 : 게임 결과가 올바르지 않습니다.</color>");
+                        break;
+                    case StatsResponseType.CANNOT_FOUND_USER:
+                        Debug.LogError("<color=red>경기 결과 등록 실패 : 유저를 찾지 못했습니다.</color>");
+                        break;
+                    case StatsResponseType.NOT_LOGGED_IN:
+                        Debug.LogError("<color=red>경기 결과 등록 실패 : 로그인 상태가 아닙니다.</color>");
+                        break;
+                }
+            });
     }
 
     /// <summary>

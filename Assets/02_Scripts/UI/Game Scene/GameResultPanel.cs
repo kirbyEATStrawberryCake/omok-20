@@ -59,6 +59,11 @@ public class GameResultPanel : MonoBehaviour
                 changedPoint.text = "플레이어2가 이겼습니다.";
                 scorePanel.SetActive(false);
                 break;
+            case GameResult.Disconnect:
+                titleImage.sprite = titleImages[0];
+                changedPoint.text = "상대방이 나갔습니다.\n10 승급 포인트를 받았습니다.";
+                scorePanel.SetActive(true);
+                break;
         }
 
         // TODO: 포인트를 받아와서 승급까지 남은 포인트를 계산하여 텍스트로 출력하고,
