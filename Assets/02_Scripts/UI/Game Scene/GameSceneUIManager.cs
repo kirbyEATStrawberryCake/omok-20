@@ -1,4 +1,5 @@
 using System;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -16,6 +17,9 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
     [SerializeField] private GameObject currentPlayerTurnCircleRight; // 현재 턴 플레이어 표시용 GameObject / Right
     [Space(7)] [SerializeField] private Button confirmMoveButton; // 착수 확정 버튼
     [SerializeField] private Button surrenderButton; // 항복 버튼
+
+    private Sprite pandaSprite;
+    private Sprite redPandaSprite;
 
 
     [Header("팝업")]
@@ -50,22 +54,31 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
             twoButtonPopup = twoButtonPopupPanel.GetComponent<TwoButtonPanel>();
         if (gameResultPopupPanel != null)
             gameResultPopup = gameResultPopupPanel.GetComponent<GameResultPanel>();
+
+        pandaSprite = Resources.Load<Sprite>($"UI/character/Property 1=panda");
+        redPandaSprite = Resources.Load<Sprite>($"UI/character/Property 1=redPanda");
     }
 
     private void OnEnable()
     {
-        gamePlayManager.OnGameEnd += EndGameUI;
+        gamePlayManager.multiplayManager.MatchResultCallback += EndGameUI;
         gamePlayManager.gameLogic.OnPlayerStonesRandomized += InitPlayerTurnDisplay;
         gamePlayManager.gameLogic.OnPlayerTurnChanged += UpdatePlayerTurnDisplay;
-        gamePlayManager.multiplayManager.MatchFoundCallback += UpdatePlayerProfileInMultiPlay;
+        if (GameModeManager.Mode == GameMode.MultiPlayer)
+        {
+            gamePlayManager.multiplayManager.MatchFoundCallback += UpdatePlayerProfileInMultiPlay;
+        }
     }
 
     private void OnDisable()
     {
-        gamePlayManager.OnGameEnd -= EndGameUI;
+        gamePlayManager.multiplayManager.MatchResultCallback -= EndGameUI;
         gamePlayManager.gameLogic.OnPlayerStonesRandomized -= InitPlayerTurnDisplay;
         gamePlayManager.gameLogic.OnPlayerTurnChanged -= UpdatePlayerTurnDisplay;
-        gamePlayManager.multiplayManager.MatchFoundCallback -= UpdatePlayerProfileInMultiPlay;
+        if (GameModeManager.Mode == GameMode.MultiPlayer)
+        {
+            gamePlayManager.multiplayManager.MatchFoundCallback -= UpdatePlayerProfileInMultiPlay;
+        }
     }
 
     protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
@@ -148,21 +161,39 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
 
     private void UpdatePlayerProfileInMultiPlay()
     {
-        if(GameModeManager.Mode != GameMode.MultiPlayer) return;
-        
-        // TODO: 나의 프로필은 기기에 있는 정보 사용
-        // TODO: 상대의 프로필은 서버에서 정보를 받아와서 프로필 업데이트
+        if (GameModeManager.Mode != GameMode.MultiPlayer) return;
+
+        Image player1ProfileImage = player1.transform.GetChild(1).GetComponent<Image>();
+        TextMeshProUGUI player1GradeAndNickname = player1.transform.GetChild(2).GetComponent<TextMeshProUGUI>();
+        Image player2ProfileImage = player2.transform.GetChild(1).GetComponent<Image>();
+        TextMeshProUGUI player2GradeAndNickname = player2.transform.GetChild(2).GetComponent<TextMeshProUGUI>();
+        // 나의 프로필은 기기에 있는 정보 사용
+        GameManager gameManager = GameManager.Instance;
+        player1ProfileImage.sprite = gameManager.profileImage == 1 ? pandaSprite : redPandaSprite;
+        player1GradeAndNickname.text = $"{gameManager.grade}급 {gameManager.nickname}";
+        // 상대의 프로필은 서버에서 받아온 정보를 사용하여 프로필 업데이트
+        MatchFoundData opponentData = MultiplayManager.Instance.matchFoundData;
+        player2ProfileImage.sprite = opponentData.profileImage == 1 ? pandaSprite : redPandaSprite;
+        player2GradeAndNickname.text = $"{opponentData.grade}급 {opponentData.nickname}";
     }
 
     /// <summary>
     /// 게임이 끝날때 호출되는 메소드
     /// </summary>
+    /// <param name="response">게임 결과에 따른 서버 반환값</param>
     /// <param name="result">게임 결과</param>
-    private void EndGameUI(GameResult result)
+    private void EndGameUI(GameResultResponse response, GameResult result)
     {
         if (gameResultPopup != null)
         {
-            gameResultPopup.OpenWithButtonEvent(result, () => { SceneManager.LoadScene("Main_Scene"); }, () =>
+            if (response.rank.gradeChanged)
+            {
+                string message = $"{response.rank.grade} 등급으로 ";
+                message += result == GameResult.Victory ? "승급했습니다." : "강등됐습니다.";
+                oneConfirmButtonPopup.OpenWithSetMessageAndButtonEvent(message);
+            }
+                
+            gameResultPopup.OpenWithButtonEvent(response, result, () => { SceneManager.LoadScene("Main_Scene"); }, () =>
             {
                 if (GameModeManager.Mode == GameMode.SinglePlayer)
                 {

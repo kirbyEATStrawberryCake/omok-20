@@ -51,8 +51,8 @@ public class MainSceneUIManager : Singleton<MainSceneUIManager>
     public StatsManager statsManager { get; private set; }
 
     // 테스트용
-    public string username;
-    public string password;
+    // public string username;
+    // public string password;
 
     protected override void Awake()
     {
@@ -65,12 +65,13 @@ public class MainSceneUIManager : Singleton<MainSceneUIManager>
     private void Start()
     {
         // 테스트용
-        AuthManager authManager = gameObject.AddComponent<AuthManager>();
-        authManager.SignIn(username, password, () => { Debug.Log("로그인 성공"); }, (error) => { Debug.Log("로그인 실패"); });
+        // AuthManager authManager = gameObject.AddComponent<AuthManager>();
+        // authManager.SignIn(username, password, () => { Debug.Log("로그인 성공"); }, (error) => { Debug.Log("로그인 실패"); });
     }
 
     protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
     {
+        if(scene.name != "Main_Scene") return;
         // 메인 씬 호출 시 유저 정보를 가져와서 띄워줌
         statsManager.GetUserInfo((response) =>
             {
@@ -79,6 +80,7 @@ public class MainSceneUIManager : Singleton<MainSceneUIManager>
                 grade = response.grade;
 
                 gradeAndNickname.text = $"{grade}급 {nickname}";
+                GameManager.Instance.SetUserInfo(response.username, response.nickname, response.grade, response.profileImage);
             },
             (errorType) =>
             {
