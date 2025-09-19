@@ -25,13 +25,15 @@ public class MultiplayManager : Singleton<MultiplayManager>
     protected override void Awake()
     {
         base.Awake();
-        // TODO: 멀티모드 테스트
-        GameModeManager.Mode = GameMode.MultiPlayer;
 
-        statsManager = GetComponent<StatsManager>();
+        if (GameModeManager.Mode == GameMode.SinglePlayer) return;
 
+        // 멀티모드 테스트
         AuthManager authManager = gameObject.AddComponent<AuthManager>();
         authManager.SignIn(username, password, () => Debug.Log("로그인 성공"), (e) => Debug.Log("로그인 실패"));
+        // 멀티모드 테스트
+
+        statsManager = GetComponent<StatsManager>();
 
         multiplayController = new MultiplayController((state, response) =>
             {
@@ -89,11 +91,13 @@ public class MultiplayManager : Singleton<MultiplayManager>
 
     private void OnEnable()
     {
+        if (GameModeManager.Mode == GameMode.SinglePlayer) return;
         GamePlayManager.Instance.OnGameEnd += EndGame;
     }
 
     private void OnDisable()
     {
+        if (GameModeManager.Mode == GameMode.SinglePlayer) return;
         GamePlayManager.Instance.OnGameEnd -= EndGame;
     }
 
