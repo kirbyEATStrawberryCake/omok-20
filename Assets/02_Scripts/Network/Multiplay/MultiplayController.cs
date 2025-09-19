@@ -163,14 +163,9 @@ public class MultiplayController : IDisposable
     {
         var data = response.GetValue<MatchFoundData>();
 
-        Debug.Log($"서버에서 받은 isPlayer1First: {data.isPlayer1First}");
-        Debug.Log($"받은 전체 데이터: {JsonConvert.SerializeObject(data)}");
-
         amIFirstPlayer = data.isPlayer1First;
-
         Debug.Log($"내가 선공인가?: {amIFirstPlayer}");
-
-        amIFirstPlayer = data.isPlayer1First;
+        MultiplayManager.Instance?.SetOpponentData(data);
 
         onMultiplayStateChanged?.Invoke(MultiplayControllerState.MatchFound, data.roomId);
     }

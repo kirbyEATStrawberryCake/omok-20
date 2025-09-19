@@ -306,8 +306,8 @@ public class BoardManager : MonoBehaviour
 
         // 시각적 돌 스프라이트 생성 및 마지막 수 마커 업데이트 
         PlaceStoneVisual(x, y, stoneType);
-        
-        Debug.Log($"돌이 놓였습니다: ({x}, {y}) - {stoneType}");
+
+        Debug.Log($"<color=green>돌 생성: ({x}, {y}) - {stoneType}</color>");
 
         hasPendingMove = false;
         pendingMoveStone?.SetActive(false); // 착수 대기 표시 숨기기
@@ -316,6 +316,22 @@ public class BoardManager : MonoBehaviour
         {
             gamePlayManager.multiplayManager.GoStone(x, y);
         }
+
+        OnPlaceStone?.Invoke(x, y); // 착수 이벤트 발생
+    }
+
+    /// <summary>
+    /// 멀티플레이에서 상대가 돌을 놓으면 실행할 메소드
+    /// </summary>
+    public void PlaceOpponentStone(int x, int y)
+    {
+        if (!CanPlaceStone(x, y)) return;
+
+        // 논리적 보드에 돌 정보 저장
+        var opponentStoneType = gameLogic.currentStone;
+        board[x, y] = opponentStoneType;
+
+        PlaceStoneVisual(x, y, opponentStoneType);
 
         OnPlaceStone?.Invoke(x, y); // 착수 이벤트 발생
     }
@@ -336,32 +352,6 @@ public class BoardManager : MonoBehaviour
         UpdateLastMoveMarker(x, y);
         if (gamePlayManager.ShowForbiddenPositions && gamePlayManager.IsRenjuModeEnabled)
             UpdateForbiddenPositions();
-    }
-
-    public void PlaceOpponentStone(int x, int y)
-    {
-        Debug.Log($"상대방 돌 생성: ({x}, {y})");
-
-        if (!CanPlaceStone(x, y)) return;
-
-        // 논리적 보드에 돌 정보 저장
-        var opponentStoneType = gameLogic.currentStone;
-        board[x, y] = opponentStoneType;
-
-        // 시각적 돌 생성
-        Vector3 worldPos = BoardToWorldPosition(x, y);
-        var stoneObj = Instantiate(
-            opponentStoneType == StoneType.Black ? stonePrefab_Black : stonePrefab_White,
-            worldPos, Quaternion.identity, stoneParent);
-        stoneObj.name = $"OpponentStone_{x}_{y}";
-        stoneObjects[x, y] = stoneObj;
-
-        // 마지막 수 마커 업데이트
-        UpdateLastMoveMarker(x, y);
-        if (gamePlayManager.ShowForbiddenPositions && gamePlayManager.IsRenjuModeEnabled)
-            UpdateForbiddenPositions();
-
-        OnPlaceStone?.Invoke(x, y); // 착수 이벤트 발생
     }
 
     #endregion
