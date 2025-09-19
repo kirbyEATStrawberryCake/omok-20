@@ -237,7 +237,7 @@ public class GamePlayManager : Singleton<GamePlayManager>
         boardManager.HandleBoardClick(aiMove.x, aiMove.y);
 
         // 실제 착수 실행
-        boardManager.PlaceStone();
+        boardManager.PlaceStone(aiMove.x, aiMove.y);
         
         watch.Stop(); // ���� ����
         Debug.Log("�ڵ� ���� �ð�: " + watch.ElapsedMilliseconds + "ms"); // ��� �ð� ��� 
