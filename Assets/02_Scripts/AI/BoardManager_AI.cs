@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-public class BoardManager_AI : BoardManager
+public partial class BoardManager : MonoBehaviour
 {
     /// <summary>
     /// 해당 위치에 돌이 없는지 확인

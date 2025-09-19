@@ -1,20 +1,26 @@
 using System;
 using System.Collections.Generic;
 using _02_Scripts.AI;
+using TMPro;
+using UnityEngine.UI;
 using UnityEngine;
 
 public class GomokuAI
 {
-    private readonly BoardManager_AI board;
+    private readonly BoardManager board;
     private readonly StoneType myStone;
     private readonly StoneType enemyStone;
+
+    private float defensiveMultiplier = 1.2f;
     
-    private int searchDepth = 3;
+    private int searchDepth = 2;
 
     public int boardSize = 15;
 
-    [SerializeField] private int collectRadius = 2; // 다음 수를 둘 빈칸과 돌이 있는 칸의 거리
-
+    [SerializeField] private int collectRadius = 1; // 다음 수를 둘 빈칸과 돌이 있는 칸의 거리
+    
+    private HashSet<Vector2Int> candidateMoves = new HashSet<Vector2Int>(); // 후보 착수 리스트
+    
     // 4방향 벡터를 담는 리스트
     private readonly Vector2Int[] directions =
     {
@@ -23,36 +29,83 @@ public class GomokuAI
         new Vector2Int(1, 1),   // 대각 ↘
         new Vector2Int(1, -1)   // 대각 ↗
     };
+    
+    // [디버그용] 착수 후보 시각화를 위한 변수들
+    public GameObject debugTextPrefab; // 점수 표시용 텍스트 프리팹 (TMP)
+    public GameObject DebugSelectPrefab; // 후보 위치 표시용 구체 프리팹
+    private List<GameObject> debugObjects = new List<GameObject>(); // 생성된 디버그 오브젝트 리스트
 
-    public GomokuAI(BoardManager_AI board, StoneType myStone)
+    
+    public GomokuAI(BoardManager board, StoneType myStone, GameObject debugTextPrefab, GameObject debugSelectPrefab)
     {
         this.board = board;
         this.myStone = myStone;
         enemyStone = (myStone == StoneType.Black) ? StoneType.White : StoneType.Black;
+        this.debugTextPrefab = debugTextPrefab;
+        this.DebugSelectPrefab = debugSelectPrefab;
     }
 
+    public void Start()
+    {
+        board.OnStonePlaced += OnStonePlaced; // 여기서 nullreferneceexception뜨는데 이유를 모르겟음...
+    }
     /// <summary>
     /// 다음 수를 선택하는 메서드. 게임플레이 구현되면 AI턴일때 AIState에서 이 함수를 호출한다.
     /// 가장 최적의 첫 수를 선택하는 역할을 한다.
     /// </summary>
     public Vector2Int GetNextMove()
     {
+        // AI 턴 시작 시 기존 디버그 시각화 삭제
+        ClearDebugVisuals();
+        
         // 1. 즉시 승리 수 체크
         Vector2Int? winMove = FindWinningMove(myStone);
         if (winMove.HasValue)
+        {
+            Debug.Log("AI: 즉시 승리수를 찾았습니다!");
+            
+            // 선택된 수에 대한 시각화
+            Vector3 pos = board.BoardToWorldPosition(winMove.Value.x, winMove.Value.y);
+            GameObject winSphere = GameObject.Instantiate(DebugSelectPrefab, pos, Quaternion.identity);
+            winSphere.GetComponent<Renderer>().material.color = Color.green; // 승리수는 초록색으로 표시
+            debugObjects.Add(winSphere);
+            
             return winMove.Value;
+        }
+        
+        Debug.Log("AI: 즉시 승리수가 없습니다.");
 
         // 2. 상대방 승리 차단
         Vector2Int? blockMove = FindWinningMove(enemyStone);
         if (blockMove.HasValue)
+        {
+            Debug.Log("AI: 상대방의 즉시 승리수를 방어합니다.");
+            
+            // 선택된 수에 대한 시각화
+            Vector3 pos = board.BoardToWorldPosition(blockMove.Value.x, blockMove.Value.y);
+            GameObject blockSphere = GameObject.Instantiate(DebugSelectPrefab, pos, Quaternion.identity);
+            blockSphere.GetComponent<Renderer>().material.color = Color.red; // 방어수는 빨간색으로 표시
+            debugObjects.Add(blockSphere);
+            
             return blockMove.Value;
+        }
 
+        Debug.Log("AI: 상대방의 즉시 승리수가 없습니다.");
+        
         // 3. 후보 생성
-        List<Vector2Int> candidateMoves = GetCandidateMoves(collectRadius);
-
+        candidateMoves = GetCandidateMoves(collectRadius);
+        Debug.Log($"AI: 착수 후보 위치 {candidateMoves.Count}개를 생성합니다.");
+        
+        // 후보 위치 시각화
+        CreateDebugVisuals(candidateMoves);
+        
         // 4. 보드가 완전히 비어있으면 중앙 반환
         if (candidateMoves.Count == 0)
+        {
+            Debug.Log("AI: 보드가 완전히 비어있어 중앙을 반환합니다.");
             return new Vector2Int(boardSize / 2, boardSize / 2);
+        }
+        
 
         // 5. 각 후보 평가
         int bestScore = int.MinValue;
@@ -61,21 +114,29 @@ public class GomokuAI
         foreach (var move in candidateMoves)
         {
             board.PlaceStone_Logical(move.x, move.y, myStone); // 미리 둬보기
-
-            
             // Minimax 함수를 호출하여 이 수가 가져올 최종 점수를 계산
             // 최상위 레벨(루트 노드)에서의 탐색. 여기서의 alpha와 beta는 초기값
             int score = Minimax(board, searchDepth, int.MinValue, int.MaxValue, false);
-            
             board.PlaceStone_Logical(move.x, move.y, StoneType.None); // 수 되돌리기
 
-
+            // 이 부분에서 각 후보 수의 점수를 화면에 표시
+            CreateScoreText(move, score);
+            
             if (score > bestScore)
             {
                 bestScore = score;
                 bestMove = move;
             }
+            
+            Debug.Log($"AI: 탐색중인 수: ({move.x}, {move.y}), 예측 점수: {score}");
         }
+        
+        // 최종 선택된 수에 대한 시각화
+        Vector3 bestMovePos = board.BoardToWorldPosition(bestMove.x, bestMove.y);
+        GameObject bestMoveSphere = GameObject.Instantiate(DebugSelectPrefab, bestMovePos, Quaternion.identity);
+        bestMoveSphere.GetComponent<Renderer>().material.color = Color.yellow; // 최적의 수는 노란색으로 표시
+        debugObjects.Add(bestMoveSphere);
+        
         return bestMove;
     }
 
@@ -141,23 +202,57 @@ public class GomokuAI
     /// <summary>
     /// 후보 생성 메서드. 주변 돌이 있는 빈 칸만 수집 (radius로 수집 범위 조절)
     /// </summary>
-    private List<Vector2Int> GetCandidateMoves(int collectRadius)
+    private HashSet<Vector2Int> GetCandidateMoves(int collectRadius)
     {
-        List<Vector2Int> list = new();
-        for (int x = 0; x < boardSize; x++)
+        // 매번 생성하는 대신, 유지되는 리스트를 사용
+        // (알파베타 가지치기 효과 극대화를 위해 여기서 각 후보의 가치를 간단히 평가하여 정렬할 예정.)
+        return new HashSet<Vector2Int>(candidateMoves);
+        
+        // List<Vector2Int> list = new();
+        // for (int x = 0; x < boardSize; x++)
+        // {
+        //     for (int y = 0; y < boardSize; y++)
+        //     {
+        //         if (!board.IsEmpty(x, y)) continue;
+        //         if (HasNeighborWithinRadius(x, y, collectRadius))
+        //             list.Add(new Vector2Int(x, y));
+        //     }
+        // }
+        // return list;
+    }
+    
+/// <summary>
+/// 돌이 놓일 때마다 후보 리스트를 업데이트하는 메서드
+/// </summary>
+/// <param name="x"></param>
+/// <param name="y"></param>
+    public void OnStonePlaced(int x, int y)
+    {
+        // 1. 돌이 놓인 위치는 더 이상 후보가 아님
+        candidateMoves.Remove(new Vector2Int(x, y));
+
+        // 2. 새로 놓인 돌 주변의 빈 칸들을 새로운 후보로 추가
+        int radius = collectRadius;
+        for (int i = -radius; i <= radius; i++)
         {
-            for (int y = 0; y < boardSize; y++)
+            for (int j = -radius; j <= radius; j++)
             {
-                if (!board.IsEmpty(x, y)) continue;
-                if (HasNeighborWithinRadius(x, y, collectRadius))
-                    list.Add(new Vector2Int(x, y));
+                if (i == 0 && j == 0) continue;
+            
+                int nx = x + i;
+                int ny = y + j;
+
+                if (board.IsValidPosition(nx, ny) && board.IsEmpty(nx, ny))
+                {
+                    candidateMoves.Add(new Vector2Int(nx, ny));
+                    Debug.Log("후보 추가 완료!!");
+                }
             }
         }
-        return list;
     }
-
+    
     /// <summary>
-    /// 빈칸의 주변(Radius)에 돌이 있는 칸이 있는지 체크
+    /// [미사용]빈칸의 주변(Radius)에 돌이 있는 칸이 있는지 체크
     /// </summary>
     private bool HasNeighborWithinRadius(int x, int y, int collectRadius)
     {
@@ -178,151 +273,120 @@ public class GomokuAI
     /// 보드 전체를 평가하여 현재 게임 상태의 점수를 반환하는 메서드.
     /// 양쪽 플레이어의 패턴을 모두 고려한다.
     /// </summary>
-    private int EvaluateBoard(BoardManager_AI board)
+    private int EvaluateBoard(BoardManager board)
     {
         int myTotalScore = 0;
         int enemyTotalScore = 0;
-
+        int totalScore = 0;
+        
         // 보드 전체를 순회하며 점수 계산
         for (int x = 0; x < boardSize; x++)
         {
             for (int y = 0; y < boardSize; y++)
             {
-                if (board.GetStoneAt(x, y) == myStone)
-                {
-                    // 나의 돌이 만드는 패턴 점수 합산
-                    myTotalScore += EvaluatePatternsAt(x, y, myStone);
-                }
-                else if (board.GetStoneAt(x, y) == enemyStone)
-                {
-                    // 상대방의 돌이 만드는 패턴 점수 합산
-                    enemyTotalScore += EvaluatePatternsAt(x, y, enemyStone);
-                }
+                // 각 위치를 시작점으로 하여 4방향의 라인을 평가
+                totalScore += EvaluateLine(board, x, y, 1, 0);   // 가로 (→)
+                totalScore += EvaluateLine(board, x, y, 0, 1);   // 세로 (↓)
+                totalScore += EvaluateLine(board, x, y, 1, 1);   // 대각선 (↘)
+                totalScore += EvaluateLine(board, x, y, 1, -1);  // 대각선 (↗)
             }
         }
+        return totalScore;
+    }
+    
+    
+    /// <summary>
+    /// 특정 시작점에서 한 방향의 라인(6칸)을 평가하여 점수를 반환하는 메서드. (개선된 버전)
+    /// </summary>
+    private int EvaluateLine(BoardManager board, int startX, int startY, int dx, int dy)
+    {
+        int myStones = 0;
+        int enemyStones = 0;
 
-        // 나의 점수에서 상대방 점수를 빼서 최종 점수 반환
-        // 상대방의 점수에 1.1 가중치를 주어 방어에 더 집중하게 만든다
-        return myTotalScore - (int)(enemyTotalScore * 1.1f);
-    }
-    
-    /// <summary>
-    /// 주어진 좌표에서 특정 색의 패턴 점수를 합하는 메서드 (4방향)
-    /// </summary>
-    private int EvaluatePatternsAt(int x, int y, StoneType stone)
-    {
-        int sum = 0;
-        foreach (var dir in directions)
-            sum += EvaluateDirection(x, y, dir.x, dir.y, stone);
-    
-        return sum;
-    }
-    
-    /// <summary>
-    /// 한 방향의 수에 대한 평가 (기준 칸 포함)
-    /// </summary>
-    private int EvaluateDirection(int x, int y, int dx, int dy, StoneType stone)
-    {
-    // 기준칸을 포함한 연속 개수 계산
-    int count = CountDirection(x, y, dx, dy, stone) +
-                CountDirection(x, y, -dx, -dy, stone) + 1;
-    
-    // 양쪽 바로 옆 칸 좌표
-    int lx = x - dx;
-    int ly = y - dy;
-    int rx = x + dx;
-    int ry = y + dy;
-    
-    // 양쪽 옆칸의 상태 판정 (경계, 비어있음, 아군, 적군)
-    bool leftOut = !board.IsValidPosition(lx, ly);
-    bool rightOut = !board.IsValidPosition(rx, ry);
-    
-    StoneType leftStone = leftOut ? StoneType.None : board.GetStoneAt(lx, ly);
-    StoneType rightStone = rightOut ? StoneType.None : board.GetStoneAt(rx, ry);
-    
-    bool leftIsEmpty = !leftOut && leftStone == StoneType.None;
-    bool rightIsEmpty = !rightOut && rightStone == StoneType.None;
-    
-    bool leftIsFriend = !leftOut && leftStone == stone;
-    bool rightIsFriend = !rightOut && rightStone == stone;
-    
-    bool leftIsEnemy = !leftOut && leftStone != StoneType.None && leftStone != StoneType.Error && leftStone != stone;
-    bool rightIsEnemy = !rightOut && rightStone != StoneType.None && leftStone != StoneType.Error && rightStone != stone;
-    
-    // 경계 또는 적으로 막힌 경우는 '막힘'으로 처리
-    bool leftBlocked = leftOut || leftIsEnemy;
-    bool rightBlocked = rightOut || rightIsEnemy;
-    
-    // 양쪽 모두 막혔으면 '유일 경로(Unique Path)'로 간주
-    if (leftBlocked && rightBlocked)
-    {
-        if (count >= 4) return 0; // 오버라인이거나 특수상황 — 점수 부여를 별도로 조정할 수도 있음
-        if (count == 3) return GomokuWeights.THREE_UNIQUE_PATH;
-        if (count == 2) return GomokuWeights.TWO_UNIQUE_PATH;
-        if (count == 1) return GomokuWeights.ONE_UNIQUE_PATH;
+        // 6칸짜리 창(Window)을 기준으로 라인을 분석한다.
+        for (int i = 0; i < 6; i++)
+        {
+            int x = startX + i * dx;
+            int y = startY + i * dy;
+
+            // 창이 보드 밖으로 벗어나면 유효한 패턴을 형성할 수 없으므로 0점 처리
+            if (!board.IsValidPosition(x, y))
+            {
+                return 0;
+            }
+
+            StoneType stone = board.GetStoneAt(x, y);
+            if (stone == myStone)
+                myStones++;
+            else if (stone == enemyStone)
+                enemyStones++;
+        }
+
+        // 한 라인에 나와 상대의 돌이 모두 있으면 해당 라인은 발전 가능성이 없으므로 0점 처리
+        if (myStones > 0 && enemyStones > 0)
+        {
+            return 0;
+        }
+
+        // 6칸 중 빈칸의 개수
+        int emptyCells = 6 - (myStones + enemyStones);
+        
+
+        if (myStones > 0)
+        {
+            return GetScoreForPattern(myStones, emptyCells);
+        }
+        else if (enemyStones > 0)
+        {
+            return (int)(-GetScoreForPattern(enemyStones, emptyCells) * defensiveMultiplier);
+        }
+
         return 0;
     }
     
-    // 4목(또는 그 이상)이고 적어도 한쪽 끝이 열려있다면 오픈포(Four open)
-    if (count >= 4 && !(leftBlocked && rightBlocked))
+    /// <summary>
+    /// 6칸 창을 기준으로 나의 돌 패턴 점수를 계산한다.
+    /// </summary>
+    private int GetScoreForPattern(int stoneCount, int emptyCount)
     {
-        return GomokuWeights.FOUR_OPEN;
+        // 6칸 창에 돌과 빈칸 외 다른 것이 있으면(상대 돌) 이미 걸러졌어야 함
+        if (stoneCount + emptyCount != 6) return 0;
+
+        switch (stoneCount)
+        {
+            case 5: // 5목: 6칸 중 5개가 내 돌. (ex: OOOOO_)
+                return GomokuWeights.FIVE;
+            
+            case 4: // 4목
+                // 빈칸 2개 -> 열린 4 (ex: _OOOO_)
+                if (emptyCount == 2) return GomokuWeights.FOUR_OPEN;
+                // 빈칸 1개 -> 닫힌 4 (ex: XOOOO_)
+                if (emptyCount == 1) return GomokuWeights.FOUR_SIDE_CLOSE; 
+                break;
+            
+            case 3: // 3목
+                // 빈칸 3개 -> 열린 3 (ex: _OOO__)
+                if (emptyCount == 3) return GomokuWeights.THREE_NO_ENEMY_NO_FRIEND;
+                // 빈칸 2개 -> 닫힌 3 (ex: XOOO__)
+                if (emptyCount == 2) return GomokuWeights.THREE_UNIQUE_PATH;
+                break;
+                
+            case 2: // 2목
+                // 빈칸 4개 -> 열린 2 (ex: __OO__)
+                if (emptyCount == 4) return GomokuWeights.TWO_NO_ENEMY_NO_FRIEND;
+                // 빈칸 3개 -> 닫힌 2 (ex: X_OO__)
+                if (emptyCount == 3) return GomokuWeights.TWO_UNIQUE_PATH;
+                break;
+
+            case 1: // 1목
+                // 빈칸 5개 -> 열린 1 (ex: ___O__)
+                if (emptyCount == 5) return GomokuWeights.ONE_NO_ENEMY_NO_FRIEND;
+                break;
+        }
+        return 0;
     }
-    
-    bool anyEnemyAdjacent = leftIsEnemy || rightIsEnemy;
-    bool anyFriendAdjacent = leftIsFriend || rightIsFriend;
-    
-    // 3목 평가
-    if (count == 3)
-    {
-        if (!anyEnemyAdjacent)
-        {
-            // 적이 인접하지 않은 경우
-            if (anyFriendAdjacent) return GomokuWeights.THREE_NO_ENEMY_HAS_FRIEND;
-            return GomokuWeights.THREE_NO_ENEMY_NO_FRIEND;
-        }
-        else
-        {
-            // 적이 인접한 경우
-            if (anyFriendAdjacent) return GomokuWeights.THREE_ENEMY_HAS_FRIEND;
-            return GomokuWeights.THREE_ENEMY_NO_FRIEND;
-        }
-    }
-    
-    // 2목 평가
-    if (count == 2)
-    {
-        if (!anyEnemyAdjacent)
-        {
-            if (anyFriendAdjacent) return GomokuWeights.TWO_NO_ENEMY_HAS_FRIEND;
-            return GomokuWeights.TWO_NO_ENEMY_NO_FRIEND;
-        }
-        else
-        {
-            if (anyFriendAdjacent) return GomokuWeights.TWO_ENEMY_HAS_FRIEND;
-            return GomokuWeights.TWO_ENEMY_NO_FRIEND;
-        }
-    }
-    
-    // 1목 평가
-    if (count == 1)
-    {
-        if (!anyEnemyAdjacent)
-        {
-            if (anyFriendAdjacent) return GomokuWeights.ONE_NO_ENEMY_HAS_FRIEND;
-            return GomokuWeights.ONE_NO_ENEMY_NO_FRIEND;
-        }
-        else
-        {
-            if (anyFriendAdjacent) return GomokuWeights.ONE_ENEMY_HAS_FRIEND;
-            return GomokuWeights.ONE_ENEMY_NO_FRIEND;
-        }
-    }
-    
-    return 0;
-    }
-    
-    private int Minimax(BoardManager_AI board, int depth, int alpha, int beta, bool maximizingPlayer)
+
+    private int Minimax(BoardManager board, int depth, int alpha, int beta, bool maximizingPlayer)
     {
         // 1. 종료 조건: 깊이 제한에 도달했거나, 게임이 끝났거나, 오목판이 다 찼으면 (더이상 둘 공간이 없으면)
         if (depth == 0 || GameManager.Instance.currentGameState == GameState.GameOver || board.IsBoardFull())
@@ -332,7 +396,7 @@ public class GomokuAI
         }
 
         // 2. 후보 수 생성 (현재 보드 상태에서 둘 수 있는 모든 유효한 수를 수집. 빈칸 주변만 탐색)
-        List<Vector2Int> candidateMoves = GetCandidateMoves(collectRadius);
+        candidateMoves = GetCandidateMoves(collectRadius);
         
         // 3. 내 턴 (최대화). 가능한 점수 중 최대를 선택.
         if (maximizingPlayer)
@@ -373,70 +437,40 @@ public class GomokuAI
             return minEval;
         }
     }
+
+    #region 디버깅용 메서드
+    private void CreateDebugVisuals(HashSet<Vector2Int> moves)
+    {
+        // 기존 디버그 오브젝트가 있다면 모두 제거
+        ClearDebugVisuals();
+
+        // 후보 위치에 구체 생성
+        foreach (var move in moves)
+        {
+            Vector3 pos = board.BoardToWorldPosition(move.x, move.y);
+            GameObject sphere = GameObject.Instantiate(DebugSelectPrefab, pos, Quaternion.identity);
+            debugObjects.Add(sphere);
+        }
+    }
+
+    private void CreateScoreText(Vector2Int move, int score)
+    {
+        // 점수 텍스트 생성
+        Vector3 pos = board.BoardToWorldPosition(move.x, move.y);
+        GameObject textObject = GameObject.Instantiate(debugTextPrefab, pos, Quaternion.identity);
+        TextMeshPro tmp = textObject.GetComponent<TextMeshPro>();
+        tmp.text = score.ToString();
+        debugObjects.Add(textObject);
+    }
+
+    public void ClearDebugVisuals()
+    {
+        foreach (var obj in debugObjects)
+        {
+            GameObject.Destroy(obj);
+        }
+        debugObjects.Clear();
+    }
+    #endregion
 }
-
-    // 미사용 메서드
-
-
-    // /// <summary>
-    // /// 한 수를 임시로 두고 평가. 금수(흑의 3x3/4x4)를 만들면 매우 낮은 점수 반환.
-    // /// </summary>
-    // private int EvaluateMove(int x, int y)
-    // {
-    //     if (!board.IsEmpty(x, y)) return int.MinValue;
-    //
-    //     board.TryPlaceStone(x, y, myStone);
-    //
-    //     if (CheckWin(x, y, myStone))
-    //     {
-    //         board.TryPlaceStone(x, y, StoneType.None);
-    //         return GomokuWeights.FOUR_OPEN;
-    //     }
-    //
-    //     if (myStone == StoneType.Black /*&& IsForbiddenByRenju(x, y)*/) // 검은돌이고, 렌주룰을 위반하는 경우 매우 낮은 점수 반환
-    //     {
-    //         board.TryPlaceStone(x, y, StoneType.None);
-    //         return int.MinValue;
-    //     }
-    //
-    //     int myScore = EvaluatePatternsAt(x, y, myStone);
-    //     int enemyScore = EvaluatePatternsAt(x, y, enemyStone);
-    //
-    //     board.TryPlaceStone(x, y, StoneType.None);
-    //
-    //     return myScore - (int)(enemyScore * 1.1f);
-    // }
-    //
-
-
-// /// <summary>
-// /// 렌즈(금수)룰 단순 판정.
-// /// </summary>
-// private bool IsForbiddenByRenju(int x, int y)
-// {
-//     int openThreeCount = 0;
-//     int fourCount = 0;
-//
-//     foreach (var d in directions)
-//     {
-//         int forward = CountDirection(x, y, d.x, d.y, StoneType.Black);
-//         int back = CountDirection(x, y, -d.x, -d.y, StoneType.Black);
-//         int contiguous = 1 + forward + back;
-//
-//         int fx = x + (forward + 1) * d.x;
-//         int fy = y + (forward + 1) * d.y;
-//         int bx = x - (back + 1) * d.x;
-//         int by = y - (back + 1) * d.y;
-//
-//         bool forwardEmpty = board.IsValidPosition(fx, fy) && board.GetStoneAt(fx, fy) == StoneType.None;
-//         bool backEmpty = board.IsValidPosition(bx, by) && board.GetStoneAt(bx, by) == StoneType.None;
-//         int openEnds = (forwardEmpty ? 1 : 0) + (backEmpty ? 1 : 0); // 열려있는 위치 갯수 (0이면 다막힘, 1이면 한쪽만 열려있음, 2면 양쪽 다 열려있음)
-//
-//         if (contiguous >= 5) return true;
-//         if (contiguous >= 4 && openEnds >= 1) fourCount++;
-//         if (contiguous == 3 && openEnds == 2) openThreeCount++;
-//     }
-//
-//     return openThreeCount >= 2 || fourCount >= 2;
-// }
 

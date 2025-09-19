@@ -25,6 +25,9 @@ namespace _02_Scripts.AI
 
         // 4목
         public const int FOUR_OPEN = 5000;
-        
+		public const int FOUR_SIDE_CLOSE = 1500;
+
+		// 5목(승리)
+		public const int FIVE = 100000;
     }
 }
