@@ -63,6 +63,8 @@ public class GamePlayManager : Singleton<GamePlayManager>
         gameLogic.Initialize();
         gameLogic.WinConditionChecked += EndGame;
         multiplayManager.MatchFoundCallback += StartGame;
+        multiplayManager.ExitRoomCallback += EndGame;
+        multiplayManager.OpponentLeftCallback += EndGame;
     }
 
     private void OnDisable()
@@ -70,6 +72,8 @@ public class GamePlayManager : Singleton<GamePlayManager>
         gameLogic.Cleanup();
         gameLogic.WinConditionChecked -= EndGame;
         multiplayManager.MatchFoundCallback -= StartGame;
+        multiplayManager.ExitRoomCallback -= EndGame;
+        multiplayManager.OpponentLeftCallback -= EndGame;
     }
 
     #endregion
@@ -118,9 +122,6 @@ public class GamePlayManager : Singleton<GamePlayManager>
         {
             Debug.Log("항복했습니다");
             EndGame(GameResult.Defeat);
-
-            // TODO: 서버에 항복 알림
-            // multiplayController?.SendSurrender();
         }
     }
 

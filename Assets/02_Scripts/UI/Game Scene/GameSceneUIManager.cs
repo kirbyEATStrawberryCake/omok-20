@@ -57,6 +57,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
         gamePlayManager.OnGameEnd += EndGameUI;
         gamePlayManager.gameLogic.OnPlayerStonesRandomized += InitPlayerTurnDisplay;
         gamePlayManager.gameLogic.OnPlayerTurnChanged += UpdatePlayerTurnDisplay;
+        gamePlayManager.multiplayManager.MatchFoundCallback += UpdatePlayerProfileInMultiPlay;
     }
 
     private void OnDisable()
@@ -64,6 +65,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
         gamePlayManager.OnGameEnd -= EndGameUI;
         gamePlayManager.gameLogic.OnPlayerStonesRandomized -= InitPlayerTurnDisplay;
         gamePlayManager.gameLogic.OnPlayerTurnChanged -= UpdatePlayerTurnDisplay;
+        gamePlayManager.multiplayManager.MatchFoundCallback -= UpdatePlayerProfileInMultiPlay;
     }
 
     protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
@@ -140,8 +142,16 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
         else if (GameModeManager.Mode == GameMode.MultiPlayer)
         {
             currentPlayerTurnCircleLeft.SetActive(currentTurn == PlayerType.Me);
-            currentPlayerTurnCircleLeft.SetActive(currentTurn == PlayerType.Opponent);
+            currentPlayerTurnCircleRight.SetActive(currentTurn == PlayerType.Opponent);
         }
+    }
+
+    private void UpdatePlayerProfileInMultiPlay()
+    {
+        if(GameModeManager.Mode != GameMode.MultiPlayer) return;
+        
+        // TODO: 나의 프로필은 기기에 있는 정보 사용
+        // TODO: 상대의 프로필은 서버에서 정보를 받아와서 프로필 업데이트
     }
 
     /// <summary>
