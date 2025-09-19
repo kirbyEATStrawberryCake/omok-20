@@ -32,6 +32,12 @@ public class GameTimer : MonoBehaviour
         // GameLogic 이벤트 구독
         gameLogic.OnPlayerStonesRandomized += OnPlayerStonesRandomized;
         gameLogic.OnPlayerTurnChanged += OnPlayerTurnChanged;
+
+        // BoardManager OnPlaceStone 이벤트 구독 (착수 시에만 타이머 초기화)
+        if (gamePlayManager.boardManager != null)
+        {
+            gamePlayManager.boardManager.OnPlaceStone += OnStonePlace;
+        }
     }
 
     private void OnDisable()
@@ -47,6 +53,11 @@ public class GameTimer : MonoBehaviour
         {
             gameLogic.OnPlayerStonesRandomized -= OnPlayerStonesRandomized;
             gameLogic.OnPlayerTurnChanged -= OnPlayerTurnChanged;
+        }
+
+        if (gamePlayManager?.boardManager != null)
+        {
+            gamePlayManager.boardManager.OnPlaceStone -= OnStonePlace;
         }
     }
 
@@ -89,14 +100,22 @@ public class GameTimer : MonoBehaviour
 
     private void OnPlayerTurnChanged(StoneType currentStone)
     {
-        // 턴이 바뀔 때마다 타이머 재시작
-        ResetTimer();
+        // OnPlaceStone 이벤트가 없으면 턴 변경 시에만 타이머 처리
+        if (gamePlayManager.boardManager == null)
+        {
+            ResetTimer();
+            StartTimer();
+            return;
+        }
+
+        // OnPlaceStone 이벤트가 있는 경우, 착수 후에 타이머가 처리되므로 여기서는 시작만
         StartTimer();
     }
 
     private void OnStonePlace(int x, int y)
     {
-        // 착수가 이루어지면 잠시 타이머 정지 (턴 변경까지)
+        // 착수가 이루어지면 타이머 리셋 및 정지 (다음 턴까지)
+        ResetTimer();
         StopTimer();
     }
 
