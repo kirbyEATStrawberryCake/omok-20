@@ -71,22 +71,24 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
 
     private void OnEnable()
     {
-        gamePlayManager.multiplayManager.MatchResultCallback += EndGameUI;
+        gamePlayManager.OnGameEnd += EndSingleGameUI;
         gamePlayManager.gameLogic.OnPlayerStonesRandomized += InitPlayerTurnDisplay;
         gamePlayManager.gameLogic.OnPlayerTurnChanged += UpdatePlayerTurnDisplay;
         if (GameModeManager.Mode == GameMode.MultiPlayer)
         {
+            gamePlayManager.multiplayManager.MatchResultCallback += EndMultiGameUI;
             gamePlayManager.multiplayManager.MatchFoundCallback += UpdatePlayerProfileInMultiPlay;
         }
     }
 
     private void OnDisable()
     {
-        gamePlayManager.multiplayManager.MatchResultCallback -= EndGameUI;
+        gamePlayManager.OnGameEnd -= EndSingleGameUI;
         gamePlayManager.gameLogic.OnPlayerStonesRandomized -= InitPlayerTurnDisplay;
         gamePlayManager.gameLogic.OnPlayerTurnChanged -= UpdatePlayerTurnDisplay;
         if (GameModeManager.Mode == GameMode.MultiPlayer)
         {
+            gamePlayManager.multiplayManager.MatchResultCallback -= EndMultiGameUI;
             gamePlayManager.multiplayManager.MatchFoundCallback -= UpdatePlayerProfileInMultiPlay;
         }
     }
@@ -188,11 +190,26 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
     }
 
     /// <summary>
-    /// 게임이 끝날때 호출되는 메소드
+    /// 싱글플레이 게임이 끝날때 호출되는 메소드
+    /// </summary>
+    /// <param name="result">게임 결과</param>
+    private void EndSingleGameUI(GameResult result)
+    {
+        if (GameModeManager.Mode == GameMode.MultiPlayer) return;
+
+        if (gameResultPopup != null)
+        {
+            gameResultPopup.OpenWithButtonEvent(result, () => { SceneController.LoadScene(SceneType.Main); },
+                () => { SceneController.LoadScene(SceneType.Game); });
+        }
+    }
+
+    /// <summary>
+    /// 멀티플레이 게임이 끝날때 호출되는 메소드
     /// </summary>
     /// <param name="response">게임 결과에 따른 서버 반환값</param>
     /// <param name="result">게임 결과</param>
-    private void EndGameUI(GameResultResponse response, GameResult result)
+    private void EndMultiGameUI(GameResultResponse response, GameResult result)
     {
         if (gameResultPopup != null)
         {
@@ -202,18 +219,9 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
                 message += result == GameResult.Victory ? "승급했습니다." : "강등됐습니다.";
                 oneConfirmButtonPopup.OpenWithSetMessageAndButtonEvent(message);
             }
-                
-            gameResultPopup.OpenWithButtonEvent(response, result, () => { SceneManager.LoadScene("Main_Scene"); }, () =>
-            {
-                if (GameModeManager.Mode == GameMode.SinglePlayer)
-                {
-                    // TODO: 재대국 로직(싱글)                    
-                }
-                else if (GameModeManager.Mode == GameMode.MultiPlayer)
-                {
-                    // TODO: 재대국 로직(멀티)
-                }
-            });
+
+            gameResultPopup.OpenWithButtonEvent(response, result, () => { SceneController.LoadScene(SceneType.Main); },
+                () => { SceneController.LoadScene(SceneType.Game); });
         }
         // 오목 결과에 따라 프로필 변경하는 메서드 호출
         UpdateProfileImagesOnResult(result);

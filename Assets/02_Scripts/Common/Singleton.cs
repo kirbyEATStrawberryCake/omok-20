@@ -47,6 +47,8 @@ public abstract class Singleton<T> : MonoBehaviour where T : MonoBehaviour
     {
         if (instance == this)
         {
+            SceneManager.sceneLoaded -= OnSceneLoad;
+            
             instance = null;
         }
     }
