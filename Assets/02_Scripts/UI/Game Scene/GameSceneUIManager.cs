@@ -18,19 +18,9 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
     [Space(7)] [SerializeField] private Button confirmMoveButton; // 착수 확정 버튼
     [SerializeField] private Button surrenderButton; // 항복 버튼
 
-    [Header("플레이어 프로필 이미지")]
-    [SerializeField] private Image leftProfileImage;
-    [SerializeField] private Image rightProfileImage;
+    private Sprite pandaSprite;
+    private Sprite redPandaSprite;
 
-    [Header("프로필용 스프라이트")]
-    [SerializeField] private Sprite pandaSprite;
-    [SerializeField] private Sprite redPandaSprite;
-    
-    [SerializeField] private Sprite winPandaProfileSprite;
-    [SerializeField] private Sprite losePandaProfileSprite;
-
-    [SerializeField] private Sprite winRedpandaProfileSprite;
-    [SerializeField] private Sprite loseRedpandaProfileSprite;
 
     [Header("팝업")]
     [SerializeField] [Tooltip("게임 씬에서 사용할 확인 버튼 1개짜리 팝업")]
@@ -71,24 +61,22 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
 
     private void OnEnable()
     {
-        gamePlayManager.OnGameEnd += EndSingleGameUI;
+        gamePlayManager.multiplayManager.MatchResultCallback += EndGameUI;
         gamePlayManager.gameLogic.OnPlayerStonesRandomized += InitPlayerTurnDisplay;
         gamePlayManager.gameLogic.OnPlayerTurnChanged += UpdatePlayerTurnDisplay;
         if (GameModeManager.Mode == GameMode.MultiPlayer)
         {
-            gamePlayManager.multiplayManager.MatchResultCallback += EndMultiGameUI;
             gamePlayManager.multiplayManager.MatchFoundCallback += UpdatePlayerProfileInMultiPlay;
         }
     }
 
     private void OnDisable()
     {
-        gamePlayManager.OnGameEnd -= EndSingleGameUI;
+        gamePlayManager.multiplayManager.MatchResultCallback -= EndGameUI;
         gamePlayManager.gameLogic.OnPlayerStonesRandomized -= InitPlayerTurnDisplay;
         gamePlayManager.gameLogic.OnPlayerTurnChanged -= UpdatePlayerTurnDisplay;
         if (GameModeManager.Mode == GameMode.MultiPlayer)
         {
-            gamePlayManager.multiplayManager.MatchResultCallback -= EndMultiGameUI;
             gamePlayManager.multiplayManager.MatchFoundCallback -= UpdatePlayerProfileInMultiPlay;
         }
     }
@@ -190,26 +178,11 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
     }
 
     /// <summary>
-    /// 싱글플레이 게임이 끝날때 호출되는 메소드
-    /// </summary>
-    /// <param name="result">게임 결과</param>
-    private void EndSingleGameUI(GameResult result)
-    {
-        if (GameModeManager.Mode == GameMode.MultiPlayer) return;
-
-        if (gameResultPopup != null)
-        {
-            gameResultPopup.OpenWithButtonEvent(result, () => { SceneController.LoadScene(SceneType.Main); },
-                () => { SceneController.LoadScene(SceneType.Game); });
-        }
-    }
-
-    /// <summary>
-    /// 멀티플레이 게임이 끝날때 호출되는 메소드
+    /// 게임이 끝날때 호출되는 메소드
     /// </summary>
     /// <param name="response">게임 결과에 따른 서버 반환값</param>
     /// <param name="result">게임 결과</param>
-    private void EndMultiGameUI(GameResultResponse response, GameResult result)
+    private void EndGameUI(GameResultResponse response, GameResult result)
     {
         if (gameResultPopup != null)
         {
@@ -219,56 +192,20 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
                 message += result == GameResult.Victory ? "승급했습니다." : "강등됐습니다.";
                 oneConfirmButtonPopup.OpenWithSetMessageAndButtonEvent(message);
             }
-
-            gameResultPopup.OpenWithButtonEvent(response, result, () => { SceneController.LoadScene(SceneType.Main); },
-                () => { SceneController.LoadScene(SceneType.Game); });
-        }
-        // 오목 결과에 따라 프로필 변경하는 메서드 호출
-        UpdateProfileImagesOnResult(result);
-    }
-
-    // 오목 결과에 따라 프로필 사진이 변경됨
-    private void UpdateProfileImagesOnResult(GameResult result)
-    {
-        if (leftProfileImage == null || rightProfileImage == null)
-        {
-            Debug.LogWarning("Profile images not assigned!");
-            return;
-        }
-
-        switch (result)
-        {
-            case GameResult.Player1Win:
-                leftProfileImage.sprite = winPandaProfileSprite;
-                rightProfileImage.sprite = loseRedpandaProfileSprite;
-                break;
-
-            case GameResult.Player2Win:
-                leftProfileImage.sprite = losePandaProfileSprite;
-                rightProfileImage.sprite = winRedpandaProfileSprite;
-                break;
-
-            case GameResult.Victory: // 내가 승리 (멀티)
-                leftProfileImage.sprite = winPandaProfileSprite;
-                rightProfileImage.sprite = loseRedpandaProfileSprite;
-                break;
-
-            case GameResult.Defeat: // 내가 패배 (멀티)
-                leftProfileImage.sprite = losePandaProfileSprite;
-                rightProfileImage.sprite = winRedpandaProfileSprite;
-                break;
-
-            case GameResult.Draw:
-                leftProfileImage.sprite = winPandaProfileSprite;
-                rightProfileImage.sprite = winRedpandaProfileSprite;
-                break;
-
-            default:
-                Debug.Log("No profile update for result: " + result);
-                break;
+                
+            gameResultPopup.OpenWithButtonEvent(response, result, () => { SceneManager.LoadScene("Main_Scene"); }, () =>
+            {
+                if (GameModeManager.Mode == GameMode.SinglePlayer)
+                {
+                    // TODO: 재대국 로직(싱글)                    
+                }
+                else if (GameModeManager.Mode == GameMode.MultiPlayer)
+                {
+                    // TODO: 재대국 로직(멀티)
+                }
+            });
         }
     }
-
 
     /// <summary>
     /// 항복 버튼을 눌렀을 때 호출되는 메소드

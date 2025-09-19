@@ -64,7 +64,6 @@ public class MultiplayManager : Singleton<MultiplayManager>
                         break;
                     case MultiplayControllerState.ExitRoom:
                         Debug.Log("<color=magenta>방에서 나갑니다.</color>");
-                        this.roomId = null;
                         ExitRoomCallback?.Invoke(GameResult.Defeat);
                         break;
                     case MultiplayControllerState.OpponentLeft:
@@ -99,13 +98,9 @@ public class MultiplayManager : Singleton<MultiplayManager>
 
     protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
     {
-        if (scene.buildIndex != (int)SceneType.Game) return;
+        if (scene.name != "Game_Scene") return;
         
         if (GameModeManager.Mode == GameMode.SinglePlayer) return;
-        if (roomId != null) // 이미 매칭 중이라면
-        {
-            MatchFoundCallback?.Invoke();
-        }
 
         StartCoroutine(WaitForConnectionAndRequestMatch());
     }

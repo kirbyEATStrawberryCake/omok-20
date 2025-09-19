@@ -38,7 +38,7 @@ public class LoginUI : MonoBehaviour
         loginSceneUIManager.authManager.SignIn(username, password, () =>
         {
             Debug.Log("<color=green>로그인 성공!</color>");
-            SceneController.LoadScene(SceneType.Main);
+            SceneManager.LoadScene("Main_Scene");
         }, (errorType) =>
         {
             switch (errorType)
