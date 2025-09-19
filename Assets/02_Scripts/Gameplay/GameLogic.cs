@@ -21,6 +21,7 @@ public class GameLogic
 
     private GamePlayManager gamePlayManager => GamePlayManager.Instance;
     private BoardManager boardManager => gamePlayManager.boardManager;
+    private GomokuAIDebugger gomokuAIDebugger => gamePlayManager.gomokuAIDebugger;
     private RenjuRule renjuRule => gamePlayManager.renjuRule;
     private MultiplayManager multiplayManager => gamePlayManager.multiplayManager;
     public StoneType currentStone { get; private set; } // 현재 차례인 돌 타입 (항상 흑돌부터 시작)
@@ -37,6 +38,14 @@ public class GameLogic
     public void Initialize()
     {
         gamePlayManager.OnGameStart += RandomizePlayerStones;
+        // GomokuAI에게 StoneType을 반환하기 위해 작성했습니다.
+        // 멀티플레이일 때는 실행되지 않고, 싱글플레이일 때만 실행하도록 조건문 처리가 필요합니다.
+        if (GameModeManager.Mode == GameMode.SinglePlayer)
+        {
+            StoneType aiStone = blackStonePlayer == PlayerType.AI ? StoneType.Black : StoneType.White;
+            gomokuAIDebugger.InstantiateGomokuAI(boardManager, aiStone);
+        }
+        Debug.Log("boardManager" + boardManager);
         boardManager.OnPlaceStone += CheckWinCondition;
         boardManager.OnPlaceStone += SwitchPlayer;
     }
@@ -78,14 +87,14 @@ public class GameLogic
             if (Random.Range(0, 2) == 0)
             {
                 blackStonePlayer = PlayerType.Player1;
-                whiteStonePlayer = PlayerType.Player2;
+                whiteStonePlayer = PlayerType.AI;
                 Debug.Log("싱글플레이: Player1이 선공 (흑돌)");
             }
             else
             {
-                blackStonePlayer = PlayerType.Player2;
+                blackStonePlayer = PlayerType.AI;
                 whiteStonePlayer = PlayerType.Player1;
-                Debug.Log("싱글플레이: Player2가 선공 (흑돌)");
+                Debug.Log("싱글플레이: AI가 선공 (흑돌)");
             }
         }
 
