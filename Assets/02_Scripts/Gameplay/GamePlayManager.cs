@@ -53,9 +53,15 @@ public class GamePlayManager : Singleton<GamePlayManager>
         base.Awake();
         boardManager = GameObject.FindFirstObjectByType<BoardManager>();
         renjuRule = GetComponent<RenjuRule>();
+    }
 
-        // TODO: 싱글모드 테스트
-        // GameModeManager.Mode = GameMode.SinglePlayer;
+    private void Start()
+    {
+        // 에디터 테스트용
+        GameModeManager.Mode = GameMode.SinglePlayer;
+        // GameModeManager.Mode = GameMode.MultiPlayer;
+        OnSceneLoad(SceneManager.GetActiveScene(), LoadSceneMode.Single);
+        // 에디터 테스트용
     }
 
     private void OnEnable()
