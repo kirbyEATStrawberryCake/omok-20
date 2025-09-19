@@ -112,6 +112,40 @@ public class GameLogic
         OnPlayerTurnChanged?.Invoke(currentStone); // 이벤트 발생
     }
 
+    /// <summary>
+    /// 턴 스킵 (타이머 만료 시 사용)
+    /// </summary>
+    public void SkipTurn()
+    {
+        Debug.Log($"{currentTurnPlayer}의 턴을 스킵합니다.");
+
+        // 돌 색깔 변경
+        currentStone = (currentStone == StoneType.Black) ? StoneType.White : StoneType.Black;
+
+        // 현재 턴 플레이어 변경
+        currentTurnPlayer = (currentStone == StoneType.Black) ? blackStonePlayer : whiteStonePlayer;
+
+        Debug.Log($"턴 스킵 후 현재 플레이어: {currentTurnPlayer}");
+
+        OnPlayerTurnChanged?.Invoke(currentStone); // 이벤트 발생
+    }
+
+    /// <summary>
+    /// 현재 턴 플레이어가 로컬 플레이어인지 확인 (멀티플레이용)
+    /// </summary>
+    /// <returns></returns>
+    public bool IsCurrentTurnLocal()
+    {
+        if (GameModeManager.Mode == GameMode.MultiPlayer)
+        {
+            return currentTurnPlayer == PlayerType.Me;
+        }
+        else
+        {
+            return true; // 싱글플레이에서는 항상 로컬
+        }
+    }
+
     private void CheckWinCondition(int x, int y)
     {
         StoneType[,] board = boardManager.GetBoardState();
