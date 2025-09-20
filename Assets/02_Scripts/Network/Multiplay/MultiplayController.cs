@@ -71,19 +71,6 @@ public class MultiplayController : IDisposable
             new SocketIOOptions { Transport = SocketIOClient.Transport.TransportProtocol.WebSocket });
         socket.JsonSerializer = new NewtonsoftJsonSerializer();
 
-        // // 연결 상태 이벤트
-        // socket.OnConnected += (sender, e) =>
-        // {
-        //     isConnected = true;
-        //     Debug.Log("소켓 연결됨");
-        // };
-        //
-        // socket.OnDisconnected += (sender, e) =>
-        // {
-        //     isConnected = false;
-        //     Debug.Log("소켓 연결 해제됨");
-        // };
-
         // 유저 정보 수신
         socket.OnUnityThread("userInfoLoaded", UserInfoLoaded);
         // 상대 착수 정보 수신
@@ -202,7 +189,6 @@ public class MultiplayController : IDisposable
         var data = response.GetValue<MatchData>();
 
         amIFirstPlayer = data.isPlayer1First;
-        Debug.Log($"내가 선공인가?: {amIFirstPlayer}");
         MultiplayManager.Instance?.SetOpponentData(data);
 
         onMultiplayStateChanged?.Invoke(MultiplayControllerState.MatchFound, data.roomId);
@@ -260,7 +246,6 @@ public class MultiplayController : IDisposable
         var data = response.GetValue<MatchData>();
 
         amIFirstPlayer = data.isPlayer1First;
-        Debug.Log($"내가 선공인가?: {amIFirstPlayer}");
         MultiplayManager.Instance?.SetOpponentData(data);
 
         onMultiplayStateChanged?.Invoke(MultiplayControllerState.RematchStarted, data.roomId);
@@ -370,62 +355,54 @@ public class MultiplayController : IDisposable
     public void RequestRematch()
     {
         socket?.Emit("requestRematch");
-        Debug.Log("리매치 요청 전송");
     }
 
     // 리매치 수락
     public void AcceptRematch()
     {
         socket?.Emit("acceptRematch");
-        Debug.Log("리매치 수락");
     }
 
     // 리매치 거절
     public void RejectRematch()
     {
         socket?.Emit("rejectRematch");
-        Debug.Log("리매치 거절");
     }
 
     // 리매치 취소
     public void CancelRematch()
     {
         socket?.Emit("cancelRematch");
-        Debug.Log("리매치 취소");
     }
 
     #endregion
 
+    private bool isDisposed = false;
+
     public void Dispose()
     {
+        if (isDisposed || socket == null) return;
+        isDisposed = true;
+
         try
         {
+            Debug.Log("소켓 해제 시작");
+
+            if (socket.Connected)
+            {
+                socket.Disconnect();
+            }
+
+            socket.Dispose();
+            socket = null;
             isConnected = false;
 
-            // 소켓이 연결되어 있다면 안전하게 해제
-            if (socket != null)
-            {
-                Debug.Log("소켓 연결 해제 시작");
-
-                // 이벤트 핸들러 제거
-                socket.OnConnected -= OnConnected;
-                socket.OnDisconnected -= OnDisconnected;
-
-                // 소켓 해제
-                if (socket.Connected)
-                {
-                    socket.Disconnect();
-                }
-
-                socket.Dispose();
-                socket = null;
-
-                Debug.Log("소켓 연결 해제 완료");
-            }
+            Debug.Log("소켓 해제 완료");
         }
         catch (Exception e)
         {
-            Debug.LogError($"소켓 해제 중 예외 발생: {e.Message}");
+            Debug.LogWarning($"소켓 해제 중 오류 (무시): {e.Message}");
+            socket = null;
         }
     }
 }

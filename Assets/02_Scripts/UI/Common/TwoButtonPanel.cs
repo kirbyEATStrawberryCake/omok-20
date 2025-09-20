@@ -16,8 +16,12 @@ public class TwoButtonPanel : MonoBehaviour
 {
     [SerializeField] [Tooltip("취소 버튼")] private Button buttonCancel;
     [SerializeField] [Tooltip("확인 버튼")] private Button buttonConfirm;
-    [SerializeField][Tooltip("취소 버튼 텍스트")] private TextMeshProUGUI cancelButtonText;
-    [SerializeField] [Tooltip("확인 버튼 텍스트")]private TextMeshProUGUI confirmButtonText;
+
+    [SerializeField] [Tooltip("취소 버튼 텍스트")]
+    private TextMeshProUGUI cancelButtonText;
+
+    [SerializeField] [Tooltip("확인 버튼 텍스트")]
+    private TextMeshProUGUI confirmButtonText;
 
     [SerializeField] [Tooltip("팝업 창에 띄울 메세지")]
     private TextMeshProUGUI message;
@@ -70,6 +74,7 @@ public class TwoButtonPanel : MonoBehaviour
     /// <param name="onCancel">취소 버튼을 눌렀을 때 실행할 액션</param>
     public void OpenWithSetMessageAndButtonEvent(string message, Action onConfirm = null, Action onCancel = null)
     {
+        gameObject.SetActive(true);
         InitPanel();
         SetMessage(message);
         SetButtonEvent(() =>
@@ -82,7 +87,6 @@ public class TwoButtonPanel : MonoBehaviour
                 onCancel?.Invoke();
                 gameObject.SetActive(false);
             });
-        gameObject.SetActive(true);
     }
 
     /// <summary>
@@ -94,6 +98,9 @@ public class TwoButtonPanel : MonoBehaviour
     public void OpenWithSetMessageAndButtonEvent(string message, TwoButtonType buttonType, float delay,
         Action onConfirm = null, Action onCancel = null)
     {
+        gameObject.SetActive(true);
+        InitPanel();
+        SetMessage(message);
         switch (buttonType)
         {
             case TwoButtonType.Confirm:
@@ -108,11 +115,11 @@ public class TwoButtonPanel : MonoBehaviour
                 break;
         }
 
-        OpenWithSetMessageAndButtonEvent(message, onConfirm, onCancel);
-        StartCoroutine(EnableButtonWithDelay(buttonType, delay));
+        StartCoroutine(EnableButtonWithDelay(buttonType, delay, onConfirm, onCancel));
     }
 
-    private IEnumerator EnableButtonWithDelay(TwoButtonType buttonType, float delay)
+    private IEnumerator EnableButtonWithDelay(TwoButtonType buttonType, float delay, Action onConfirm = null,
+        Action onCancel = null)
     {
         yield return new WaitForSeconds(delay);
         switch (buttonType)
@@ -128,6 +135,17 @@ public class TwoButtonPanel : MonoBehaviour
                 buttonCancel.interactable = true;
                 break;
         }
+
+        SetButtonEvent(() =>
+            {
+                onConfirm?.Invoke();
+                gameObject.SetActive(false);
+            },
+            () =>
+            {
+                onCancel?.Invoke();
+                gameObject.SetActive(false);
+            });
     }
 
     public void SetButtonText(string confirmText, string cancelText)
