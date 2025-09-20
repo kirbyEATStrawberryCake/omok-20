@@ -266,6 +266,7 @@ public enum MultiplayControllerState
     RematchCanceled,
     RematchStarted,
     ExitRoom, // 클라이언트가 방에서 나갈 때
+    OpponentSurrender, // 상대방이 항복했을 때
     OpponentLeft, // 상대방이 접속을 끊거나 방을 나갔을 때
     Error
 }

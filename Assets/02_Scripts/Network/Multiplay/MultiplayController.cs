@@ -88,6 +88,12 @@ public class MultiplayController : IDisposable
         socket.OnUnityThread("userInfoLoaded", UserInfoLoaded);
         // 상대 착수 정보 수신
         socket.OnUnityThread("doOpponent", DoOpponent);
+        // 상대 항복 정보 수신
+        socket.OnUnityThread("opponentSurrender", OpponentSurrender);
+        // 상대방이 방에서 나갔을 때 정보 수신
+        socket.OnUnityThread("opponentLeft", OpponentLeft);
+        // 내가 방을 나갔을때 정보 수신
+        socket.OnUnityThread("exitRoom", ExitRoom);
 
         // 매칭 관련
         socket.OnUnityThread("matchWaiting", MatchWaiting);
@@ -95,15 +101,12 @@ public class MultiplayController : IDisposable
         socket.OnUnityThread("matchFound", MatchFound);
         socket.OnUnityThread("matchFailed", MatchFailed);
         socket.OnUnityThread("matchCanceled", MatchCanceled);
-        socket.OnUnityThread("exitRoom", ExitRoom);
-        socket.OnUnityThread("opponentLeft", OpponentLeft);
-        socket.OnUnityThread("gameEnded", GameEnded);
 
         // 리매칭 관련
         socket.OnUnityThread("rematchRequested", RematchRequested); // 상대방의 리매치 요청
         socket.OnUnityThread("rematchRequestSent", RematchRequestSent); // 내가 상대방에게 리매치 요청을 함
         socket.OnUnityThread("rematchRejected", RematchRejected); // 상대방의 리매치 거절
-        socket.OnUnityThread("rematchCanceled", RematchCanceled); // 내가 리매치를 취소한 결과
+        socket.OnUnityThread("rematchCanceled", RematchCanceled); // 상대방이 리매치를 취소
         socket.OnUnityThread("rematchStarted", RematchStarted); // 리매치가 성사됨
 
         // 에러
@@ -113,7 +116,6 @@ public class MultiplayController : IDisposable
         socket.OnUnityThread("userNotFound", UserNotFound);
         socket.OnUnityThread("rematchError", RematchError);
     }
-
 
     public void Connect(string username)
     {
@@ -142,22 +144,23 @@ public class MultiplayController : IDisposable
         onBlockDataChanged?.Invoke(data.blockIdx_x, data.blockIdx_y);
     }
 
+    private void OpponentSurrender(SocketIOResponse obj)
+    {
+        Debug.Log("상대방이 항복했습니다.");
+        onMultiplayStateChanged?.Invoke(MultiplayControllerState.OpponentSurrender, null);
+    }
+
+    private void OpponentLeft(SocketIOResponse response)
+    {
+        Debug.Log("상대방이 나갔습니다.");
+        onMultiplayStateChanged?.Invoke(MultiplayControllerState.OpponentLeft, null);
+    }
+
     private void ExitRoom(SocketIOResponse response)
     {
         var data = response.GetValue<RoomData>();
 
         onMultiplayStateChanged?.Invoke(MultiplayControllerState.ExitRoom, data.roomId);
-    }
-
-    private void OpponentLeft(SocketIOResponse response)
-    {
-        onMultiplayStateChanged?.Invoke(MultiplayControllerState.OpponentLeft, null);
-    }
-
-
-    private void GameEnded(SocketIOResponse response)
-    {
-        throw new NotImplementedException();
     }
 
     #endregion
@@ -313,7 +316,11 @@ public class MultiplayController : IDisposable
     {
         socket?.Emit("cancelMatch");
     }
-    
+
+    public void Surrender()
+    {
+        socket?.Emit("surrender");
+    }
 
     public void LeaveRoom()
     {
@@ -334,6 +341,11 @@ public class MultiplayController : IDisposable
         });
     }
 
+    public void ApplicationQuit()
+    {
+        socket?.Emit("applicationQuit");
+    }
+
     #endregion
 
     #region Rematch (Client -> Server)
@@ -343,6 +355,13 @@ public class MultiplayController : IDisposable
     {
         socket?.Emit("requestRematch");
         Debug.Log("리매치 요청 전송");
+    }
+    
+    // 리매치 수락
+    public void AcceptRematch()
+    {
+        socket?.Emit("acceptRematch");
+        Debug.Log("리매치 수락");
     }
 
     // 리매치 거절

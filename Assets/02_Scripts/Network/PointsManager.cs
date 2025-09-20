@@ -4,7 +4,12 @@ using UnityEngine;
 
 public class PointsManager : MonoBehaviour
 {
-    private NetworkManager networkManager => NetworkManager.Instance;
+    private NetworkManager networkManager;
+
+    private void Start()
+    {
+        networkManager = NetworkManager.Instance;
+    }
 
     /// <summary>
     /// 사용자 포인트 정보 가져오기

@@ -22,7 +22,6 @@ public enum SignUpPanelType
     Fail_NotSelectedProfileImage
 }
 
-[RequireComponent(typeof(AuthManager))]
 public class LoginSceneUIManager : Singleton<LoginSceneUIManager>
 {
     [SerializeField] [Tooltip("로그인 화면 패널")]
@@ -40,8 +39,12 @@ public class LoginSceneUIManager : Singleton<LoginSceneUIManager>
     protected override void Awake()
     {
         base.Awake();
-        authManager = GetComponent<AuthManager>();
         popup = popupPanel.GetComponent<OneButtonPanel>();
+    }
+
+    private void Start()
+    {
+        authManager = NetworkManager.Instance.authManager;
     }
 
     protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)

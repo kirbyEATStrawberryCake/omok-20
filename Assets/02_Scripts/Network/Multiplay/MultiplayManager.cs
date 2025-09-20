@@ -3,7 +3,6 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 
-[RequireComponent(typeof(StatsManager))]
 public class MultiplayManager : Singleton<MultiplayManager>
 {
     // 테스트용
@@ -12,24 +11,24 @@ public class MultiplayManager : Singleton<MultiplayManager>
 
     public MultiplayController multiplayController { get; private set; }
 
-    private GameSceneUIManager gameSceneUIManager => GameSceneUIManager.Instance;
+    private GameSceneUIManager gameSceneUIManager;
+    private GamePlayManager gamePlayManager;
     private StatsManager statsManager;
     private string roomId;
     public MatchData MatchData { get; private set; }
 
+    public event UnityAction MatchWaitngCallback;
     public event UnityAction MatchFoundCallback;
+    public event UnityAction MatchCanceledCallback;
     public event UnityAction<GameResultResponse, GameResult> MatchResultCallback;
-    public event UnityAction<GameResult> ExitRoomCallback;
-    public event UnityAction<GameResult> OpponentLeftCallback;
     public event UnityAction<MultiplayControllerState> RematchCallback;
+    public event UnityAction<string, bool> ErrorCallback;
 
     protected override void Awake()
     {
         base.Awake();
 
         if (GameModeManager.Mode == GameMode.SinglePlayer) return;
-
-        statsManager = GetComponent<StatsManager>();
 
         multiplayController = new MultiplayController((state, response) =>
             {
@@ -38,8 +37,7 @@ public class MultiplayManager : Singleton<MultiplayManager>
                     // ---------- 매칭 ---------- 
                     case MultiplayControllerState.MatchWaiting:
                         // 매칭 중임을 알리는 팝업을 띄움
-                        gameSceneUIManager?.OpenOneCancelButtonPopup("매칭 찾는 중...",
-                            () => multiplayController.CancelMatch());
+                        MatchWaitngCallback.Invoke();
                         Debug.Log("<color=cyan>매칭 찾는 중...</color>");
                         // TODO: 사용자가 매칭 중임을 알 수 있도록 로직 추가
                         break;
@@ -49,59 +47,39 @@ public class MultiplayManager : Singleton<MultiplayManager>
                         break;
                     case MultiplayControllerState.MatchFound:
                         // 매칭 중임을 알리는 팝업을 강제로 닫음
-                        gameSceneUIManager?.CloseOneButtonPopup();
                         this.roomId = response;
                         MatchFoundCallback?.Invoke();
                         Debug.Log("<color=green>매칭 성공!</color>");
                         break;
                     case MultiplayControllerState.MatchCanceled:
                         // 매칭 취소 팝업을 띄움, 확인 버튼을 누르면 메인 씬으로 이동
-                        gameSceneUIManager?.OpenOneConfirmButtonPopup("매칭이 취소되었습니다.",
-                            () => SceneController.LoadScene(SceneType.Main, 0.5f));
+                        MatchCanceledCallback?.Invoke();
                         Debug.Log("<color=cyan>매칭을 취소합니다.</color>");
                         break;
                     case MultiplayControllerState.MatchFailed:
                         Debug.Log("<color=magenta>매칭 실패 AI 대전으로 전환합니다.</color>");
                         // TODO: AI대전으로 전환
                         break;
-                    case MultiplayControllerState.ExitRoom:
-                        Debug.Log("<color=magenta>방에서 나갑니다.</color>");
-                        this.roomId = null;
-                        ExitRoomCallback?.Invoke(GameResult.Defeat);
-                        break;
-                    case MultiplayControllerState.OpponentLeft:
-                        Debug.Log("<color=cyan>상대방이 나갔습니다.</color>");
-                        OpponentLeftCallback?.Invoke(GameResult.Disconnect);
+                    case MultiplayControllerState.OpponentSurrender:
+                        Debug.Log("<color=cyan>상대방이 항복했습니다.</color>");
+                        EndGame(GameResult.Victory);
                         break;
                     // ---------- 리매칭 ----------
                     case MultiplayControllerState.RematchRequested:
-                        // TODO: 상대가 리매칭을 요청했을때, twoButton팝업을 띄우기(거절, 수락)
-                        // TODO: 거절 -> RejectRematch, 수락 -> RequestRematch
-                        RematchCallback?.Invoke(MultiplayControllerState.RematchRequested);
-                        break;
                     case MultiplayControllerState.RematchRequestSent:
-                        // TODO: 내가 리매칭을 요청했을때, oneCancelButton팝업(상대를 기다리는 중...)
-                        // TODO: 일정 시간 이후에 버튼 활성화
-                        RematchCallback?.Invoke(MultiplayControllerState.RematchRequestSent);
-                        break;
                     case MultiplayControllerState.RematchRejected:
-                        // TODO: 상대가 리매칭을 거절했을때, oneButton팝업(상대가 재대국을 거절했습니다.)
-                        // TODO: 재대국 버튼 비활성화
-                        RematchCallback?.Invoke(MultiplayControllerState.RematchRejected);
-                        break;
                     case MultiplayControllerState.RematchCanceled:
-                        // TODO: 내가 리매칭을 취소했을때, oneButton팝업(재대국을 취소했습니다.)
-                        // TODO: 재대국 버튼 비활성화
-                        RematchCallback?.Invoke(MultiplayControllerState.RematchCanceled);
-                        break;
                     case MultiplayControllerState.RematchStarted:
-                        // TODO: 리매치 성사, 보드 청소
-                        RematchCallback?.Invoke(MultiplayControllerState.RematchStarted);
+                        RematchCallback?.Invoke(state);
+                        break;
+                    case MultiplayControllerState.OpponentLeft:
+                    case MultiplayControllerState.ExitRoom:
+                        this.roomId = null;
+                        RematchCallback?.Invoke(state);
                         break;
                     // ---------- 에러 ----------
                     case MultiplayControllerState.Error:
-                        gameSceneUIManager?.OpenOneConfirmButtonPopup($"오류가 발생했습니다.\n {response}",
-                            () => SceneController.LoadScene(SceneType.Main, 0.5f));
+                        ErrorCallback?.Invoke(response, true);
                         Debug.Log($"<color=red>에러! {response}</color>");
                         break;
                 }
@@ -111,24 +89,35 @@ public class MultiplayManager : Singleton<MultiplayManager>
         multiplayController.Connect(GameManager.Instance.username);
     }
 
-    private void OnEnable()
+    private void Start()
     {
         if (GameModeManager.Mode == GameMode.SinglePlayer) return;
 
-        GamePlayManager.Instance.OnGameEnd += EndGame;
+        statsManager = NetworkManager.Instance.statsManager;
+        gameSceneUIManager = GameSceneUIManager.Instance;
+        gamePlayManager = GamePlayManager.Instance;
+        if (gamePlayManager != null)
+        {
+            gamePlayManager.OnGameEnd += EndGame;
+            gamePlayManager.OnSurrender += multiplayController.Surrender;
+        }
     }
 
     private void OnDisable()
     {
         if (GameModeManager.Mode == GameMode.SinglePlayer) return;
 
-        GamePlayManager.Instance.OnGameEnd -= EndGame;
+        if (gamePlayManager != null)
+        {
+            gamePlayManager.OnGameEnd -= EndGame;
+            gamePlayManager.OnSurrender -= multiplayController.Surrender;
+        }
     }
 
     protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
     {
         if (scene.buildIndex != (int)SceneType.Game) return;
-        
+
         if (GameModeManager.Mode == GameMode.SinglePlayer) return;
         if (roomId != null) // 이미 매칭 중이라면
         {
@@ -164,7 +153,8 @@ public class MultiplayManager : Singleton<MultiplayManager>
     {
         if (x == -1 || y == -1)
         {
-            gameSceneUIManager?.OpenOneConfirmButtonPopup($"착수 실패\n좌표가 비어있습니다.");
+            string message = $"착수 실패\n좌표가 비어있습니다.";
+            ErrorCallback?.Invoke(message, false);
             Debug.LogError("<color=red>착수 실패 : 좌표가 비어있습니다.</color>");
             return;
         }
@@ -191,7 +181,7 @@ public class MultiplayManager : Singleton<MultiplayManager>
             (response) =>
             {
                 MatchResultCallback?.Invoke(response, result);
-                Debug.Log($"<color=green>### 게임 결과({result.ToString()}) 등록 성공 ! ###</color>");                
+                Debug.Log($"<color=green>### 게임 결과({result.ToString()}) 등록 성공 ! ###</color>");
             },
             (errorType) =>
             {
@@ -208,7 +198,7 @@ public class MultiplayManager : Singleton<MultiplayManager>
                         break;
                 }
             });
-        
+
         multiplayController?.NotifyGameEnded();
     }
 
@@ -217,7 +207,7 @@ public class MultiplayManager : Singleton<MultiplayManager>
     /// </summary>
     private void OnApplicationQuit()
     {
-        multiplayController?.LeaveRoom();
+        multiplayController?.ApplicationQuit();
         multiplayController?.Dispose();
     }
 }

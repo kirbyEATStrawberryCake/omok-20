@@ -153,6 +153,7 @@ public class GameResultPanel : MonoBehaviour
     public void OpenWithButtonEvent(GameResultResponse response, GameResult result, Action onClickExit,
         Action onClickRematch)
     {
+        InitPanel();
         SetMessage(result);
         SetPoint(response);
         SetButtonEvent(() =>
@@ -161,8 +162,8 @@ public class GameResultPanel : MonoBehaviour
             gameObject.SetActive(false);
         }, () =>
         {
+            DisableRematchButton();
             onClickRematch?.Invoke();
-            gameObject.SetActive(false);
         });
         gameObject.SetActive(true);
     }

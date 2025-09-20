@@ -24,10 +24,11 @@ public enum GameResult
 }
 
 [RequireComponent(typeof(RenjuRule))]
+[RequireComponent(typeof(GameLogicController))]
 public class GamePlayManager : Singleton<GamePlayManager>
 {
     public BoardManager boardManager { get; private set; } // 오목판 관리자 참조
-    public GameLogic gameLogic { get; private set; } = new GameLogic(); // 플레이어 관리자 참조
+    public GameLogicController gameLogicController { get; private set; }
     public RenjuRule renjuRule { get; private set; } // 렌주룰 관리자 참조
     public GameSceneUIManager uiManager => GameSceneUIManager.Instance;
     public MultiplayManager multiplayManager => MultiplayManager.Instance;
@@ -46,6 +47,8 @@ public class GamePlayManager : Singleton<GamePlayManager>
     public GameState currentGameState { get; private set; } = GameState.Default; // 현재 게임 상태
 
     public event UnityAction OnGameStart;
+    public event UnityAction OnGameRestart;
+    public event UnityAction OnSurrender;
     public event UnityAction<GameResult> OnGameEnd;
 
     #region 유니티 이벤트
@@ -55,37 +58,41 @@ public class GamePlayManager : Singleton<GamePlayManager>
         base.Awake();
         boardManager = FindFirstObjectByType<BoardManager>();
         gomokuAIDebugger = FindFirstObjectByType<GomokuAIDebugger>();
+        gameLogicController = GetComponent<GameLogicController>();
         renjuRule = GetComponent<RenjuRule>();
+#if UNITY_EDITOR
+        if (gameObject.scene.name == EditorSceneLoader.StartupSceneName)
+        {
+            Debug.Log($"<color=cyan>싱글모드 테스트 시작</color>");
+            GameModeManager.Mode = GameMode.SinglePlayer;
+            OnSceneLoad(SceneManager.GetActiveScene(), LoadSceneMode.Single);
+        }
+#endif
     }
 
     private void Start()
     {
-        // 싱글모드 테스트용
-        // GameModeManager.Mode = GameMode.SinglePlayer;
-        // OnSceneLoad(SceneManager.GetActiveScene(), LoadSceneMode.Single);
-    }
+        if (gameLogicController != null)
+        {
+            gameLogicController.WinConditionChecked += EndGame;
+        }
 
-    private void OnEnable()
-    {
-        gameLogic.Initialize();
-        gameLogic.WinConditionChecked += EndGame;
-        if (GameModeManager.Mode == GameMode.MultiPlayer)
+        if (multiplayManager != null && GameModeManager.Mode == GameMode.MultiPlayer)
         {
             multiplayManager.MatchFoundCallback += StartGame;
-            multiplayManager.ExitRoomCallback += EndGame;
-            multiplayManager.OpponentLeftCallback += EndGame;
         }
     }
 
     private void OnDisable()
     {
-        gameLogic.Cleanup();
-        gameLogic.WinConditionChecked -= EndGame;
-        if (GameModeManager.Mode == GameMode.MultiPlayer)
+        if (gameLogicController != null)
+        {
+            gameLogicController.WinConditionChecked -= EndGame;
+        }
+
+        if (multiplayManager != null && GameModeManager.Mode == GameMode.MultiPlayer)
         {
             multiplayManager.MatchFoundCallback -= StartGame;
-            multiplayManager.ExitRoomCallback -= EndGame;
-            multiplayManager.OpponentLeftCallback -= EndGame;
         }
     }
 
@@ -125,7 +132,7 @@ public class GamePlayManager : Singleton<GamePlayManager>
         // 항복한 플레이어의 상대가 승리
         if (GameModeManager.Mode == GameMode.SinglePlayer)
         {
-            PlayerType currentTurnPlayer = gameLogic.currentTurnPlayer;
+            PlayerType currentTurnPlayer = gameLogicController.GetCurrentTurnPlayer();
             GameResult result = (currentTurnPlayer == PlayerType.Player1)
                 ? GameResult.Player2Win
                 : GameResult.Player1Win;
@@ -136,6 +143,7 @@ public class GamePlayManager : Singleton<GamePlayManager>
         else if (GameModeManager.Mode == GameMode.MultiPlayer)
         {
             Debug.Log("항복했습니다");
+            OnSurrender?.Invoke();
             EndGame(GameResult.Defeat);
         }
     }
@@ -183,8 +191,7 @@ public class GamePlayManager : Singleton<GamePlayManager>
         if (currentGameState != GameState.GameOver) return;
 
         currentGameState = GameState.Default;
-        boardManager?.InitializeBoard();
-        gameLogic?.ResetGame();
+        OnGameRestart?.Invoke();
         StartGame();
     }
 

@@ -16,17 +16,17 @@ public class TwoButtonPanel : MonoBehaviour
 {
     [SerializeField] [Tooltip("취소 버튼")] private Button buttonCancel;
     [SerializeField] [Tooltip("확인 버튼")] private Button buttonConfirm;
+    [SerializeField][Tooltip("취소 버튼 텍스트")] private TextMeshProUGUI cancelButtonText;
+    [SerializeField] [Tooltip("확인 버튼 텍스트")]private TextMeshProUGUI confirmButtonText;
 
     [SerializeField] [Tooltip("팝업 창에 띄울 메세지")]
     private TextMeshProUGUI message;
 
-    private TextMeshProUGUI cancelButtonText;
-    private TextMeshProUGUI confirmButtonText;
 
     private void Awake()
     {
-        cancelButtonText = buttonCancel.transform.GetChild(0).GetComponent<TextMeshProUGUI>();
-        confirmButtonText = buttonConfirm.transform.GetChild(0).GetComponent<TextMeshProUGUI>();
+        // cancelButtonText = buttonCancel.transform.GetChild(0).GetComponent<TextMeshProUGUI>();
+        // confirmButtonText = buttonConfirm.transform.GetChild(0).GetComponent<TextMeshProUGUI>();
     }
 
     private void InitPanel()
