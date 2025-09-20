@@ -1,5 +1,7 @@
 using System;
+using System.Diagnostics;
 using UnityEngine;
+using UnityEngine.Android;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
@@ -197,7 +199,7 @@ public class GamePlayManager : Singleton<GamePlayManager>
 
     /*private void Update()
     {
-        // ������ ���� ���� ���� �� ó��
+        // 게임 중이 아니면 무시
         if (currentGameState != GameState.Playing) return;
 
         // ���� ���� �÷��̾ AI���� Ȯ��
@@ -252,7 +254,7 @@ public class GamePlayManager : Singleton<GamePlayManager>
 
         // 실제 착수 실행
         boardManager.PlaceStone();
-
+        
         watch.Stop(); // ���� ����
         Debug.Log("�ڵ� ���� �ð�: " + watch.ElapsedMilliseconds + "ms"); // ��� �ð� ���
     }*/
