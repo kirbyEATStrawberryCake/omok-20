@@ -61,8 +61,8 @@ public class GamePlayManager : Singleton<GamePlayManager>
     private void Start()
     {
         // 싱글모드 테스트용
-        GameModeManager.Mode = GameMode.SinglePlayer;
-        OnSceneLoad(SceneManager.GetActiveScene(), LoadSceneMode.Single);
+        // GameModeManager.Mode = GameMode.SinglePlayer;
+        // OnSceneLoad(SceneManager.GetActiveScene(), LoadSceneMode.Single);
     }
 
     private void OnEnable()

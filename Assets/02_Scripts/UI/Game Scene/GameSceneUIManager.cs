@@ -20,12 +20,14 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
 
     [Header("플레이어 프로필 이미지")]
     [SerializeField] private Image leftProfileImage;
+
     [SerializeField] private Image rightProfileImage;
 
     [Header("프로필용 스프라이트")]
     [SerializeField] private Sprite pandaSprite;
+
     [SerializeField] private Sprite redPandaSprite;
-    
+
     [SerializeField] private Sprite winPandaProfileSprite;
     [SerializeField] private Sprite losePandaProfileSprite;
 
@@ -46,6 +48,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
     private GameObject gameResultPopupPanel;
 
     private GamePlayManager gamePlayManager => GamePlayManager.Instance;
+    private MultiplayManager multiplayManager => MultiplayManager.Instance;
 
     private OneButtonPanel oneConfirmButtonPopup;
     private OneButtonPanel oneCancelButtonPopup;
@@ -72,24 +75,26 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
     private void OnEnable()
     {
         gamePlayManager.OnGameEnd += EndSingleGameUI;
+        gamePlayManager.OnGameEnd += UpdateProfileImagesOnResult;
         gamePlayManager.gameLogic.OnPlayerStonesRandomized += InitPlayerTurnDisplay;
         gamePlayManager.gameLogic.OnPlayerTurnChanged += UpdatePlayerTurnDisplay;
         if (GameModeManager.Mode == GameMode.MultiPlayer)
         {
-            gamePlayManager.multiplayManager.MatchResultCallback += EndMultiGameUI;
-            gamePlayManager.multiplayManager.MatchFoundCallback += UpdatePlayerProfileInMultiPlay;
+            multiplayManager.MatchResultCallback += EndMultiGameUI;
+            multiplayManager.MatchFoundCallback += UpdatePlayerProfileInMultiPlay;
         }
     }
 
     private void OnDisable()
     {
         gamePlayManager.OnGameEnd -= EndSingleGameUI;
+        gamePlayManager.OnGameEnd -= UpdateProfileImagesOnResult;
         gamePlayManager.gameLogic.OnPlayerStonesRandomized -= InitPlayerTurnDisplay;
         gamePlayManager.gameLogic.OnPlayerTurnChanged -= UpdatePlayerTurnDisplay;
         if (GameModeManager.Mode == GameMode.MultiPlayer)
         {
-            gamePlayManager.multiplayManager.MatchResultCallback -= EndMultiGameUI;
-            gamePlayManager.multiplayManager.MatchFoundCallback -= UpdatePlayerProfileInMultiPlay;
+            multiplayManager.MatchResultCallback -= EndMultiGameUI;
+            multiplayManager.MatchFoundCallback -= UpdatePlayerProfileInMultiPlay;
         }
     }
 
@@ -184,7 +189,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
         player1ProfileImage.sprite = gameManager.profileImage == 1 ? pandaSprite : redPandaSprite;
         player1GradeAndNickname.text = $"{gameManager.grade}급 {gameManager.nickname}";
         // 상대의 프로필은 서버에서 받아온 정보를 사용하여 프로필 업데이트
-        MatchFoundData opponentData = MultiplayManager.Instance.matchFoundData;
+        MatchData opponentData = MultiplayManager.Instance.MatchData;
         player2ProfileImage.sprite = opponentData.profileImage == 1 ? pandaSprite : redPandaSprite;
         player2GradeAndNickname.text = $"{opponentData.grade}급 {opponentData.nickname}";
     }
@@ -199,7 +204,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
 
         if (gameResultPopup != null)
         {
-            gameResultPopup.OpenWithButtonEvent(result, () => { SceneController.LoadScene(SceneType.Main); },
+            gameResultPopup.OpenWithButtonEvent(result, () => { SceneController.LoadScene(SceneType.Main, 0.5f); },
                 () => { gamePlayManager.ResterGame(); });
         }
     }
@@ -220,9 +225,10 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
                 oneConfirmButtonPopup.OpenWithSetMessageAndButtonEvent(message);
             }
 
-            gameResultPopup.OpenWithButtonEvent(response, result, () => { SceneController.LoadScene(SceneType.Main); },
-                () => { SceneController.LoadScene(SceneType.Game); });
+            gameResultPopup.OpenWithButtonEvent(response, result, () => { SceneController.LoadScene(SceneType.Main, 0.5f); },
+                () => { gamePlayManager.multiplayManager.multiplayController?.RequestRematch(); });
         }
+
         // 오목 결과에 따라 프로필 변경하는 메서드 호출
         UpdateProfileImagesOnResult(result);
     }
@@ -269,6 +275,35 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
         }
     }
 
+    private void Rematch(MultiplayControllerState state)
+    {
+        switch (state)
+        {
+            case MultiplayControllerState.RematchRequested:
+                twoButtonPopup.SetButtonText("거절", "수락");
+                twoButtonPopup.OpenWithSetMessageAndButtonEvent("상대가 재대국 신청을 하였습니다.\n받으시겠습니까?",
+                    () => { gamePlayManager.multiplayManager.multiplayController?.RequestRematch(); },
+                    () => { gamePlayManager.multiplayManager.multiplayController?.RejectRematch(); });
+                break;
+            case MultiplayControllerState.RematchRequestSent:
+                oneCancelButtonPopup.OpenWithSetMessageAndButtonEvent("재대국 신청 중입니다...", 2f,
+                    () => { gamePlayManager.multiplayManager.multiplayController?.CancelRematch(); });
+                break;
+            case MultiplayControllerState.RematchRejected:
+                CloseOneButtonPopup();
+                oneConfirmButtonPopup.OpenWithSetMessageAndButtonEvent("상대방이 재대국을 거절했습니다.",
+                    () => { gameResultPopup.DisableRematchButton(); });
+                break;
+            case MultiplayControllerState.RematchCanceled:
+                CloseOneButtonPopup();
+                oneConfirmButtonPopup.OpenWithSetMessageAndButtonEvent("재대국을 취소했습니다.",
+                    () => { gameResultPopup.DisableRematchButton(); });
+                break;
+            case MultiplayControllerState.RematchStarted:
+                gamePlayManager.ResterGame();
+                break;
+        }
+    }
 
     /// <summary>
     /// 항복 버튼을 눌렀을 때 호출되는 메소드
@@ -276,6 +311,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
     public void OnClickSurrenderButton()
     {
         // TODO: 타이머 멈추기
+        twoButtonPopup.SetButtonText("취소", "기권");
         twoButtonPopup.OpenWithSetMessageAndButtonEvent("기권 하시겠습니까?", () => { gamePlayManager.Surrender(); }, () =>
         {
             // TODO: 타이머 다시 시작
