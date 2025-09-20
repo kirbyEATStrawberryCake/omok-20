@@ -43,7 +43,7 @@ public class GameTimer : MonoBehaviour
         // BoardManager OnPlaceStone 이벤트 구독 (착수 시에만 타이머 초기화)
         if (gamePlayManager.BoardManager != null)
         {
-            gamePlayManager.BoardManager.OnPlaceStone += OnStonePlace;
+            // gamePlayManager.BoardManager.OnPlaceStone += OnStonePlace;
         }
     }
 
@@ -63,7 +63,7 @@ public class GameTimer : MonoBehaviour
 
         if (gamePlayManager?.BoardManager != null)
         {
-            gamePlayManager.BoardManager.OnPlaceStone -= OnStonePlace;
+            // gamePlayManager.BoardManager.OnPlaceStone -= OnStonePlace;
         }
     }
 
@@ -124,13 +124,13 @@ public class GameTimer : MonoBehaviour
         StartTimer();
     }
 
-    private void OnStonePlace(int x, int y)
-    {
-        // 실제 착수가 이루어졌을 때만 타이머 리셋 및 정지
-        Debug.Log($"착수 완료: ({x}, {y}) - 타이머 리셋 및 정지");
-        ResetTimer();
-        StopTimer();
-    }
+    // private void OnStonePlace(int x, int y)
+    // {
+    //     // 실제 착수가 이루어졌을 때만 타이머 리셋 및 정지
+    //     Debug.Log($"착수 완료: ({x}, {y}) - 타이머 리셋 및 정지");
+    //     ResetTimer();
+    //     StopTimer();
+    // }
 
     #endregion
 
