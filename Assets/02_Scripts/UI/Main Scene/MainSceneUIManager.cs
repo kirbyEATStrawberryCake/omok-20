@@ -65,6 +65,15 @@ public class MainSceneUIManager : Singleton<MainSceneUIManager>
 
     private void Start()
     {
+#if UNITY_EDITOR
+        if (gameObject.scene.name == EditorSceneLoader.StartupSceneName)
+        {
+            Debug.Log($"<color=cyan>메인씬 테스트 시작</color>");
+            OnSceneLoad(SceneManager.GetActiveScene(), LoadSceneMode.Single);
+            return;
+        }
+#endif
+
         statsManager = NetworkManager.Instance.statsManager;
 
         // 메인 씬 호출 시 유저 정보를 가져와서 띄워줌

@@ -7,9 +7,10 @@ using UnityEngine.Events;
 public class BoardManager : MonoBehaviour
 {
     private GamePlayManager gamePlayManager;
+    private GameSceneUIManager uiManager;
+    private MultiplayManager multiplayManager;
     private RenjuRule renjuRule;
     private GameLogicController gameLogic;
-    private GameSceneUIManager uiManager;
 
     [Header("Sprites")]
     [SerializeField] private Sprite blackStoneSprite; // 흑돌 스프라이트
@@ -64,17 +65,18 @@ public class BoardManager : MonoBehaviour
     {
         mainCamera = Camera.main;
         gamePlayManager = GamePlayManager.Instance;
-        gameLogic = gamePlayManager?.gameLogicController;
-        uiManager = GameSceneUIManager.Instance;
-        renjuRule = gamePlayManager?.renjuRule;
+        uiManager = gamePlayManager?.UIManager;
+        gameLogic = gamePlayManager?.GameLogicController;
+        renjuRule = gamePlayManager?.RenjuRule;
 
         if (gamePlayManager != null)
         {
             gamePlayManager.OnGameStart += InitializeBoard;
             gamePlayManager.OnGameEnd += HideAllMarkers;
+            if (gameLogic != null) gameLogic.OnPlayerTurnChanged += HidePendingMove;
         }
 
-        if (gamePlayManager.currentGameState == GameState.Playing)
+        if (gamePlayManager?.currentGameState == GameState.Playing)
         {
             InitializeBoard();
         }
@@ -86,12 +88,15 @@ public class BoardManager : MonoBehaviour
         {
             gamePlayManager.OnGameStart -= InitializeBoard;
             gamePlayManager.OnGameEnd -= HideAllMarkers;
+            if (gameLogic != null) gameLogic.OnPlayerTurnChanged += HidePendingMove;
         }
     }
 
     void Update()
     {
         if (gamePlayManager.currentGameState != GameState.Playing) return;
+        if (GameModeManager.Mode == GameMode.MultiPlayer &&
+            gameLogic.GetCurrentTurnPlayer() == PlayerType.Opponent) return;
 
         HandleMouseInput();
     }
@@ -172,7 +177,32 @@ public class BoardManager : MonoBehaviour
 
     #endregion
 
-    #region 마우스 입력 및 착수 대기
+    #region 좌표 변환
+
+    /// <summary>
+    /// 월드 좌표를 보드 좌표로 변환
+    /// </summary>
+    private Vector2Int WorldToBoardPosition(Vector3 worldPos)
+    {
+        Vector3 localPos = worldPos - transform.position;
+        int x = Mathf.RoundToInt((localPos.x - boardOffset.x) / cellSize + (boardSize - 1) / 2.0f);
+        int y = Mathf.RoundToInt((boardSize - 1) / 2.0f - (localPos.y - boardOffset.y) / cellSize); // Y축 반전
+        return new Vector2Int(x, y);
+    }
+
+    /// <summary>
+    /// 보드 좌표를 월드 좌표로 변환
+    /// </summary>
+    public Vector3 BoardToWorldPosition(int x, int y)
+    {
+        float worldX = (x - (boardSize - 1) / 2.0f) * cellSize + boardOffset.x;
+        float worldY = ((boardSize - 1) / 2.0f - y) * cellSize + boardOffset.y; // Y축 반전
+        return transform.position + new Vector3(worldX, worldY, 0);
+    }
+
+    #endregion
+
+    #region 마우스 입력 처리
 
     /// <summary>
     /// 마우스 입력 처리
@@ -198,43 +228,11 @@ public class BoardManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 월드 좌표를 보드 좌표로 변환
-    /// </summary>
-    private Vector2Int WorldToBoardPosition(Vector3 worldPos)
-    {
-        Vector3 localPos = worldPos - transform.position;
-        int x = Mathf.RoundToInt((localPos.x - boardOffset.x) / cellSize + (boardSize - 1) / 2.0f);
-        int y = Mathf.RoundToInt((boardSize - 1) / 2.0f - (localPos.y - boardOffset.y) / cellSize); // Y축 반전
-        return new Vector2Int(x, y);
-    }
-
-    /// <summary>
     /// 유효한 위치인지 검사
     /// </summary>
     public bool IsValidPosition(int x, int y)
     {
         return x >= 0 && x < boardSize && y >= 0 && y < boardSize;
-    }
-
-    /// <summary>
-    /// 선택된 위치 마커 업데이트
-    /// </summary>
-    private void UpdateSelectedMarker(int x, int y)
-    {
-        if (gamePlayManager.currentGameState != GameState.Playing) return;
-
-        // 이미 돌이 놓인 위치는 마커 표시하지 않음
-        if (board[x, y] != StoneType.None)
-        {
-            selectedMarker?.SetActive(false);
-            return;
-        }
-
-        if (selectedMarker != null)
-        {
-            selectedMarker.transform.position = BoardToWorldPosition(x, y);
-            selectedMarker?.SetActive(true);
-        }
     }
 
     /// <summary>
@@ -293,14 +291,36 @@ public class BoardManager : MonoBehaviour
         return true;
     }
 
+    #endregion
+
+    #region 착수 대기
+
+    /// <summary>
+    /// 선택된 위치 마커 업데이트
+    /// </summary>
+    private void UpdateSelectedMarker(int x, int y)
+    {
+        if (gamePlayManager.currentGameState != GameState.Playing) return;
+
+        // 이미 돌이 놓인 위치는 마커 표시하지 않음
+        if (board[x, y] != StoneType.None)
+        {
+            selectedMarker?.SetActive(false);
+            return;
+        }
+
+        if (selectedMarker != null)
+        {
+            selectedMarker.transform.position = BoardToWorldPosition(x, y);
+            selectedMarker?.SetActive(true);
+        }
+    }
+
     /// <summary>
     /// 착수 대기 표시
     /// </summary>
     private void ShowPendingMove(int x, int y)
     {
-        if (GameModeManager.Mode == GameMode.MultiPlayer &&
-            gameLogic.GetCurrentTurnPlayer() == PlayerType.Opponent) return;
-
         // 돌 색상에 맞게 스프라이트 변경
         pendingMoveStoneRenderer.sprite =
             (gameLogic.GetCurrentStone() == StoneType.Black) ? blackStoneSprite : whiteStoneSprite;
@@ -309,13 +329,12 @@ public class BoardManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 보드 좌표를 월드 좌표로 변환
+    /// 착수 대기 표시를 지움
     /// </summary>
-    public Vector3 BoardToWorldPosition(int x, int y)
+    private void HidePendingMove(StoneType stoneType)
     {
-        float worldX = (x - (boardSize - 1) / 2.0f) * cellSize + boardOffset.x;
-        float worldY = ((boardSize - 1) / 2.0f - y) * cellSize + boardOffset.y; // Y축 반전
-        return transform.position + new Vector3(worldX, worldY, 0);
+        if (pendingMoveStone.activeSelf)
+            pendingMoveStone.SetActive(false);
     }
 
     #endregion
@@ -323,13 +342,8 @@ public class BoardManager : MonoBehaviour
     #region 착수
 
     /// <summary>
-    /// 착수 버튼에서 호출
+    /// 실제로 돌을 놓는 메서드
     /// </summary>
-    public void OnClickPlaceStone()
-    {
-        PlaceStone(pendingMove.x, pendingMove.y);
-    }
-
     public void PlaceStone()
     {
         PlaceStone(pendingMove.x, pendingMove.y);
@@ -365,7 +379,7 @@ public class BoardManager : MonoBehaviour
 
         if (GameModeManager.Mode == GameMode.MultiPlayer)
         {
-            gamePlayManager.multiplayManager.GoStone(x, y);
+            multiplayManager.GoStone(x, y);
         }
 
         OnPlaceStone?.Invoke(x, y); // 착수 이벤트 발생
@@ -452,15 +466,7 @@ public class BoardManager : MonoBehaviour
 
     #endregion
 
-
-    /// <summary>
-    /// 지정한 위치의 돌 타입 반환
-    /// </summary>
-    public StoneType GetStoneAt(int x, int y)
-    {
-        if (!IsValidPosition(x, y)) return StoneType.None;
-        return board[x, y];
-    }
+    #region 값 반환
 
     /// <summary>
     /// 현재 보드 상태 반환 (복사본)
@@ -472,12 +478,22 @@ public class BoardManager : MonoBehaviour
         return boardCopy;
     }
 
+    #endregion
+
+    #region AI용
+
+    /// <summary>
+    /// 지정한 위치의 돌 타입 반환
+    /// </summary>
+    public StoneType GetStoneAt(int x, int y)
+    {
+        if (!IsValidPosition(x, y)) return StoneType.None;
+        return board[x, y];
+    }
+
     /// <summary>
     /// 해당 위치에 돌이 없는지 확인
     /// </summary>
-    /// <param name="x"></param>
-    /// <param name="y"></param>
-    /// <returns></returns>
     public bool IsEmpty(int x, int y)
     {
         return IsValidPosition(x, y) && board[x, y] == StoneType.None;
@@ -486,10 +502,6 @@ public class BoardManager : MonoBehaviour
     /// <summary>
     /// 논리적 보드에 돌 정보 저장
     /// </summary>
-    /// <param name="x"></param>
-    /// <param name="y"></param>
-    /// <param name="stone"></param>
-    /// <exception cref="ArgumentOutOfRangeException"></exception>
     public void PlaceStone_Logical(int x, int y, StoneType stone)
     {
         if (!IsValidPosition(x, y))
@@ -500,7 +512,6 @@ public class BoardManager : MonoBehaviour
     /// <summary>
     /// 보드에 돌을 놓을 공간이 없는지 확인
     /// </summary>
-    /// <returns></returns>
     public bool IsBoardFull()
     {
         for (int x = 0; x < boardSize; x++)
@@ -516,4 +527,6 @@ public class BoardManager : MonoBehaviour
 
         return true;
     }
+
+    #endregion
 }
