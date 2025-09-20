@@ -80,16 +80,21 @@ public class GiboUIManager : Singleton<GiboUIManager>
         }
     }
 
+    /// <summary>
+    /// 현재 프로필 UI 업데이트
+    /// </summary>
+    /// <param name="curRecord"></param>
     private void UpdateProfileImage(GameRecord curRecord) 
     {
         // Todo: 자기거 띄우기
-
+        GameManager gameManager = GameManager.Instance;
+        leftProfile_Image.sprite = gameManager.profileImage == 1 ? panda : red_panda;
+        leftProfile_Grade.text = curRecord.otherRank == 0 ? $"{gameManager.nickname}": $"{gameManager.grade}급 {gameManager.nickname}";
         // 상대방 정보 띄우기
         rightProfile_Image.sprite = curRecord.otherProfileImage == 1 ? panda :
                              (curRecord.otherProfileImage == 2 ? red_panda : null);
-        rightProfile_Grade.text = $"{curRecord.otherRank}급 {curRecord.otherPlayerNickname}";
+        rightProfile_Grade.text = curRecord.otherRank == 0 ? $"{curRecord.otherPlayerNickname}": $"{curRecord.otherRank}급 {curRecord.otherPlayerNickname}";
 
     }
-
 
 }

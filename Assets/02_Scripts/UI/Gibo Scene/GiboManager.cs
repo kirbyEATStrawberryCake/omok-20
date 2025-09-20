@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// 게임 단위로 시작 시간이 키 값으로 저장됨. ( 게임 씬에서 사용 )
@@ -11,7 +12,6 @@ using UnityEngine;
 [Serializable]
 public class MoveData // 돌 움직임
 {
-    public int turn;          // 몇 번째 수
     public int stoneColor;    // 1 - "black" or 2 - "white"
     public int x;             // 좌표 X
     public int y;             // 좌표 Y
@@ -34,23 +34,50 @@ public class GiboIndex // 기보 목록
     public List<string> startTimes = new List<string>();
 }
 
-public class GiboManager : MonoBehaviour
+public class GiboManager : Singleton<GiboManager>
 {
     private const string INDEX_KEY = "Gibo_Index";
 
+    private GameRecord curRecord;
+
+    public void StartNewRecord()
+    {
+        curRecord = new GameRecord
+        {
+            startTime = DateTime.Now.ToString("yyyyMMdd_HHmmss"),
+            displayTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+            otherPlayerNickname = "플레이어 2",
+            otherProfileImage = 2,
+            otherRank = 0,
+            moves = new List<MoveData>()
+        };
+    }
+
+    public void SetGiboProfileData(string nickname, int profileImg, int rank)
+    {
+        curRecord.otherPlayerNickname = nickname;
+        curRecord.otherProfileImage = profileImg;
+        curRecord.otherRank = rank;
+    }
+    public void AddMove(MoveData move)
+    {
+        if (curRecord == null) return;
+
+        curRecord.moves.Add(move);
+    }
+
+
     #region 저장 및 불러오기
+    public void SaveCurrentRecord()
+    {
+        if (curRecord == null) return;
+
+        SaveRecord(curRecord);
+    }
 
     // 새로운 기록 저장
     public static void SaveRecord(GameRecord record)
     {
-        if (string.IsNullOrEmpty(record.startTime))
-        {
-            // 저장용 안전 키
-            record.startTime = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            // 화면 표시용
-            record.displayTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-        }
-
         string key = record.startTime;
         string json = JsonUtility.ToJson(record, true);
         PlayerPrefs.SetString(key, json);
@@ -98,7 +125,7 @@ public class GiboManager : MonoBehaviour
 
     #region 인덱스 관리
 
-    private static GiboIndex LoadIndex()
+    public static GiboIndex LoadIndex()
     {
         if (PlayerPrefs.HasKey(INDEX_KEY))
         {
@@ -108,7 +135,7 @@ public class GiboManager : MonoBehaviour
         return new GiboIndex();
     }
 
-    private static void SaveIndex(GiboIndex index)
+    public static void SaveIndex(GiboIndex index)
     {
         string json = JsonUtility.ToJson(index, true);
         PlayerPrefs.SetString(INDEX_KEY, json);
@@ -146,6 +173,10 @@ public class GiboManager : MonoBehaviour
         PlayerPrefs.DeleteKey(INDEX_KEY);
         PlayerPrefs.Save();
         Debug.Log("모든 기보 삭제 완료");
+    }
+
+    protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
+    {
     }
 
     #endregion

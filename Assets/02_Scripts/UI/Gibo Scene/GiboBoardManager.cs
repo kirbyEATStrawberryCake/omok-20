@@ -47,8 +47,7 @@ public class GiboBoardManager : MonoBehaviour
     private void Awake()
     {
         InitializeBoard();
-        CreateTestRecord();
-        //LoadSelectedRecord();
+        LoadSelectedRecord();
     }
 
     #endregion
@@ -214,6 +213,7 @@ public class GiboBoardManager : MonoBehaviour
             Debug.LogError($"기보를 찾을 수 없습니다: {gameId}");
             return;
         }
+        Debug.Log(currentRecord.otherPlayerNickname + " " + currentRecord.otherProfileImage + " " + currentRecord.otherRank);
 
         // 초기화: 보드 비우기
         ClearBoard();
@@ -221,28 +221,6 @@ public class GiboBoardManager : MonoBehaviour
         OnProfileImage?.Invoke(currentRecord);
     }
 
-    private void CreateTestRecord()
-    {
-        // 테스트용 ID 설정
-        SelectedGiboGameId.selectedGameId = "20250919_120000";
-
-        // 테스트용 GameRecord 생성
-        currentRecord = new GameRecord
-        {
-            startTime = "20250919_120000", // 키 값용
-            displayTime = "2025-09-19 12:00", // 화면 표시용
-            otherPlayerNickname = "홍길동",
-            otherRank = 3,
-            otherProfileImage = 1,
-            moves = new System.Collections.Generic.List<MoveData>()
-        };
-
-        currentRecord.moves.Add(new MoveData { turn = 1, stoneColor = 1, x = 7, y = 7 }); // 흑 중앙
-        currentRecord.moves.Add(new MoveData { turn = 2, stoneColor = 2, x = 7, y = 8 }); // 백 아래
-        currentRecord.moves.Add(new MoveData { turn = 3, stoneColor = 1, x = 8, y = 8 }); // 흑 대각
-        currentRecord.moves.Add(new MoveData { turn = 4, stoneColor = 2, x = 6, y = 7 }); // 백 왼쪽
-        currentRecord.moves.Add(new MoveData { turn = 5, stoneColor = 1, x = 8, y = 7 }); // 흑 오른쪽
-    }
 
     #region 버튼 이벤트 (처음 / 이전 / 다음 / 끝)
 
@@ -271,7 +249,12 @@ public class GiboBoardManager : MonoBehaviour
         currentMoveIndex++;
         MoveData move = currentRecord.moves[currentMoveIndex];
         PlaceStoneVisual(move.x, move.y, move.stoneColor == 1 ? StoneType.Black : StoneType.White);
-        OnButtonChanged?.Invoke(currentMoveIndex);
+        if(currentMoveIndex == currentRecord.moves.Count -1)
+            OnButtonChanged?.Invoke(-2);
+        else
+        {
+            OnButtonChanged?.Invoke(currentMoveIndex);
+        }
     }
 
     public void OnClickLast()

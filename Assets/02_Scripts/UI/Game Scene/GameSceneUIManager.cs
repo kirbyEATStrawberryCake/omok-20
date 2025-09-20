@@ -56,6 +56,8 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
 
     private MatchData opponentData;
 
+    private GiboManager giboManager;
+
     protected override void Awake()
     {
         base.Awake();
@@ -74,12 +76,18 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
     {
         gamePlayManager = GamePlayManager.Instance;
         multiplayManager = MultiplayManager.Instance;
+        giboManager = GiboManager.Instance;
+        giboManager.StartNewRecord(); // 새 기보 데이터 생성
 
         if (gamePlayManager != null)
         {
             gamePlayManager.OnGameEnd += OpenEndGamePanelInSinglePlay;
             gamePlayManager.OnGameEnd += UpdateProfileImagesOnResult;
+            gamePlayManager.OnGameEnd += SaveGibo;
+            
             gamePlayManager.OnGameRestart += ResetProfileImage;
+            gamePlayManager.OnGameRestart += StartGibo;
+
 
             if (gamePlayManager?.GameLogicController != null)
             {
@@ -109,7 +117,9 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
         {
             gamePlayManager.OnGameEnd -= OpenEndGamePanelInSinglePlay;
             gamePlayManager.OnGameEnd -= UpdateProfileImagesOnResult;
+            gamePlayManager.OnGameEnd -= SaveGibo;
             gamePlayManager.OnGameRestart -= ResetProfileImage;
+            gamePlayManager.OnGameRestart -= StartGibo;
 
             if (gamePlayManager?.GameLogicController != null)
             {
@@ -362,11 +372,13 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
             opponentData = MultiplayManager.Instance.MatchData;
             rightProfileImage.sprite = opponentData.profileImage == 1 ? pandaSprite : redPandaSprite;
             player2GradeAndNickname.text = $"{opponentData.grade}급 {opponentData.nickname}";
+            giboManager.SetGiboProfileData(opponentData.nickname, opponentData.profileImage, opponentData.grade);
         }
         else if (GameModeManager.Mode == GameMode.AI)
         {
             rightProfileImage.sprite = gameManager.profileImage == 1 ? redPandaSprite : pandaSprite;
-            // TODO: AI 랜덤이름?
+            // TODO: AI 랜덤이름? -> 일단 값은 고정적으로 세팅했습니다!
+            giboManager.SetGiboProfileData("AI1", 2, 10);
         }
     }
 
@@ -485,6 +497,18 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
     }
 
     #endregion
+
+    // 게임 종료 시, 기보 저장 함수 호출
+    private void SaveGibo(GameResult result)
+    {
+        giboManager.SaveCurrentRecord();
+    }
+
+    // 재대국 시, 기보 생성 함수 호출
+    private void StartGibo()
+    {
+        giboManager.StartNewRecord();
+    }
 
     /// <summary>
     /// 항복 버튼을 눌렀을 때 호출되는 메소드

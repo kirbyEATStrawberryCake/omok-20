@@ -9,6 +9,7 @@ public class BoardManager : MonoBehaviour
     private GamePlayManager gamePlayManager;
     private GameSceneUIManager uiManager;
     private MultiplayManager multiplayManager;
+    private GiboManager giboManager;
     private RenjuRule renjuRule;
     private GameLogicController gameLogic;
 
@@ -54,6 +55,7 @@ public class BoardManager : MonoBehaviour
     public event UnityAction<int, int> OnPlaceStone;
     public event UnityAction<string, bool> ViolateRenjuRule;
 
+
     #region 유니티 이벤트
 
     private void Awake()
@@ -65,6 +67,7 @@ public class BoardManager : MonoBehaviour
     {
         mainCamera = Camera.main;
         gamePlayManager = GamePlayManager.Instance;
+        giboManager = GiboManager.Instance;
         uiManager = gamePlayManager?.UIManager;
         gameLogic = gamePlayManager?.GameLogicController;
         renjuRule = gamePlayManager?.RenjuRule;
@@ -414,6 +417,9 @@ public class BoardManager : MonoBehaviour
         UpdateLastMoveMarker(x, y);
         if (gamePlayManager.ShowForbiddenPositions && gamePlayManager.IsRenjuModeEnabled)
             UpdateForbiddenPositions();
+
+        MoveData move = new MoveData { x = x, y = y, stoneColor = stoneType == StoneType.Black ? 1 : 2};
+        giboManager.AddMove(move);
     }
 
     #endregion
