@@ -4,7 +4,12 @@ using UnityEngine;
 
 public class AuthManager : MonoBehaviour
 {
-    private NetworkManager networkManager => NetworkManager.Instance;
+    private NetworkManager networkManager;
+
+    private void Start()
+    {
+        networkManager = NetworkManager.Instance;
+    }
 
     /// <summary>
     /// 회원가입 요청

@@ -1,8 +1,16 @@
 using System;
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
+
+public enum GameResultButtonType
+{
+    Rematch,
+    Exit,
+    All
+}
 
 public class GameResultPanel : MonoBehaviour
 {
@@ -29,6 +37,11 @@ public class GameResultPanel : MonoBehaviour
     [SerializeField] private TextMeshProUGUI changedPoint;
     [SerializeField] private TextMeshProUGUI pointsToNextLevel;
 
+
+    private void InitPanel()
+    {
+        rematchButton.interactable = true;
+    }
 
     private void SetButtonEvent(UnityAction onClickExit, UnityAction onClickRematch)
     {
@@ -116,6 +129,7 @@ public class GameResultPanel : MonoBehaviour
     public void OpenWithButtonEvent(GameResult result, Action onClickExit,
         Action onClickRematch)
     {
+        InitPanel();
         SetMessage(result);
         SetButtonEvent(() =>
         {
@@ -139,6 +153,7 @@ public class GameResultPanel : MonoBehaviour
     public void OpenWithButtonEvent(GameResultResponse response, GameResult result, Action onClickExit,
         Action onClickRematch)
     {
+        InitPanel();
         SetMessage(result);
         SetPoint(response);
         SetButtonEvent(() =>
@@ -147,9 +162,53 @@ public class GameResultPanel : MonoBehaviour
             gameObject.SetActive(false);
         }, () =>
         {
+            DisableRematchButton();
             onClickRematch?.Invoke();
-            gameObject.SetActive(false);
         });
         gameObject.SetActive(true);
+    }
+
+    public void OpenWithButtonEvent(GameResultButtonType buttonType, float delay, GameResultResponse response,
+        GameResult result, Action onClickExit,
+        Action onClickRematch)
+    {
+        switch (buttonType)
+        {
+            case GameResultButtonType.Rematch:
+                rematchButton.interactable = false;
+                break;
+            case GameResultButtonType.Exit:
+                exitButton.interactable = false;
+                break;
+            case GameResultButtonType.All:
+                rematchButton.interactable = false;
+                exitButton.interactable = false;
+                break;
+        }OpenWithButtonEvent(response, result, onClickExit, onClickRematch);
+        StartCoroutine(EnableButtonWithDelay(buttonType, delay));
+    }
+
+    private IEnumerator EnableButtonWithDelay(GameResultButtonType buttonType, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        switch (buttonType)
+        {
+            case GameResultButtonType.Rematch:
+                rematchButton.interactable = true;
+                break;
+            case GameResultButtonType.Exit:
+                exitButton.interactable = true;
+                break;
+            case GameResultButtonType.All:
+                rematchButton.interactable = true;
+                exitButton.interactable = true;
+                break;
+        }
+    }
+
+    public void DisableRematchButton()
+    {
+        rematchButton.interactable = false;
     }
 }

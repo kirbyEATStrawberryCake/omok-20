@@ -3,13 +3,18 @@ using UnityEngine;
 
 public class RankingUI : MonoBehaviour
 {
-    private MainSceneUIManager mainSceneUIManager => MainSceneUIManager.Instance;
+    private MainSceneUIManager mainSceneUIManager;
 
     [SerializeField] [Tooltip("랭킹 정보가 들어갈 오브젝트")]
     private GameObject rankingItemPrefab;
 
     [SerializeField] [Tooltip("랭킹이 표시될 부모 오브젝트 트랜스폼(Content)")]
     private Transform rankingContentObject;
+
+    private void Start()
+    {
+        mainSceneUIManager = MainSceneUIManager.Instance;
+    }
 
     private void OnEnable()
     {

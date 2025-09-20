@@ -4,9 +4,10 @@ using UnityEngine.UI;
 
 public class SignUpUI : MonoBehaviour
 {
-    private LoginSceneUIManager loginSceneUIManager => LoginSceneUIManager.Instance;
+    private LoginSceneUIManager loginSceneUIManager;
 
-    [Header("Input Fields")] [SerializeField] [Tooltip("유저 ID(이메일) InputField")]
+    [Header("Input Fields")]
+    [SerializeField] [Tooltip("유저 ID(이메일) InputField")]
     private TMP_InputField usernameInput;
 
     [SerializeField] [Tooltip("패스워드 InputField")]
@@ -18,7 +19,8 @@ public class SignUpUI : MonoBehaviour
     [SerializeField] [Tooltip("닉네임 InputField")]
     private TMP_InputField nicknameInput;
 
-    [Header("프로필 이미지")] [SerializeField] [Tooltip("판다 이미지(프로필 이미지)")]
+    [Header("프로필 이미지")]
+    [SerializeField] [Tooltip("판다 이미지(프로필 이미지)")]
     private Image pandaImage;
 
     [SerializeField] [Tooltip("레드 판다 이미지(프로필 이미지)")]
@@ -37,6 +39,11 @@ public class SignUpUI : MonoBehaviour
 
     // private string selectedProfile = ""; // 선택된 프로필사진 ("panda" or "red_panda")
     private int selectedProfile = 0; // 선택된 프로필사진(0 : Panda, 1 : Panda, 2 : Red Panda)
+
+    private void Start()
+    {
+        loginSceneUIManager = LoginSceneUIManager.Instance;
+    }
 
     private void OnEnable()
     {

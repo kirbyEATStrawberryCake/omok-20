@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class RenjuRule : MonoBehaviour
@@ -7,8 +8,8 @@ public class RenjuRule : MonoBehaviour
     public bool showForbiddenPositions = false; // �ݼ� ��ġ �ð��� ǥ�� ����
 
     // �Ŵ��� ���� (ȿ������ ����)
-    private GamePlayManager gamePlayManager => GamePlayManager.Instance;
-    private BoardManager boardManager => gamePlayManager.boardManager;
+    private GamePlayManager gamePlayManager;
+    private BoardManager boardManager;
 
     // 8���� ���� (�����¿�, �밢��)
     private readonly int[,] directions = {
@@ -17,9 +18,10 @@ public class RenjuRule : MonoBehaviour
         {1, -1},  {1, 0},  {1, 1}     // ���� �Ʒ�, �Ʒ�, ������ �Ʒ�
     };
 
-    void Start()
+    private void Start()
     {
-        // �ʱ�ȭ�� GameManager���� ȣ���ϹǷ� ���⼭�� ���� ����
+        gamePlayManager = GamePlayManager.Instance;
+        boardManager = gamePlayManager?.boardManager;
     }
 
     /// <summary>

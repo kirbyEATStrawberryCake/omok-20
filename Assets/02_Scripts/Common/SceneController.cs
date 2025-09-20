@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -9,7 +10,7 @@ public enum SceneType
 }
 
 /// <summary>
-/// ¾À ÀüÈ¯À» °ü¸®ÇÏ´Â ½Ì±ÛÅÏ ÄÁÆ®·Ñ·¯
+/// ì”¬ ì „í™˜ì„ ê´€ë¦¬í•˜ëŠ” ì‹±ê¸€í„´ ì»¨íŠ¸ë¡¤ëŸ¬
 /// </summary>
 public class SceneController : Singleton<SceneController>
 {
@@ -23,8 +24,21 @@ public class SceneController : Singleton<SceneController>
     {
     }
 
-    public static void LoadScene(SceneType sceneType)
+    public static void LoadScene(SceneType sceneType, float delay = 0)
     {
+        if (delay > 0)
+            Instance.StartCoroutine(Instance.LoadSceneWithDelay(sceneType, delay));
+        else
+            SceneManager.LoadScene((int)sceneType);
+    }
+
+    private IEnumerator LoadSceneWithDelay(SceneType sceneType, float delay)
+    {
+        // ë”œë ˆì´ ëŒ€ê¸°
+        yield return new WaitForSeconds(delay);
+
+        // í•œ í”„ë ˆì„ ë” ëŒ€ê¸° (OnDestroy ì™„ë£Œ ë³´ì¥)
+        yield return null;
         SceneManager.LoadScene((int)sceneType);
     }
 }

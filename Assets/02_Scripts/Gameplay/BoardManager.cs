@@ -6,10 +6,10 @@ using UnityEngine.Events;
 
 public class BoardManager : MonoBehaviour
 {
-    private GamePlayManager gamePlayManager => GamePlayManager.Instance;
-    private RenjuRule renjuRule => gamePlayManager.renjuRule;
-    private GameLogic gameLogic => gamePlayManager.gameLogic;
-    private GameSceneUIManager uiManager => GameSceneUIManager.Instance;
+    private GamePlayManager gamePlayManager;
+    private RenjuRule renjuRule;
+    private GameLogicController gameLogic;
+    private GameSceneUIManager uiManager;
 
     [Header("Sprites")]
     [SerializeField] private Sprite blackStoneSprite; // 흑돌 스프라이트
@@ -51,25 +51,42 @@ public class BoardManager : MonoBehaviour
 
     // 위치가 선택되었을 때 발생하는 이벤트
     public event UnityAction<int, int> OnPlaceStone;
+    public event UnityAction<string, bool> ViolateRenjuRule;
 
     #region 유니티 이벤트
 
     private void Awake()
     {
-        mainCamera = Camera.main;
         pendingMoveStoneRenderer = pendingMoveStone.GetComponent<SpriteRenderer>();
     }
 
-    void OnEnable()
+    void Start()
     {
-        gamePlayManager.OnGameStart += InitializeBoard;
-        gamePlayManager.OnGameEnd += HideAllMarkers;
+        mainCamera = Camera.main;
+        gamePlayManager = GamePlayManager.Instance;
+        gameLogic = gamePlayManager?.gameLogicController;
+        uiManager = GameSceneUIManager.Instance;
+        renjuRule = gamePlayManager?.renjuRule;
+
+        if (gamePlayManager != null)
+        {
+            gamePlayManager.OnGameStart += InitializeBoard;
+            gamePlayManager.OnGameEnd += HideAllMarkers;
+        }
+
+        if (gamePlayManager.currentGameState == GameState.Playing)
+        {
+            InitializeBoard();
+        }
     }
 
     private void OnDisable()
     {
-        gamePlayManager.OnGameStart -= InitializeBoard;
-        gamePlayManager.OnGameEnd -= HideAllMarkers;
+        if (gamePlayManager != null)
+        {
+            gamePlayManager.OnGameStart -= InitializeBoard;
+            gamePlayManager.OnGameEnd -= HideAllMarkers;
+        }
     }
 
     void Update()
@@ -86,18 +103,21 @@ public class BoardManager : MonoBehaviour
     /// <summary>
     /// 오목판 초기화
     /// </summary>
-    private void InitializeBoard()
+    public void InitializeBoard()
     {
-        // 배열 초기화
-        board = new StoneType[boardSize, boardSize];
-        stoneObjects = new GameObject[boardSize, boardSize];
-        forbiddenMarkers = new List<GameObject>();
-
-        pendingMove = Vector2Int.zero;
-        hasPendingMove = false;
+        if (board == null)
+        {
+            board = new StoneType[boardSize, boardSize];
+            stoneObjects = new GameObject[boardSize, boardSize];
+            forbiddenMarkers = new List<GameObject>();
+        }
 
         // 기존 오브젝트들 제거
         ClearBoard();
+
+        pendingMove = Vector2Int.zero;
+        hasPendingMove = false;
+        hoveredPosition = new Vector2Int(-1, -1);
     }
 
     /// <summary>
@@ -210,8 +230,11 @@ public class BoardManager : MonoBehaviour
             return;
         }
 
-        selectedMarker.transform.position = BoardToWorldPosition(x, y);
-        selectedMarker?.SetActive(true);
+        if (selectedMarker != null)
+        {
+            selectedMarker.transform.position = BoardToWorldPosition(x, y);
+            selectedMarker?.SetActive(true);
+        }
     }
 
     /// <summary>
@@ -221,11 +244,11 @@ public class BoardManager : MonoBehaviour
     {
         if (gamePlayManager.currentGameState != GameState.Playing) return;
         if (!IsValidPosition(x, y)) return;
-        if (GamePlayManager.Instance.IsCurrentTurnAI())
+        /*if (GamePlayManager.Instance.IsCurrentTurnAI())
         {
             Debug.Log("AI 차례일 때는 플레이어의 마우스 입력을 무시합니다.");
             // 여기에 AI 차례일때는 플레이어의 마우스 입력을 무시하도록 하는 내용이 필요합니다..!
-        }
+        }*/
 
         // 해당 위치에 돌을 놓을 수 있는지 검사
         if (CanPlaceStone(x, y))
@@ -257,11 +280,12 @@ public class BoardManager : MonoBehaviour
         if (board[x, y] != StoneType.None) return false;
 
         // 렌주룰 검사 (흑돌인 경우만)
-        if (gamePlayManager.IsRenjuModeEnabled && gameLogic.currentStone == StoneType.Black)
+        if (gamePlayManager.IsRenjuModeEnabled && gameLogic.GetCurrentStone() == StoneType.Black)
         {
-            if (!renjuRule.IsValidMove(x, y, gameLogic.currentStone, board))
+            if (!renjuRule.IsValidMove(x, y, gameLogic.GetCurrentStone(), board))
             {
-                uiManager.OpenOneConfirmButtonPopup("렌주룰 위반으로 해당 위치에 돌을 놓을 수 없습니다.");
+                string message = "렌주룰 위반으로 해당 위치에 돌을 놓을 수 없습니다.";
+                ViolateRenjuRule?.Invoke(message, false);
                 return false;
             }
         }
@@ -274,11 +298,12 @@ public class BoardManager : MonoBehaviour
     /// </summary>
     private void ShowPendingMove(int x, int y)
     {
-        if (GameModeManager.Mode == GameMode.MultiPlayer && gameLogic.currentTurnPlayer == PlayerType.Opponent) return;
+        if (GameModeManager.Mode == GameMode.MultiPlayer &&
+            gameLogic.GetCurrentTurnPlayer() == PlayerType.Opponent) return;
 
         // 돌 색상에 맞게 스프라이트 변경
         pendingMoveStoneRenderer.sprite =
-            (gameLogic.currentStone == StoneType.Black) ? blackStoneSprite : whiteStoneSprite;
+            (gameLogic.GetCurrentStone() == StoneType.Black) ? blackStoneSprite : whiteStoneSprite;
         pendingMoveStone.transform.position = BoardToWorldPosition(x, y);
         pendingMoveStone.SetActive(true);
     }
@@ -305,12 +330,18 @@ public class BoardManager : MonoBehaviour
         PlaceStone(pendingMove.x, pendingMove.y);
     }
 
+    public void PlaceStone()
+    {
+        PlaceStone(pendingMove.x, pendingMove.y);
+    }
+
     /// <summary>
     /// 실제로 돌을 놓는 메서드
     /// </summary>
     public void PlaceStone(int x, int y)
     {
-        if (GameModeManager.Mode == GameMode.MultiPlayer && gameLogic.currentTurnPlayer == PlayerType.Opponent) return;
+        if (GameModeManager.Mode == GameMode.MultiPlayer &&
+            gameLogic.GetCurrentTurnPlayer() == PlayerType.Opponent) return;
         if (!hasPendingMove) return;
 
         if (!CanPlaceStone(x, y))
@@ -321,7 +352,7 @@ public class BoardManager : MonoBehaviour
         }
 
         // 논리적 보드에 돌 정보 저장
-        var stoneType = gameLogic.currentStone;
+        var stoneType = gameLogic.GetCurrentStone();
         board[x, y] = stoneType;
 
         // 시각적 돌 스프라이트 생성 및 마지막 수 마커 업데이트 
@@ -348,7 +379,7 @@ public class BoardManager : MonoBehaviour
         if (!CanPlaceStone(x, y)) return;
 
         // 논리적 보드에 돌 정보 저장
-        var opponentStoneType = gameLogic.currentStone;
+        var opponentStoneType = gameLogic.GetCurrentStone();
         board[x, y] = opponentStoneType;
 
         PlaceStoneVisual(x, y, opponentStoneType);
@@ -440,7 +471,7 @@ public class BoardManager : MonoBehaviour
         Array.Copy(board, boardCopy, board.Length);
         return boardCopy;
     }
-    
+
     /// <summary>
     /// 해당 위치에 돌이 없는지 확인
     /// </summary>
@@ -451,7 +482,7 @@ public class BoardManager : MonoBehaviour
     {
         return IsValidPosition(x, y) && board[x, y] == StoneType.None;
     }
-    
+
     /// <summary>
     /// 논리적 보드에 돌 정보 저장
     /// </summary>
@@ -482,6 +513,7 @@ public class BoardManager : MonoBehaviour
                 }
             }
         }
+
         return true;
     }
 }
