@@ -19,11 +19,11 @@ public class GameLogic
         { 1, -1 }, { 1, 0 }, { 1, 1 }
     };
 
-    private GamePlayManager gamePlayManager => GamePlayManager.Instance;
-    private BoardManager boardManager => gamePlayManager.boardManager;
-    private GomokuAIDebugger gomokuAIDebugger => gamePlayManager.gomokuAIDebugger;
-    private RenjuRule renjuRule => gamePlayManager.renjuRule;
-    private MultiplayManager multiplayManager => gamePlayManager.multiplayManager;
+    private GamePlayManager gamePlayManager;
+    private BoardManager boardManager;
+    private GomokuAIDebugger gomokuAIDebugger;
+    private RenjuRule renjuRule;
+    private MultiplayManager multiplayManager;
     public StoneType currentStone { get; private set; } // 현재 차례인 돌 타입 (항상 흑돌부터 시작)
     private PlayerType blackStonePlayer; // 흑돌을 가진 플레이어
     private PlayerType whiteStonePlayer; // 백돌을 가진 플레이어
@@ -37,25 +37,47 @@ public class GameLogic
     // 이벤트 구독을 위한 초기화 메서드
     public void Initialize()
     {
-        gamePlayManager.OnGameStart += RandomizePlayerStones;
         // GomokuAI에게 StoneType을 반환하기 위해 작성했습니다.
         // 멀티플레이일 때는 실행되지 않고, 싱글플레이일 때만 실행하도록 조건문 처리가 필요합니다.
-        if (GameModeManager.Mode == GameMode.SinglePlayer)
+        // if (GameModeManager.Mode == GameMode.SinglePlayer)
+        // {
+        //     StoneType aiStone = blackStonePlayer == PlayerType.AI ? StoneType.Black : StoneType.White;
+        //     gomokuAIDebugger.InstantiateGomokuAI(boardManager, aiStone);
+        // }
+        // Debug.Log("boardManager" + boardManager);
+        gamePlayManager = GamePlayManager.Instance;
+        boardManager = gamePlayManager?.boardManager;
+        gomokuAIDebugger = gamePlayManager?.gomokuAIDebugger;
+        renjuRule = gamePlayManager?.renjuRule;
+        multiplayManager = gamePlayManager?.multiplayManager;
+
+        if (gamePlayManager != null)
         {
-            StoneType aiStone = blackStonePlayer == PlayerType.AI ? StoneType.Black : StoneType.White;
-            gomokuAIDebugger.InstantiateGomokuAI(boardManager, aiStone);
+            gamePlayManager.OnGameStart += RandomizePlayerStones;
+            gamePlayManager.OnGameRestart += ResetGame;
         }
-        Debug.Log("boardManager" + boardManager);
-        boardManager.OnPlaceStone += CheckWinCondition;
-        boardManager.OnPlaceStone += SwitchPlayer;
+
+        if (boardManager != null)
+        {
+            boardManager.OnPlaceStone += CheckWinCondition;
+            boardManager.OnPlaceStone += SwitchPlayer;
+        }
     }
 
     // 이벤트 구독 해제를 위한 정리 메서드
     public void Cleanup()
     {
-        gamePlayManager.OnGameStart -= RandomizePlayerStones;
-        boardManager.OnPlaceStone -= CheckWinCondition;
-        boardManager.OnPlaceStone -= SwitchPlayer;
+        if (gamePlayManager != null)
+        {
+            gamePlayManager.OnGameStart -= RandomizePlayerStones;
+            gamePlayManager.OnGameRestart -= ResetGame;
+        }
+
+        if (boardManager != null)
+        {
+            boardManager.OnPlaceStone -= CheckWinCondition;
+            boardManager.OnPlaceStone -= SwitchPlayer;
+        }
     }
 
     /// <summary>
@@ -87,14 +109,14 @@ public class GameLogic
             if (Random.Range(0, 2) == 0)
             {
                 blackStonePlayer = PlayerType.Player1;
-                whiteStonePlayer = PlayerType.AI;
+                whiteStonePlayer = PlayerType.Player2;
                 Debug.Log("싱글플레이: Player1이 선공 (흑돌)");
             }
             else
             {
-                blackStonePlayer = PlayerType.AI;
+                blackStonePlayer = PlayerType.Player2;
                 whiteStonePlayer = PlayerType.Player1;
-                Debug.Log("싱글플레이: AI가 선공 (흑돌)");
+                Debug.Log("싱글플레이: Player2가 선공 (흑돌)");
             }
         }
 
@@ -218,5 +240,11 @@ public class GameLogic
         {
             return (whiteStonePlayer == PlayerType.Player1) ? GameResult.Player1Win : GameResult.Player2Win;
         }
+    }
+
+    public void ResetGame()
+    {
+        currentStone = StoneType.Black;
+        currentTurnPlayer = blackStonePlayer;
     }
 }

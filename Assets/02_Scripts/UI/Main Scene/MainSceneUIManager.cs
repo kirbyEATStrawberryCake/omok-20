@@ -5,11 +5,10 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-[RequireComponent(typeof(StatsManager))]
 public class MainSceneUIManager : Singleton<MainSceneUIManager>
 {
-    [Header("유저 정보")] [SerializeField] [Tooltip("프로필 오브젝트")]
-    private GameObject profileObject;
+    [Header("유저 정보")]
+    [SerializeField] [Tooltip("프로필 오브젝트")] private GameObject profileObject;
 
     [Space(10)] [SerializeField] [Tooltip("프로필 이미지")]
     private Image profileImage;
@@ -25,7 +24,8 @@ public class MainSceneUIManager : Singleton<MainSceneUIManager>
     public string nickname { get; private set; }
     public int grade { get; private set; }
 
-    [Header("패널")] [SerializeField] [Tooltip("메인 씬에서 사용할 패널들")]
+    [Header("패널")]
+    [SerializeField] [Tooltip("메인 씬에서 사용할 패널들")]
     private List<GameObject> mainScenePanels;
 
     /*
@@ -39,7 +39,8 @@ public class MainSceneUIManager : Singleton<MainSceneUIManager>
      */
     [SerializeField] [Tooltip("메인 패널")] private GameObject mainPanel;
 
-    [Header("팝업")] [SerializeField] [Tooltip("메인 씬에서 사용할 버튼 1개짜리 팝업")]
+    [Header("팝업")]
+    [SerializeField] [Tooltip("메인 씬에서 사용할 버튼 1개짜리 팝업")]
     private GameObject oneButtonPopupPanel;
 
     [SerializeField] [Tooltip("메인 씬에서 사용할 버튼 2개짜리 팝업")]
@@ -57,21 +58,14 @@ public class MainSceneUIManager : Singleton<MainSceneUIManager>
     protected override void Awake()
     {
         base.Awake();
-        statsManager = GetComponent<StatsManager>();
         oneButtonPopup = oneButtonPopupPanel.GetComponent<OneButtonPanel>();
         twoButtonPopup = twoButtonPopupPanel.GetComponent<TwoButtonPanel>();
     }
 
     private void Start()
     {
-        // 테스트용
-        // AuthManager authManager = gameObject.AddComponent<AuthManager>();
-        // authManager.SignIn(username, password, () => { Debug.Log("로그인 성공"); }, (error) => { Debug.Log("로그인 실패"); });
-    }
+        statsManager = NetworkManager.Instance.statsManager;
 
-    protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
-    {
-        if(scene.name != "Main_Scene") return;
         // 메인 씬 호출 시 유저 정보를 가져와서 띄워줌
         statsManager.GetUserInfo((response) =>
             {
@@ -80,7 +74,8 @@ public class MainSceneUIManager : Singleton<MainSceneUIManager>
                 grade = response.grade;
 
                 gradeAndNickname.text = $"{grade}급 {nickname}";
-                GameManager.Instance.SetUserInfo(response.username, response.nickname, response.grade, response.profileImage);
+                GameManager.Instance.SetUserInfo(response.username, response.nickname, response.grade,
+                    response.profileImage);
             },
             (errorType) =>
             {
@@ -98,6 +93,11 @@ public class MainSceneUIManager : Singleton<MainSceneUIManager>
                         break;
                 }
             });
+    }
+
+    protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
+    {
+        if (scene.name != "Main_Scene") return;
 
         // 메인 씬 호출 시 메인 패널을 띄워줌
         OpenMainPanel();
@@ -108,13 +108,13 @@ public class MainSceneUIManager : Singleton<MainSceneUIManager>
     /// </summary>
     /// <param name="panelToOpen">열고자 하는 패널의 GameObject</param>
     public void OpenPanel(GameObject panelToOpen)
-    { 
+    {
         foreach (GameObject panel in mainScenePanels)
         {
             // 만약 현재 패널이 열고자 하는 패널이라면 활성화하고, 아니라면 비활성화
             panel.SetActive(panel == panelToOpen);
         }
-        
+
         int openedPanelIndex = mainScenePanels.IndexOf(panelToOpen);
 
         // 메인 패널이나 게임플레이 패널일때만 profileObject를 활성화
@@ -131,6 +131,7 @@ public class MainSceneUIManager : Singleton<MainSceneUIManager>
         {
             mainScenePanels[i].SetActive(i == 0);
         }
+
         profileObject.SetActive(true);
     }
 

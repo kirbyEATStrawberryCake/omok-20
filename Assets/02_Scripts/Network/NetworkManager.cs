@@ -4,10 +4,18 @@ using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 
+[RequireComponent(typeof(AuthManager))]
+[RequireComponent(typeof(StatsManager))]
+[RequireComponent(typeof(PointsManager))]
 public class NetworkManager : Singleton<NetworkManager>
 {
     public const string ServerURL = "http://localhost:3000";
     public const string SocketServerURL = "ws://localhost:3000";
+
+    public AuthManager authManager { get; private set; }
+    public StatsManager statsManager { get; private set; }
+    public PointsManager pointsManager { get; private set; }
+
 
     /// <summary>
     /// 네트워크 연결 결과
@@ -25,6 +33,16 @@ public class NetworkManager : Singleton<NetworkManager>
     {
         public NetworkConnectionResult connectionResult;
         public T data;
+    }
+
+    protected override void Awake()
+    {
+        base.Awake();
+        DontDestroyOnLoad(gameObject);
+
+        authManager = GetComponent<AuthManager>();
+        statsManager = GetComponent<StatsManager>();
+        pointsManager = GetComponent<PointsManager>();
     }
 
     protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)

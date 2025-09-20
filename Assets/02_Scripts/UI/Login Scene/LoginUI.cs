@@ -1,13 +1,19 @@
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class LoginUI : MonoBehaviour
 {
-    private LoginSceneUIManager loginSceneUIManager => LoginSceneUIManager.Instance;
+    private LoginSceneUIManager loginSceneUIManager;
 
     [SerializeField][Tooltip("ID(이메일) InputField")] private TMP_InputField usernameInput;
     [SerializeField][Tooltip("비밀번호 InputField")] private TMP_InputField passwordInput;
+
+    private void Start()
+    {
+        loginSceneUIManager = LoginSceneUIManager.Instance;
+    }
 
     private void OnEnable()
     {

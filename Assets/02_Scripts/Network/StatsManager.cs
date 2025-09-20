@@ -4,7 +4,12 @@ using UnityEngine;
 
 public class StatsManager : MonoBehaviour
 {
-    private NetworkManager networkManager => NetworkManager.Instance;
+    private NetworkManager networkManager;
+
+    private void Start()
+    {
+        networkManager = NetworkManager.Instance;
+    }
 
     /// <summary>
     /// 게임 결과 업데이트
@@ -12,14 +17,16 @@ public class StatsManager : MonoBehaviour
     /// <param name="gameResult">게임 결과</param>
     /// <param name="onSuccess">게임 결과 업데이트 성공 시 실행할 액션</param>
     /// <param name="onFail">게임 결과 업데이트 실패 시 실행할 액션</param>
-    public void UpdateGameResult(GameResult gameResult, Action<GameResultResponse> onSuccess, Action<StatsResponseType> onFail)
+    public void UpdateGameResult(GameResult gameResult, Action<GameResultResponse> onSuccess,
+        Action<StatsResponseType> onFail)
     {
         StartCoroutine(UpdateGameResultCoroutine(gameResult, onSuccess, onFail));
     }
 
-    private IEnumerator UpdateGameResultCoroutine(GameResult gameResult, Action<GameResultResponse> onSuccess, Action<StatsResponseType> onFail)
+    private IEnumerator UpdateGameResultCoroutine(GameResult gameResult, Action<GameResultResponse> onSuccess,
+        Action<StatsResponseType> onFail)
     {
-        string requestData ="";
+        string requestData = "";
         switch (gameResult)
         {
             case GameResult.Victory:
@@ -33,6 +40,7 @@ public class StatsManager : MonoBehaviour
                 requestData = "draw";
                 break;
         }
+
         GameResultRequest gameResultRequest = new(requestData);
         yield return networkManager.PostRequestWithSuccess<GameResultRequest, StatsResponse, GameResultResponse>(
             "/stats/updateGameResult",
@@ -55,11 +63,9 @@ public class StatsManager : MonoBehaviour
                         break;
                 }
             },
-            (result) =>
-            {
-                onSuccess?.Invoke(result);
-            });
+            (result) => { onSuccess?.Invoke(result); });
     }
+
     /// <summary>
     /// 사용자 기본 정보 가져오기
     /// </summary>
@@ -90,7 +96,7 @@ public class StatsManager : MonoBehaviour
             },
             (result) => { onSuccess?.Invoke(result); });
     }
-    
+
 
     /// <summary>
     /// 사용자 전적 가져오기

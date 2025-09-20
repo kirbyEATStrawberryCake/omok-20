@@ -859,6 +859,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 656e5ec8ad1a2c2439d637b94d409dc8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TwoButtonPanel
-  buttonConfirm: {fileID: 5098090182618944319}
   buttonCancel: {fileID: 7066883233417247116}
+  buttonConfirm: {fileID: 5098090182618944319}
+  cancelButtonText: {fileID: 696641800034817583}
+  confirmButtonText: {fileID: 8897906540818145537}
   message: {fileID: 2415945001890898542}
