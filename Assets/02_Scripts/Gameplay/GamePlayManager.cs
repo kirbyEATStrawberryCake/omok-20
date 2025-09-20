@@ -1,7 +1,5 @@
 using System;
-using System.Diagnostics;
 using UnityEngine;
-using UnityEngine.Android;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
@@ -29,13 +27,19 @@ public enum GameResult
 [RequireComponent(typeof(GameLogicController))]
 public class GamePlayManager : Singleton<GamePlayManager>
 {
-    public BoardManager boardManager { get; private set; } // 오목판 관리자 참조
-    public GameLogicController gameLogicController { get; private set; }
-    public RenjuRule renjuRule { get; private set; } // 렌주룰 관리자 참조
-    public GameSceneUIManager uiManager => GameSceneUIManager.Instance;
-    public MultiplayManager multiplayManager => MultiplayManager.Instance;
+    [SerializeField] private BoardManager boardManager;
+    [SerializeField] private GameSceneUIManager uiManager;
+    [SerializeField] private MultiplayManager multiplayManager;
+    [SerializeField] private GomokuAIDebugger gomokuAIDebugger;
+    [SerializeField] private GameTimer gameTimer;
+    public BoardManager BoardManager => boardManager;
+    public GameSceneUIManager UIManager => uiManager;
+    public MultiplayManager MultiplayManager => multiplayManager;
+    public GomokuAIDebugger GomokuAIDebugger => gomokuAIDebugger;
+    public GameTimer GameTimer => gameTimer;
 
-    public GomokuAIDebugger gomokuAIDebugger { get; private set; } // 오목 AI 디버거(착수 후보, 가중치 시각화) 참조
+    public RenjuRule RenjuRule { get; private set; } // 렌주룰 관리자 참조
+    public GameLogicController GameLogicController { get; private set; }
 
     [Header("Game Settings")]
     [SerializeField] private bool isRenjuModeEnabled = true; // 렌주룰 적용 여부
@@ -58,10 +62,8 @@ public class GamePlayManager : Singleton<GamePlayManager>
     protected override void Awake()
     {
         base.Awake();
-        boardManager = FindFirstObjectByType<BoardManager>();
-        gomokuAIDebugger = FindFirstObjectByType<GomokuAIDebugger>();
-        gameLogicController = GetComponent<GameLogicController>();
-        renjuRule = GetComponent<RenjuRule>();
+        GameLogicController = GetComponent<GameLogicController>();
+        RenjuRule = GetComponent<RenjuRule>();
 #if UNITY_EDITOR
         if (gameObject.scene.name == EditorSceneLoader.StartupSceneName)
         {
@@ -74,27 +76,88 @@ public class GamePlayManager : Singleton<GamePlayManager>
 
     private void Start()
     {
-        if (gameLogicController != null)
+        if (GameLogicController != null)
         {
-            gameLogicController.WinConditionChecked += EndGame;
+            GameLogicController.WinConditionChecked += EndGame;
         }
 
-        if (multiplayManager != null && GameModeManager.Mode == GameMode.MultiPlayer)
+        if (MultiplayManager.Instance != null && GameModeManager.Mode == GameMode.MultiPlayer)
         {
-            multiplayManager.MatchFoundCallback += StartGame;
+            MultiplayManager.Instance.MatchCallback += StartGame;
         }
+
+        currentGameState = GameState.Default;
+
+        if (GameModeManager.Mode == GameMode.SinglePlayer || GameModeManager.Mode == GameMode.AI)
+        {
+            StartGame();
+        }
+        // 멀티플레이는 MultiplayManager에서 담당
+    }
+
+    private void Update()
+    {
+        if (currentGameState != GameState.Playing) return;
+
+        if (GameModeManager.Mode != GameMode.SinglePlayer && GameModeManager.Mode != GameMode.AI)
+            return;
+
+        // 현재 턴이 AI인지 확인
+        if (IsCurrentTurnAI())
+        {
+            if (!isAITurnHandled)
+            {
+                HandleAITurn();
+                isAITurnHandled = true;
+            }
+        }
+        else
+        {
+            isAITurnHandled = false;
+        }
+    }
+
+    private bool IsCurrentTurnAI()
+    {
+        if (GameModeManager.Mode == GameMode.AI)
+        {
+            return GameLogicController.GetCurrentTurnPlayer() == PlayerType.AI;
+        }
+
+        return false;
+    }
+
+    private void HandleAITurn()
+    {
+        if (!IsInvoking("ExecuteAITurn"))
+        {
+            Invoke("ExecuteAITurn", 1f);
+        }
+    }
+
+    private void ExecuteAITurn()
+    {
+        var watch = new System.Diagnostics.Stopwatch();
+        watch.Start();
+
+        Vector2Int aiMove = gomokuAIDebugger.GetNextMoveFromAI();
+        boardManager.HandleBoardClick(aiMove.x, aiMove.y);
+        boardManager.PlaceStone();
+
+        watch.Stop();
+        Debug.Log("AI 착수 시간: " + watch.ElapsedMilliseconds + "ms");
     }
 
     private void OnDisable()
     {
-        if (gameLogicController != null)
+        if (GameLogicController != null)
         {
-            gameLogicController.WinConditionChecked -= EndGame;
+            GameLogicController.WinConditionChecked -= EndGame;
         }
 
-        if (multiplayManager != null && GameModeManager.Mode == GameMode.MultiPlayer)
+        if (MultiplayManager.Instance != null && GameModeManager.Mode == GameMode.MultiPlayer)
         {
-            multiplayManager.MatchFoundCallback -= StartGame;
+            MultiplayManager.Instance.MatchCallback -= StartGame;
         }
     }
 
@@ -104,14 +167,6 @@ public class GamePlayManager : Singleton<GamePlayManager>
 
     protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
     {
-        if (scene.name != "Game_Scene") return;
-        currentGameState = GameState.Default;
-
-        if (GameModeManager.Mode == GameMode.SinglePlayer)
-        {
-            StartGame();
-        }
-        // 멀티플레이는 MultiplayManager에서 담당
     }
 
     #endregion
@@ -124,6 +179,26 @@ public class GamePlayManager : Singleton<GamePlayManager>
         OnGameStart?.Invoke();
     }
 
+    private void StartGame(MultiplayControllerState state)
+    {
+        if (state == MultiplayControllerState.MatchFound)
+            StartGame();
+        else if(state == MultiplayControllerState.MatchFailed)
+            StartAIGame();
+    }
+
+    private void StartAIGame()
+    {
+        if (currentGameState != GameState.Default) return;
+
+        if (MultiplayManager.Instance != null)
+        {
+            MultiplayManager.Instance.MatchCallback -= StartGame;
+        }
+
+        StartGame();
+    }
+
     /// <summary>
     /// 항복 처리
     /// </summary>
@@ -134,7 +209,7 @@ public class GamePlayManager : Singleton<GamePlayManager>
         // 항복한 플레이어의 상대가 승리
         if (GameModeManager.Mode == GameMode.SinglePlayer)
         {
-            PlayerType currentTurnPlayer = gameLogicController.GetCurrentTurnPlayer();
+            PlayerType currentTurnPlayer = GameLogicController.GetCurrentTurnPlayer();
             GameResult result = (currentTurnPlayer == PlayerType.Player1)
                 ? GameResult.Player2Win
                 : GameResult.Player1Win;
@@ -142,7 +217,7 @@ public class GamePlayManager : Singleton<GamePlayManager>
             Debug.Log($"{currentTurnPlayer}가 항복했습니다");
             EndGame(result);
         }
-        else if (GameModeManager.Mode == GameMode.MultiPlayer)
+        else if (GameModeManager.Mode == GameMode.MultiPlayer || GameModeManager.Mode == GameMode.AI)
         {
             Debug.Log("항복했습니다");
             OnSurrender?.Invoke();
@@ -254,7 +329,7 @@ public class GamePlayManager : Singleton<GamePlayManager>
 
         // 실제 착수 실행
         boardManager.PlaceStone();
-        
+
         watch.Stop(); // ���� ����
         Debug.Log("�ڵ� ���� �ð�: " + watch.ElapsedMilliseconds + "ms"); // ��� �ð� ���
     }*/

@@ -3,18 +3,18 @@ using UnityEngine.UI;
 
 public class SoundSettingsUI : MonoBehaviour
 {
-    public Slider bgmSlider;            // UI ½½¶óÀÌ´õ
+    public Slider bgmSlider;            // UI ï¿½ï¿½ï¿½ï¿½ï¿½Ì´ï¿½
     public Slider sfxSlider;
 
     void Start()
     {
 
-        // ½½¶óÀÌ´õ ÃÊ±â°ª ¼³Á¤
+        // ï¿½ï¿½ï¿½ï¿½ï¿½Ì´ï¿½ ï¿½Ê±â°ª ï¿½ï¿½ï¿½ï¿½
         bgmSlider.value = PlayerPrefs.GetFloat("BGM", 0.5f);
         sfxSlider.value = PlayerPrefs.GetFloat("SFX", 0.5f);
 
-        // ÀÌº¥Æ® ¿¬°á
-        bgmSlider.onValueChanged.AddListener(SoundManager.Instance.SetBGMVolume);
-        sfxSlider.onValueChanged.AddListener(SoundManager.Instance.SetSFXVolume);
+        // ï¿½Ìºï¿½Æ® ï¿½ï¿½ï¿½ï¿½
+        bgmSlider.onValueChanged.AddListener(SoundManager.SetBGMVolume);
+        sfxSlider.onValueChanged.AddListener(SoundManager.SetSFXVolume);
     }
 }

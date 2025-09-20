@@ -25,7 +25,7 @@ public class timer : MonoBehaviour
         if (currentTime <= 0)
         {
             currentTime = 0;
-            PauseTimer(); // Å¸ÀÓ¿À¹ö ½Ã Å¸ÀÌ¸Ó Á¤Áö
+            PauseTimer(); // íƒ€ìž„ì˜¤ë²„ ì‹œ íƒ€ì´ë¨¸ ì •ì§€
         }
 
         timerImage.fillAmount = currentTime / totalTime;

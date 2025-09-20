@@ -153,6 +153,7 @@ public class GameResultPanel : MonoBehaviour
     public void OpenWithButtonEvent(GameResultResponse response, GameResult result, Action onClickExit,
         Action onClickRematch)
     {
+        gameObject.SetActive(true);
         InitPanel();
         SetMessage(result);
         SetPoint(response);
@@ -165,13 +166,16 @@ public class GameResultPanel : MonoBehaviour
             DisableRematchButton();
             onClickRematch?.Invoke();
         });
-        gameObject.SetActive(true);
     }
 
     public void OpenWithButtonEvent(GameResultButtonType buttonType, float delay, GameResultResponse response,
         GameResult result, Action onClickExit,
         Action onClickRematch)
     {
+        gameObject.SetActive(true);
+        InitPanel();
+        SetMessage(result);
+        SetPoint(response);
         switch (buttonType)
         {
             case GameResultButtonType.Rematch:
@@ -184,11 +188,13 @@ public class GameResultPanel : MonoBehaviour
                 rematchButton.interactable = false;
                 exitButton.interactable = false;
                 break;
-        }OpenWithButtonEvent(response, result, onClickExit, onClickRematch);
-        StartCoroutine(EnableButtonWithDelay(buttonType, delay));
+        }
+
+        StartCoroutine(EnableButtonWithDelay(buttonType, delay, onClickExit, onClickRematch));
     }
 
-    private IEnumerator EnableButtonWithDelay(GameResultButtonType buttonType, float delay)
+    private IEnumerator EnableButtonWithDelay(GameResultButtonType buttonType, float delay, Action onClickExit,
+        Action onClickRematch)
     {
         yield return new WaitForSeconds(delay);
 
@@ -205,6 +211,16 @@ public class GameResultPanel : MonoBehaviour
                 exitButton.interactable = true;
                 break;
         }
+
+        SetButtonEvent(() =>
+        {
+            onClickExit?.Invoke();
+            gameObject.SetActive(false);
+        }, () =>
+        {
+            DisableRematchButton();
+            onClickRematch?.Invoke();
+        });
     }
 
     public void DisableRematchButton()

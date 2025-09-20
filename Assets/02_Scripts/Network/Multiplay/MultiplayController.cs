@@ -51,7 +51,7 @@ public class MultiplayController : IDisposable
 
     // 사용자 정보
     public UserInfo CurrentUserInfo { get; private set; }
-
+    private string username;
     public bool amIFirstPlayer { get; private set; }
 
     // Room 상태 변화에 따른 액션
@@ -70,19 +70,6 @@ public class MultiplayController : IDisposable
         socket = new SocketIOUnity(uri,
             new SocketIOOptions { Transport = SocketIOClient.Transport.TransportProtocol.WebSocket });
         socket.JsonSerializer = new NewtonsoftJsonSerializer();
-
-        // 연결 상태 이벤트
-        socket.OnConnected += (sender, e) =>
-        {
-            isConnected = true;
-            Debug.Log("소켓 연결됨");
-        };
-
-        socket.OnDisconnected += (sender, e) =>
-        {
-            isConnected = false;
-            Debug.Log("소켓 연결 해제됨");
-        };
 
         // 유저 정보 수신
         socket.OnUnityThread("userInfoLoaded", UserInfoLoaded);
@@ -125,10 +112,28 @@ public class MultiplayController : IDisposable
             return;
         }
 
+        this.username = username;
         socket?.Connect();
 
         // 연결 후 사용자 정보 전송
-        socket.OnConnected += (sender, e) => { socket.Emit("authenticate", username); };
+        if (socket != null)
+        {
+            socket.OnConnected += OnConnected;
+            socket.OnDisconnected += OnDisconnected;
+        }
+    }
+
+    private void OnConnected(object sender, EventArgs e)
+    {
+        socket.Emit("authenticate", username);
+        isConnected = true;
+        Debug.Log("소켓 연결됨");
+    }
+
+    private void OnDisconnected(object sender, string e)
+    {
+        isConnected = false;
+        Debug.Log("소켓 연결 해제됨");
     }
 
     #region Server -> Client
@@ -146,13 +151,11 @@ public class MultiplayController : IDisposable
 
     private void OpponentSurrender(SocketIOResponse obj)
     {
-        Debug.Log("상대방이 항복했습니다.");
         onMultiplayStateChanged?.Invoke(MultiplayControllerState.OpponentSurrender, null);
     }
 
     private void OpponentLeft(SocketIOResponse response)
     {
-        Debug.Log("상대방이 나갔습니다.");
         onMultiplayStateChanged?.Invoke(MultiplayControllerState.OpponentLeft, null);
     }
 
@@ -186,7 +189,6 @@ public class MultiplayController : IDisposable
         var data = response.GetValue<MatchData>();
 
         amIFirstPlayer = data.isPlayer1First;
-        Debug.Log($"내가 선공인가?: {amIFirstPlayer}");
         MultiplayManager.Instance?.SetOpponentData(data);
 
         onMultiplayStateChanged?.Invoke(MultiplayControllerState.MatchFound, data.roomId);
@@ -244,7 +246,6 @@ public class MultiplayController : IDisposable
         var data = response.GetValue<MatchData>();
 
         amIFirstPlayer = data.isPlayer1First;
-        Debug.Log($"내가 선공인가?: {amIFirstPlayer}");
         MultiplayManager.Instance?.SetOpponentData(data);
 
         onMultiplayStateChanged?.Invoke(MultiplayControllerState.RematchStarted, data.roomId);
@@ -354,37 +355,54 @@ public class MultiplayController : IDisposable
     public void RequestRematch()
     {
         socket?.Emit("requestRematch");
-        Debug.Log("리매치 요청 전송");
     }
-    
+
     // 리매치 수락
     public void AcceptRematch()
     {
         socket?.Emit("acceptRematch");
-        Debug.Log("리매치 수락");
     }
 
     // 리매치 거절
     public void RejectRematch()
     {
         socket?.Emit("rejectRematch");
-        Debug.Log("리매치 거절");
     }
 
     // 리매치 취소
     public void CancelRematch()
     {
         socket?.Emit("cancelRematch");
-        Debug.Log("리매치 취소");
     }
 
     #endregion
 
+    private bool isDisposed = false;
+
     public void Dispose()
     {
-        isConnected = false;
-        socket?.Disconnect();
-        socket?.Dispose();
-        socket = null;
+        if (isDisposed || socket == null) return;
+        isDisposed = true;
+
+        try
+        {
+            Debug.Log("소켓 해제 시작");
+
+            if (socket.Connected)
+            {
+                socket.Disconnect();
+            }
+
+            socket.Dispose();
+            socket = null;
+            isConnected = false;
+
+            Debug.Log("소켓 해제 완료");
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"소켓 해제 중 오류 (무시): {e.Message}");
+            socket = null;
+        }
     }
 }

@@ -24,18 +24,18 @@ public class GameLogic
     private GomokuAIDebugger gomokuAIDebugger;
     private RenjuRule renjuRule;
     private MultiplayManager multiplayManager;
+    private GameTimer gameTimer;
     public StoneType currentStone { get; private set; } // 현재 차례인 돌 타입 (항상 흑돌부터 시작)
     private PlayerType blackStonePlayer; // 흑돌을 가진 플레이어
     private PlayerType whiteStonePlayer; // 백돌을 가진 플레이어
     public PlayerType currentTurnPlayer { get; private set; } // 현재 턴인 플레이어 ID
 
     // 플레이어 변경 시 발생하는 이벤트
-    public event UnityAction OnPlayerStonesRandomized;
     public event UnityAction<StoneType> OnPlayerTurnChanged;
     public event UnityAction<GameResult> WinConditionChecked;
 
     // 이벤트 구독을 위한 초기화 메서드
-    public void Initialize()
+    public void Initialize(GamePlayManager gamePlayManager)
     {
         // GomokuAI에게 StoneType을 반환하기 위해 작성했습니다.
         // 멀티플레이일 때는 실행되지 않고, 싱글플레이일 때만 실행하도록 조건문 처리가 필요합니다.
@@ -45,22 +45,21 @@ public class GameLogic
         //     gomokuAIDebugger.InstantiateGomokuAI(boardManager, aiStone);
         // }
         // Debug.Log("boardManager" + boardManager);
-        gamePlayManager = GamePlayManager.Instance;
-        boardManager = gamePlayManager?.boardManager;
-        gomokuAIDebugger = gamePlayManager?.gomokuAIDebugger;
-        renjuRule = gamePlayManager?.renjuRule;
-        multiplayManager = gamePlayManager?.multiplayManager;
-
-        if (gamePlayManager != null)
-        {
-            gamePlayManager.OnGameStart += RandomizePlayerStones;
-            gamePlayManager.OnGameRestart += ResetGame;
-        }
+        this.boardManager = gamePlayManager.BoardManager;
+        this.gomokuAIDebugger = gamePlayManager.GomokuAIDebugger;
+        this.renjuRule = gamePlayManager.RenjuRule;
+        this.multiplayManager = gamePlayManager.MultiplayManager;
+        this.gameTimer = gamePlayManager.GameTimer;
 
         if (boardManager != null)
         {
             boardManager.OnPlaceStone += CheckWinCondition;
             boardManager.OnPlaceStone += SwitchPlayer;
+        }
+
+        if (gameTimer != null)
+        {
+            gameTimer.OnTimeUp += ForceSkipTurn;
         }
     }
 
@@ -77,6 +76,11 @@ public class GameLogic
         {
             boardManager.OnPlaceStone -= CheckWinCondition;
             boardManager.OnPlaceStone -= SwitchPlayer;
+        }
+
+        if (gameTimer != null)
+        {
+            gameTimer.OnTimeUp -= ForceSkipTurn;
         }
     }
 
@@ -103,6 +107,23 @@ public class GameLogic
                 Debug.Log("멀티플레이: 내가 후공 (백돌)");
             }
         }
+        else if (GameModeManager.Mode == GameMode.AI)
+        {
+            Debug.Log("AI 전환 모드: 플레이어 vs AI");
+
+            if (Random.Range(0, 2) == 0)
+            {
+                blackStonePlayer = PlayerType.Me;
+                whiteStonePlayer = PlayerType.AI;
+                Debug.Log("AI플레이: Player1이 선공 (흑돌)");
+            }
+            else
+            {
+                blackStonePlayer = PlayerType.AI;
+                whiteStonePlayer = PlayerType.Me;
+                Debug.Log("AI플레이: AI가 선공 (흑돌)");
+            }
+        }
         else
         {
             // 싱글플레이 (로컬): 랜덤 방식
@@ -123,9 +144,16 @@ public class GameLogic
         // 오목은 항상 흑돌부터 시작
         currentStone = StoneType.Black;
         currentTurnPlayer = blackStonePlayer;
+        
+        // AI 초기화 (플레이어 할당 완료 후)
+        if (blackStonePlayer == PlayerType.AI || whiteStonePlayer == PlayerType.AI)
+        {
+            StoneType aiStoneType = (blackStonePlayer == PlayerType.AI) ? StoneType.Black : StoneType.White;
+            gomokuAIDebugger.InstantiateGomokuAI(aiStoneType);
+        }
 
-        OnPlayerStonesRandomized?.Invoke();
-        // OnPlayerTurnChanged?.Invoke(currentPlayer);
+
+        OnPlayerTurnChanged?.Invoke(currentStone);
     }
 
     /// <summary>
@@ -183,7 +211,7 @@ public class GameLogic
     {
         PlayerType winnerPlayer = (winnerStone == StoneType.Black) ? blackStonePlayer : whiteStonePlayer;
 
-        if (GameModeManager.Mode == GameMode.MultiPlayer)
+        if (GameModeManager.Mode == GameMode.MultiPlayer || GameModeManager.Mode == GameMode.AI)
         {
             // 멀티플레이: 내가 이겼는지 확인
             return (winnerPlayer == PlayerType.Me) ? GameResult.Victory : GameResult.Defeat;
@@ -212,5 +240,10 @@ public class GameLogic
     {
         currentStone = StoneType.Black;
         currentTurnPlayer = blackStonePlayer;
+    }
+
+    private void ForceSkipTurn()
+    {
+        SwitchPlayer(-1, -1);
     }
 }

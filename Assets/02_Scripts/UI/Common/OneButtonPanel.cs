@@ -39,6 +39,7 @@ public class OneButtonPanel : MonoBehaviour
     /// <param name="onConfirm">확인 버튼을 눌렀을 때 실행할 액션</param>
     public void OpenWithSetMessageAndButtonEvent(string message, Action onConfirm = null)
     {
+        gameObject.SetActive(true);
         InitPanel();
         SetMessage(message);
         SetButtonEvent(() =>
@@ -46,7 +47,6 @@ public class OneButtonPanel : MonoBehaviour
             onConfirm?.Invoke();
             gameObject.SetActive(false);
         });
-        gameObject.SetActive(true);
     }
 
     /// <summary>
@@ -57,14 +57,23 @@ public class OneButtonPanel : MonoBehaviour
     /// <param name="delay">버튼 활성화 딜레이</param>
     public void OpenWithSetMessageAndButtonEvent(string message, float delay, Action onConfirm = null)
     {
+        gameObject.SetActive(true);
+        InitPanel();
+        SetMessage(message);
         button.interactable = false;
-        OpenWithSetMessageAndButtonEvent(message, onConfirm);
-        StartCoroutine(EnableButtonWithDelay(delay));
+
+        StartCoroutine(EnableButtonWithDelay(delay, onConfirm));
     }
 
-    private IEnumerator EnableButtonWithDelay(float delay)
+    private IEnumerator EnableButtonWithDelay(float delay, Action onConfirm = null)
     {
         yield return new WaitForSeconds(delay);
+
         button.interactable = true;
+        SetButtonEvent(() =>
+        {
+            onConfirm?.Invoke();
+            gameObject.SetActive(false);
+        });
     }
 }
