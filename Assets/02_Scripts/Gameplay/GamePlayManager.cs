@@ -1,7 +1,7 @@
 using System;
 using System.Diagnostics;
-using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Android;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
@@ -45,8 +45,7 @@ public class GamePlayManager : Singleton<GamePlayManager>
     [SerializeField] private bool showForbiddenPositions = true; // 금지 위치 표시 여부
     public bool ShowForbiddenPositions => showForbiddenPositions;
 
-    public GameState currentGameState = GameState.Default; // 현재 게임 상태
-    private int totalMoves; // 총 수 카운트
+    public GameState currentGameState { get; private set; } = GameState.Default; // 현재 게임 상태
 
     public event UnityAction OnGameStart;
     public event UnityAction<GameResult> OnGameEnd;
@@ -63,10 +62,9 @@ public class GamePlayManager : Singleton<GamePlayManager>
 
     private void Start()
     {
-        // 에디터 테스트용
+        // 싱글모드 테스트용
         // GameModeManager.Mode = GameMode.SinglePlayer;
-        OnSceneLoad(SceneManager.GetActiveScene(), LoadSceneMode.Single);
-        // 에디터 테스트용
+        // OnSceneLoad(SceneManager.GetActiveScene(), LoadSceneMode.Single);
     }
 
     private void OnEnable()
@@ -99,10 +97,8 @@ public class GamePlayManager : Singleton<GamePlayManager>
 
     protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
     {
-        // 테스트 때문에 잠시 주석처리했습니다.
-        // TODO : 주석처리 한것 해제해야 합니다
-        //if(scene.name != "Game_Scene") return;
-        
+        if (scene.name != "Game_Scene") return;
+        currentGameState = GameState.Default;
 
         if (GameModeManager.Mode == GameMode.SinglePlayer)
         {
@@ -186,7 +182,7 @@ public class GamePlayManager : Singleton<GamePlayManager>
     
     private void Update()
     {
-        // ������ ���� ���� ���� �� ó��
+        // 게임 중이 아니면 무시
         if (currentGameState != GameState.Playing) return;
 
         // ���� ���� �÷��̾ AI���� Ȯ��
@@ -204,9 +200,6 @@ public class GamePlayManager : Singleton<GamePlayManager>
             // ���콺 �Է� ó�� (BoardManager�� update ���� ó��)
             isAITurnHandled = false; // AI 턴 처리 체크해제
         }
-        
-        // 게임중이 아니면 무시
-        if (currentGameState != GameState.Playing) return;
     }
     
     /// <summary>
@@ -243,7 +236,7 @@ public class GamePlayManager : Singleton<GamePlayManager>
         boardManager.HandleBoardClick(aiMove.x, aiMove.y);
 
         // 실제 착수 실행
-        boardManager.PlaceStone();
+        boardManager.PlaceStone(aiMove.x, aiMove.y);
         
         watch.Stop(); // ���� ����
         Debug.Log("�ڵ� ���� �ð�: " + watch.ElapsedMilliseconds + "ms"); // ��� �ð� ��� 

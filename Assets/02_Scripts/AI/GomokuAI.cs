@@ -272,8 +272,6 @@ public class GomokuAI
     /// </summary>
     private int EvaluateBoard(BoardManager board)
     {
-        int myTotalScore = 0;
-        int enemyTotalScore = 0;
         int totalScore = 0;
         
         // 보드 전체를 순회하며 점수 계산
