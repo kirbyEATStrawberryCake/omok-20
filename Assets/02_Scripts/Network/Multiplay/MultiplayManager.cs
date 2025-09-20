@@ -11,13 +11,13 @@ public class MultiplayManager : Singleton<MultiplayManager>
 
     public MultiplayController multiplayController { get; private set; }
 
-    private GameSceneUIManager gameSceneUIManager;
+    private BoardManager boardManager;
     private GamePlayManager gamePlayManager;
     private StatsManager statsManager;
     private string roomId;
     public MatchData MatchData { get; private set; }
 
-    public event UnityAction MatchWaitngCallback;
+    public event UnityAction MatchWaitingCallback;
     public event UnityAction MatchFoundCallback;
     public event UnityAction MatchCanceledCallback;
     public event UnityAction<GameResultResponse, GameResult> MatchResultCallback;
@@ -37,7 +37,7 @@ public class MultiplayManager : Singleton<MultiplayManager>
                     // ---------- 매칭 ---------- 
                     case MultiplayControllerState.MatchWaiting:
                         // 매칭 중임을 알리는 팝업을 띄움
-                        MatchWaitngCallback.Invoke();
+                        MatchWaitingCallback?.Invoke();
                         Debug.Log("<color=cyan>매칭 찾는 중...</color>");
                         // TODO: 사용자가 매칭 중임을 알 수 있도록 로직 추가
                         break;
@@ -94,8 +94,8 @@ public class MultiplayManager : Singleton<MultiplayManager>
         if (GameModeManager.Mode == GameMode.SinglePlayer) return;
 
         statsManager = NetworkManager.Instance.statsManager;
-        gameSceneUIManager = GameSceneUIManager.Instance;
         gamePlayManager = GamePlayManager.Instance;
+        boardManager = gamePlayManager?.BoardManager;
         if (gamePlayManager != null)
         {
             gamePlayManager.OnGameEnd += EndGame;
@@ -169,7 +169,7 @@ public class MultiplayManager : Singleton<MultiplayManager>
     private void DoOpponent(int x, int y)
     {
         Debug.Log($"<color=yellow>상대방 돌 생성: ({x}, {y})</color>");
-        GamePlayManager.Instance.boardManager.PlaceOpponentStone(x, y);
+        boardManager.PlaceOpponentStone(x, y);
     }
 
     /// <summary>

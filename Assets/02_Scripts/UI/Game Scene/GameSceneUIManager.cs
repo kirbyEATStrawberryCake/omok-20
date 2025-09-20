@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -7,9 +8,8 @@ using UnityEngine.UI;
 public class GameSceneUIManager : Singleton<GameSceneUIManager>
 {
     [Header("UI Components")]
-    [SerializeField] private GameObject defaultPlayerTurnImage; // 플레이어 차례 표시 기본 GameObject
-
     [SerializeField] private GameObject blackStonePlayerTurnImage; // 흑돌 플레이어 차례 표시 GameObject
+
     [SerializeField] private GameObject whiteStonePlayerTurnImage; // 백돌 플레이어 차례 표시 GameObject
     [Space(7)] [SerializeField] private GameObject player1;
     [SerializeField] private GameObject player2;
@@ -67,9 +67,6 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
             twoButtonPopup = twoButtonPopupPanel.GetComponent<TwoButtonPanel>();
         if (gameResultPopupPanel != null)
             gameResultPopup = gameResultPopupPanel.GetComponent<GameResultPanel>();
-
-        pandaSprite = Resources.Load<Sprite>($"UI/character/Property 1=panda");
-        redPandaSprite = Resources.Load<Sprite>($"UI/character/Property 1=redPanda");
     }
 
     private void Start()
@@ -77,22 +74,27 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
         gamePlayManager = GamePlayManager.Instance;
         multiplayManager = MultiplayManager.Instance;
 
-        if (gamePlayManager?.gameLogicController != null)
+        if (gamePlayManager != null)
         {
             gamePlayManager.OnGameEnd += OpenEndGamePanelInSinglePlay;
             gamePlayManager.OnGameEnd += UpdateProfileImagesOnResult;
-            gamePlayManager.gameLogicController.OnPlayerStonesRandomized += InitPlayerTurnDisplay;
-            gamePlayManager.gameLogicController.OnPlayerTurnChanged += UpdatePlayerTurnDisplay;
+            gamePlayManager.OnGameRestart += RestProfileImage;
+
+            if (gamePlayManager?.GameLogicController != null)
+            {
+                gamePlayManager.GameLogicController.OnPlayerTurnChanged += UpdatePlayerTurnDisplay;
+            }
+
+            if (gamePlayManager?.BoardManager != null)
+            {
+                gamePlayManager.BoardManager.ViolateRenjuRule += OnError;
+            }
         }
 
-        if (gamePlayManager?.boardManager != null)
-        {
-            gamePlayManager.boardManager.ViolateRenjuRule += OnError;
-        }
 
         if (multiplayManager != null && GameModeManager.Mode == GameMode.MultiPlayer)
         {
-            multiplayManager.MatchWaitngCallback += OpenMatchWaitingPanel;
+            multiplayManager.MatchWaitingCallback += OpenMatchWaitingPanel;
             multiplayManager.MatchFoundCallback += OnMatchFound;
             multiplayManager.MatchCanceledCallback += OnMatchCanceled;
             multiplayManager.MatchResultCallback += OpenEndGamePanelInMultiplay;
@@ -103,23 +105,28 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
 
     private void OnDisable()
     {
-        if (gamePlayManager?.gameLogicController != null)
+        if (gamePlayManager != null)
         {
             gamePlayManager.OnGameEnd -= OpenEndGamePanelInSinglePlay;
             gamePlayManager.OnGameEnd -= UpdateProfileImagesOnResult;
-            multiplayManager.MatchCanceledCallback -= OnMatchCanceled;
-            gamePlayManager.gameLogicController.OnPlayerStonesRandomized -= InitPlayerTurnDisplay;
-            gamePlayManager.gameLogicController.OnPlayerTurnChanged -= UpdatePlayerTurnDisplay;
-        }
-        if (gamePlayManager?.boardManager != null)
-        {
-            gamePlayManager.boardManager.ViolateRenjuRule -= OnError;
+            gamePlayManager.OnGameRestart -= RestProfileImage;
+
+            if (gamePlayManager?.GameLogicController != null)
+            {
+                gamePlayManager.GameLogicController.OnPlayerTurnChanged -= UpdatePlayerTurnDisplay;
+            }
+
+            if (gamePlayManager?.BoardManager != null)
+            {
+                gamePlayManager.BoardManager.ViolateRenjuRule -= OnError;
+            }
         }
 
         if (multiplayManager != null && GameModeManager.Mode == GameMode.MultiPlayer)
         {
-            multiplayManager.MatchWaitngCallback -= OpenMatchWaitingPanel;
+            multiplayManager.MatchWaitingCallback -= OpenMatchWaitingPanel;
             multiplayManager.MatchFoundCallback -= OnMatchFound;
+            multiplayManager.MatchCanceledCallback -= OnMatchCanceled;
             multiplayManager.MatchResultCallback -= OpenEndGamePanelInMultiplay;
             multiplayManager.RematchCallback -= HandleRematchUI;
             multiplayManager.ErrorCallback -= OnError;
@@ -148,7 +155,6 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
     private void InitPlayerTurnDisplay()
     {
         if (gamePlayManager.currentGameState != GameState.Playing) return;
-        if (defaultPlayerTurnImage.activeSelf) defaultPlayerTurnImage.SetActive(false);
 
         blackStonePlayerTurnImage?.SetActive(true);
         whiteStonePlayerTurnImage?.SetActive(false);
@@ -175,7 +181,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
     /// </summary>
     private void UpdateCurrentTurnCircle()
     {
-        var currentTurn = gamePlayManager.gameLogicController.GetCurrentTurnPlayer();
+        var currentTurn = gamePlayManager.GameLogicController.GetCurrentTurnPlayer();
         if (GameModeManager.Mode == GameMode.SinglePlayer)
         {
             currentPlayerTurnCircleLeft.SetActive(currentTurn == PlayerType.Player1);
@@ -188,6 +194,86 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
         }
     }
 
+    /// <summary>
+    /// 오목 결과에 따라서 프로필 사진을 변경하는 메소드
+    /// </summary>
+    /// <param name="result"></param>
+    private void UpdateProfileImagesOnResult(GameResult result)
+    {
+        if (leftProfileImage == null || rightProfileImage == null)
+        {
+            Debug.LogWarning("Profile images not assigned!");
+            return;
+        }
+
+        GameManager gameManager = GameManager.Instance;
+
+        switch (result)
+        {
+            case GameResult.Player1Win:
+                leftProfileImage.sprite = winPandaProfileSprite;
+                rightProfileImage.sprite = loseRedPandaProfileSprite;
+                break;
+
+            case GameResult.Player2Win:
+                leftProfileImage.sprite = losePandaProfileSprite;
+                rightProfileImage.sprite = winRedPandaProfileSprite;
+                break;
+
+            case GameResult.Victory: // 내가 승리 (멀티)
+                leftProfileImage.sprite = gameManager.profileImage == 1
+                    ? winPandaProfileSprite
+                    : winRedPandaProfileSprite;
+                rightProfileImage.sprite = gameManager.profileImage == 1
+                    ? loseRedPandaProfileSprite
+                    : losePandaProfileSprite;
+                break;
+
+            case GameResult.Defeat: // 내가 패배 (멀티)
+                leftProfileImage.sprite = gameManager.profileImage == 1
+                    ? losePandaProfileSprite
+                    : loseRedPandaProfileSprite;
+                rightProfileImage.sprite = gameManager.profileImage == 1
+                    ? winRedPandaProfileSprite
+                    : winPandaProfileSprite;
+                ;
+                break;
+
+            case GameResult.Draw:
+                leftProfileImage.sprite = winPandaProfileSprite;
+                rightProfileImage.sprite = winRedPandaProfileSprite;
+                break;
+
+            default:
+                Debug.Log("No profile update for result: " + result);
+                break;
+        }
+    }
+
+    /// <summary>
+    /// 프로필 이미지를 초기화해주는 메소드
+    /// </summary>
+    private void RestProfileImage()
+    {
+        if (GameModeManager.Mode == GameMode.SinglePlayer)
+        {
+            leftProfileImage.sprite = pandaSprite;
+            rightProfileImage.sprite = redPandaSprite;
+        }
+        else if (GameModeManager.Mode == GameMode.MultiPlayer)
+        {
+            UpdatePlayerProfileInMultiPlay();
+        }
+        else
+        {
+        }
+    }
+
+    /// <summary>
+    /// 에러 발생 시 팝업을 띄워주는 메소드
+    /// </summary>
+    /// <param name="errorMessage">에러 메세지</param>
+    /// <param name="goToMainScene">확인 버튼 클릭 시 메인 씬으로 돌아갈지 여부</param>
     private void OnError(string errorMessage, bool goToMainScene)
     {
         if (goToMainScene)
@@ -226,7 +312,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
     private void OpenMatchWaitingPanel()
     {
         oneCancelButtonPopup.OpenWithSetMessageAndButtonEvent("매칭 찾는 중...", 0.5f,
-            () => gamePlayManager.multiplayManager.multiplayController?.CancelMatch());
+            () => multiplayManager.multiplayController?.CancelMatch());
     }
 
     /// <summary>
@@ -287,55 +373,37 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
             gameResultPopup.OpenWithButtonEvent(response, result,
                 () =>
                 {
-                    gamePlayManager.multiplayManager.multiplayController?.LeaveRoom();
+                    StartCoroutine(SafeExitGame());
+                    multiplayManager.multiplayController?.LeaveRoom();
                     SceneController.LoadScene(SceneType.Main, 0.5f);
                 },
-                () => { gamePlayManager.multiplayManager.multiplayController?.RequestRematch(); });
+                () => { multiplayManager.multiplayController?.RequestRematch(); });
         }
     }
 
-    // 오목 결과에 따라 프로필 사진이 변경됨
-    private void UpdateProfileImagesOnResult(GameResult result)
+    private IEnumerator SafeExitGame()
     {
-        if (leftProfileImage == null || rightProfileImage == null)
+        // 방 나가기
+        if (multiplayManager?.multiplayController != null)
         {
-            Debug.LogWarning("Profile images not assigned!");
-            return;
+            multiplayManager.multiplayController.LeaveRoom();
+            yield return new WaitForSeconds(0.5f); // 서버 처리 대기
         }
 
-        switch (result)
+        // 소켓 연결 해제
+        if (multiplayManager?.multiplayController != null)
         {
-            case GameResult.Player1Win:
-                leftProfileImage.sprite = winPandaProfileSprite;
-                rightProfileImage.sprite = loseRedPandaProfileSprite;
-                break;
-
-            case GameResult.Player2Win:
-                leftProfileImage.sprite = losePandaProfileSprite;
-                rightProfileImage.sprite = winRedPandaProfileSprite;
-                break;
-
-            case GameResult.Victory: // 내가 승리 (멀티)
-                leftProfileImage.sprite = winPandaProfileSprite;
-                rightProfileImage.sprite = loseRedPandaProfileSprite;
-                break;
-
-            case GameResult.Defeat: // 내가 패배 (멀티)
-                leftProfileImage.sprite = losePandaProfileSprite;
-                rightProfileImage.sprite = winRedPandaProfileSprite;
-                break;
-
-            case GameResult.Draw:
-                leftProfileImage.sprite = winPandaProfileSprite;
-                rightProfileImage.sprite = winRedPandaProfileSprite;
-                break;
-
-            default:
-                Debug.Log("No profile update for result: " + result);
-                break;
+            multiplayManager.multiplayController.Dispose();
+            yield return new WaitForSeconds(0.3f); // 소켓 해제 대기
         }
+
+        SceneController.LoadScene(SceneType.Main, 0.5f);
     }
 
+    /// <summary>
+    /// 재대국 UI를 조절하는 메소드
+    /// </summary>
+    /// <param name="state">서버에서 받은 상태</param>
     private void HandleRematchUI(MultiplayControllerState state)
     {
         switch (state)
@@ -343,12 +411,12 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
             case MultiplayControllerState.RematchRequested:
                 twoButtonPopup.SetButtonText("거절", "수락");
                 twoButtonPopup.OpenWithSetMessageAndButtonEvent("상대가 재대국 신청을 하였습니다.\n받으시겠습니까?",
-                    () => { gamePlayManager.multiplayManager.multiplayController?.AcceptRematch(); },
-                    () => { gamePlayManager.multiplayManager.multiplayController?.RejectRematch(); });
+                    () => { multiplayManager.multiplayController?.AcceptRematch(); },
+                    () => { multiplayManager.multiplayController?.RejectRematch(); });
                 break;
             case MultiplayControllerState.RematchRequestSent:
                 oneCancelButtonPopup.OpenWithSetMessageAndButtonEvent("재대국 신청 중입니다...", 2f,
-                    () => { gamePlayManager.multiplayManager.multiplayController?.CancelRematch(); });
+                    () => { multiplayManager.multiplayController?.CancelRematch(); });
                 break;
             case MultiplayControllerState.RematchRejected:
                 CloseButtonPopup();
