@@ -97,6 +97,7 @@ public class BoardManager : MonoBehaviour
         if (gamePlayManager.currentGameState != GameState.Playing) return;
         if (GameModeManager.Mode == GameMode.MultiPlayer &&
             gameLogic.GetCurrentTurnPlayer() == PlayerType.Opponent) return;
+        if (GameModeManager.Mode == GameMode.AI && gameLogic.GetCurrentTurnPlayer() == PlayerType.AI) return;
 
         HandleMouseInput();
     }
@@ -242,11 +243,6 @@ public class BoardManager : MonoBehaviour
     {
         if (gamePlayManager.currentGameState != GameState.Playing) return;
         if (!IsValidPosition(x, y)) return;
-        /*if (GamePlayManager.Instance.IsCurrentTurnAI())
-        {
-            Debug.Log("AI 차례일 때는 플레이어의 마우스 입력을 무시합니다.");
-            // 여기에 AI 차례일때는 플레이어의 마우스 입력을 무시하도록 하는 내용이 필요합니다..!
-        }*/
 
         // 해당 위치에 돌을 놓을 수 있는지 검사
         if (CanPlaceStone(x, y))
@@ -356,6 +352,7 @@ public class BoardManager : MonoBehaviour
     {
         if (GameModeManager.Mode == GameMode.MultiPlayer &&
             gameLogic.GetCurrentTurnPlayer() == PlayerType.Opponent) return;
+        
         if (!hasPendingMove) return;
 
         if (!CanPlaceStone(x, y))
