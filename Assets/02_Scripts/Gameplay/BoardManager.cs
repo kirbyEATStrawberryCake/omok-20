@@ -305,13 +305,17 @@ public class BoardManager : MonoBehaviour
     /// <summary>
     /// 실제로 돌을 놓는 메서드(착수 버튼에서 호출)
     /// </summary>
+    /// 
+
     public void PlaceStone()
+    {
+        PlaceStone(pendingMove.x, pendingMove.y);
+    }
+    public void PlaceStone(int x, int y)
     {
         if (GameModeManager.Mode == GameMode.MultiPlayer && gameLogic.currentTurnPlayer == PlayerType.Opponent) return;
         if (!hasPendingMove) return;
 
-        int x = pendingMove.x;
-        int y = pendingMove.y;
         if (!CanPlaceStone(x, y))
         {
             hasPendingMove = false;
