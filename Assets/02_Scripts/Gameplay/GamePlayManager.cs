@@ -1,5 +1,7 @@
 using System;
+using System.Diagnostics;
 using UnityEngine;
+using UnityEngine.Android;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
@@ -180,7 +182,7 @@ public class GamePlayManager : Singleton<GamePlayManager>
     
     private void Update()
     {
-        // ������ ���� ���� ���� �� ó��
+        // 게임 중이 아니면 무시
         if (currentGameState != GameState.Playing) return;
 
         // ���� ���� �÷��̾ AI���� Ȯ��
@@ -198,9 +200,6 @@ public class GamePlayManager : Singleton<GamePlayManager>
             // ���콺 �Է� ó�� (BoardManager�� update ���� ó��)
             isAITurnHandled = false; // AI 턴 처리 체크해제
         }
-        
-        // 게임중이 아니면 무시
-        if (currentGameState != GameState.Playing) return;
     }
     
     /// <summary>
@@ -237,7 +236,7 @@ public class GamePlayManager : Singleton<GamePlayManager>
         boardManager.HandleBoardClick(aiMove.x, aiMove.y);
 
         // 실제 착수 실행
-        boardManager.PlaceStone();
+        boardManager.PlaceStone(aiMove.x, aiMove.y);
         
         watch.Stop(); // ���� ����
         Debug.Log("�ڵ� ���� �ð�: " + watch.ElapsedMilliseconds + "ms"); // ��� �ð� ��� 
