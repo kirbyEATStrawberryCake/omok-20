@@ -84,7 +84,10 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
             gamePlayManager.OnGameEnd += OpenEndGamePanelInSinglePlay;
             gamePlayManager.OnGameEnd += UpdateProfileImagesOnResult;
             gamePlayManager.OnGameEnd += SaveGibo;
+            
             gamePlayManager.OnGameRestart += ResetProfileImage;
+            gamePlayManager.OnGameRestart += StartGibo;
+
 
             if (gamePlayManager?.GameLogicController != null)
             {
@@ -116,6 +119,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
             gamePlayManager.OnGameEnd -= UpdateProfileImagesOnResult;
             gamePlayManager.OnGameEnd -= SaveGibo;
             gamePlayManager.OnGameRestart -= ResetProfileImage;
+            gamePlayManager.OnGameRestart -= StartGibo;
 
             if (gamePlayManager?.GameLogicController != null)
             {
@@ -498,6 +502,12 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
     private void SaveGibo(GameResult result)
     {
         giboManager.SaveCurrentRecord();
+    }
+
+    // 재대국 시, 기보 생성 함수 호출
+    private void StartGibo()
+    {
+        giboManager.StartNewRecord();
     }
 
     /// <summary>

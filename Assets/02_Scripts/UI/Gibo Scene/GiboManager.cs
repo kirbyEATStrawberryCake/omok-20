@@ -177,7 +177,6 @@ public class GiboManager : Singleton<GiboManager>
 
     protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
     {
-        throw new NotImplementedException();
     }
 
     #endregion
