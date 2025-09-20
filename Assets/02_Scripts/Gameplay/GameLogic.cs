@@ -24,18 +24,18 @@ public class GameLogic
     private GomokuAIDebugger gomokuAIDebugger;
     private RenjuRule renjuRule;
     private MultiplayManager multiplayManager;
+    private GameTimer gameTimer;
     public StoneType currentStone { get; private set; } // 현재 차례인 돌 타입 (항상 흑돌부터 시작)
     private PlayerType blackStonePlayer; // 흑돌을 가진 플레이어
     private PlayerType whiteStonePlayer; // 백돌을 가진 플레이어
     public PlayerType currentTurnPlayer { get; private set; } // 현재 턴인 플레이어 ID
 
     // 플레이어 변경 시 발생하는 이벤트
-    public event UnityAction OnPlayerStonesRandomized;
     public event UnityAction<StoneType> OnPlayerTurnChanged;
     public event UnityAction<GameResult> WinConditionChecked;
 
     // 이벤트 구독을 위한 초기화 메서드
-    public void Initialize()
+    public void Initialize(GamePlayManager gamePlayManager)
     {
         // GomokuAI에게 StoneType을 반환하기 위해 작성했습니다.
         // 멀티플레이일 때는 실행되지 않고, 싱글플레이일 때만 실행하도록 조건문 처리가 필요합니다.
@@ -45,22 +45,21 @@ public class GameLogic
         //     gomokuAIDebugger.InstantiateGomokuAI(boardManager, aiStone);
         // }
         // Debug.Log("boardManager" + boardManager);
-        gamePlayManager = GamePlayManager.Instance;
-        boardManager = gamePlayManager?.boardManager;
-        gomokuAIDebugger = gamePlayManager?.gomokuAIDebugger;
-        renjuRule = gamePlayManager?.renjuRule;
-        multiplayManager = gamePlayManager?.multiplayManager;
-
-        if (gamePlayManager != null)
-        {
-            gamePlayManager.OnGameStart += RandomizePlayerStones;
-            gamePlayManager.OnGameRestart += ResetGame;
-        }
+        this.boardManager = gamePlayManager.BoardManager;
+        this.gomokuAIDebugger = gamePlayManager.GomokuAIDebugger;
+        this.renjuRule = gamePlayManager.RenjuRule;
+        this.multiplayManager = gamePlayManager.MultiplayManager;
+        this.gameTimer = gamePlayManager.GameTimer;
 
         if (boardManager != null)
         {
             boardManager.OnPlaceStone += CheckWinCondition;
             boardManager.OnPlaceStone += SwitchPlayer;
+        }
+
+        if (gameTimer != null)
+        {
+            gameTimer.OnTimeUp += ForceSkipTurn;
         }
     }
 
@@ -77,6 +76,11 @@ public class GameLogic
         {
             boardManager.OnPlaceStone -= CheckWinCondition;
             boardManager.OnPlaceStone -= SwitchPlayer;
+        }
+
+        if (gameTimer != null)
+        {
+            gameTimer.OnTimeUp -= ForceSkipTurn;
         }
     }
 
@@ -124,8 +128,7 @@ public class GameLogic
         currentStone = StoneType.Black;
         currentTurnPlayer = blackStonePlayer;
 
-        OnPlayerStonesRandomized?.Invoke();
-        // OnPlayerTurnChanged?.Invoke(currentPlayer);
+        OnPlayerTurnChanged?.Invoke(currentStone);
     }
 
     /// <summary>
@@ -246,5 +249,10 @@ public class GameLogic
     {
         currentStone = StoneType.Black;
         currentTurnPlayer = blackStonePlayer;
+    }
+
+    private void ForceSkipTurn()
+    {
+        SwitchPlayer(-1, -1);
     }
 }

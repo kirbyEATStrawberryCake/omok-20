@@ -21,7 +21,7 @@ public class RenjuRule : MonoBehaviour
     private void Start()
     {
         gamePlayManager = GamePlayManager.Instance;
-        boardManager = gamePlayManager?.boardManager;
+        boardManager = gamePlayManager?.BoardManager;
     }
 
     /// <summary>

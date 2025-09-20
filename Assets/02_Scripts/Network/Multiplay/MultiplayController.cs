@@ -51,7 +51,7 @@ public class MultiplayController : IDisposable
 
     // 사용자 정보
     public UserInfo CurrentUserInfo { get; private set; }
-
+    private string username;
     public bool amIFirstPlayer { get; private set; }
 
     // Room 상태 변화에 따른 액션
@@ -71,18 +71,18 @@ public class MultiplayController : IDisposable
             new SocketIOOptions { Transport = SocketIOClient.Transport.TransportProtocol.WebSocket });
         socket.JsonSerializer = new NewtonsoftJsonSerializer();
 
-        // 연결 상태 이벤트
-        socket.OnConnected += (sender, e) =>
-        {
-            isConnected = true;
-            Debug.Log("소켓 연결됨");
-        };
-
-        socket.OnDisconnected += (sender, e) =>
-        {
-            isConnected = false;
-            Debug.Log("소켓 연결 해제됨");
-        };
+        // // 연결 상태 이벤트
+        // socket.OnConnected += (sender, e) =>
+        // {
+        //     isConnected = true;
+        //     Debug.Log("소켓 연결됨");
+        // };
+        //
+        // socket.OnDisconnected += (sender, e) =>
+        // {
+        //     isConnected = false;
+        //     Debug.Log("소켓 연결 해제됨");
+        // };
 
         // 유저 정보 수신
         socket.OnUnityThread("userInfoLoaded", UserInfoLoaded);
@@ -125,10 +125,28 @@ public class MultiplayController : IDisposable
             return;
         }
 
+        this.username = username;
         socket?.Connect();
 
         // 연결 후 사용자 정보 전송
-        socket.OnConnected += (sender, e) => { socket.Emit("authenticate", username); };
+        if (socket != null)
+        {
+            socket.OnConnected += OnConnected;
+            socket.OnDisconnected += OnDisconnected;
+        }
+    }
+
+    private void OnConnected(object sender, EventArgs e)
+    {
+        socket.Emit("authenticate", username);
+        isConnected = true;
+        Debug.Log("소켓 연결됨");
+    }
+
+    private void OnDisconnected(object sender, string e)
+    {
+        isConnected = false;
+        Debug.Log("소켓 연결 해제됨");
     }
 
     #region Server -> Client
@@ -146,13 +164,11 @@ public class MultiplayController : IDisposable
 
     private void OpponentSurrender(SocketIOResponse obj)
     {
-        Debug.Log("상대방이 항복했습니다.");
         onMultiplayStateChanged?.Invoke(MultiplayControllerState.OpponentSurrender, null);
     }
 
     private void OpponentLeft(SocketIOResponse response)
     {
-        Debug.Log("상대방이 나갔습니다.");
         onMultiplayStateChanged?.Invoke(MultiplayControllerState.OpponentLeft, null);
     }
 
@@ -356,7 +372,7 @@ public class MultiplayController : IDisposable
         socket?.Emit("requestRematch");
         Debug.Log("리매치 요청 전송");
     }
-    
+
     // 리매치 수락
     public void AcceptRematch()
     {
@@ -382,9 +398,34 @@ public class MultiplayController : IDisposable
 
     public void Dispose()
     {
-        isConnected = false;
-        socket?.Disconnect();
-        socket?.Dispose();
-        socket = null;
+        try
+        {
+            isConnected = false;
+
+            // 소켓이 연결되어 있다면 안전하게 해제
+            if (socket != null)
+            {
+                Debug.Log("소켓 연결 해제 시작");
+
+                // 이벤트 핸들러 제거
+                socket.OnConnected -= OnConnected;
+                socket.OnDisconnected -= OnDisconnected;
+
+                // 소켓 해제
+                if (socket.Connected)
+                {
+                    socket.Disconnect();
+                }
+
+                socket.Dispose();
+                socket = null;
+
+                Debug.Log("소켓 연결 해제 완료");
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"소켓 해제 중 예외 발생: {e.Message}");
+        }
     }
 }

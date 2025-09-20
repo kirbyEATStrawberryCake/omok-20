@@ -9,22 +9,20 @@ public class GameLogicController : MonoBehaviour
     void Awake()
     {
         gameLogic = new GameLogic();
-    }
 
-    private void Start()
-    {
-        gameLogic.Initialize();
+        var gamePlayManager = GamePlayManager.Instance;
+        if (gamePlayManager != null)
+        {
+            gameLogic.Initialize(gamePlayManager);
+
+            gamePlayManager.OnGameStart += gameLogic.RandomizePlayerStones;
+            gamePlayManager.OnGameRestart += gameLogic.ResetGame;
+        }
     }
 
     private void OnDisable()
     {
         gameLogic.Cleanup();
-    }
-    
-    public event UnityAction OnPlayerStonesRandomized
-    {
-        add => gameLogic.OnPlayerStonesRandomized += value;
-        remove => gameLogic.OnPlayerStonesRandomized -= value;
     }
 
     public event UnityAction<StoneType> OnPlayerTurnChanged
@@ -43,7 +41,7 @@ public class GameLogicController : MonoBehaviour
     {
         return gameLogic.currentTurnPlayer;
     }
-    
+
     public StoneType GetCurrentStone()
     {
         return gameLogic.currentStone;
