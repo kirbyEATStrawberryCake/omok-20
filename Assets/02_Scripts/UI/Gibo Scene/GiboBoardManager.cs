@@ -271,7 +271,12 @@ public class GiboBoardManager : MonoBehaviour
         currentMoveIndex++;
         MoveData move = currentRecord.moves[currentMoveIndex];
         PlaceStoneVisual(move.x, move.y, move.stoneColor == 1 ? StoneType.Black : StoneType.White);
-        OnButtonChanged?.Invoke(currentMoveIndex);
+        if(currentMoveIndex == currentRecord.moves.Count -1)
+            OnButtonChanged?.Invoke(-2);
+        else
+        {
+            OnButtonChanged?.Invoke(currentMoveIndex);
+        }
     }
 
     public void OnClickLast()
