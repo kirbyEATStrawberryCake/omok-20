@@ -1,6 +1,7 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -84,7 +85,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
             gamePlayManager.OnGameEnd += OpenEndGamePanelInSinglePlay;
             gamePlayManager.OnGameEnd += UpdateProfileImagesOnResult;
             gamePlayManager.OnGameEnd += SaveGibo;
-            
+
             gamePlayManager.OnGameRestart += ResetProfileImage;
             gamePlayManager.OnGameRestart += StartGibo;
 
@@ -255,8 +256,6 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
                     rightProfileImage.sprite = gameManager.profileImage == 1
                         ? winRedPandaProfileSprite
                         : winPandaProfileSprite;
-
-                ;
                 break;
 
             case GameResult.Draw:
@@ -348,7 +347,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
                 break;
             case MultiplayControllerState.MatchCanceled:
                 oneConfirmButtonPopup.OpenWithSetMessageAndButtonEvent("매칭이 취소되었습니다.",
-                    () => StartCoroutine(SafeExitGame()));
+                    () => SceneController.LoadScene(SceneType.Main, 0.5f));
                 break;
         }
     }
@@ -413,34 +412,33 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
         }
     }
 
+    bool isRoomLeft = false;
+
     private IEnumerator SafeExitGame()
     {
         if (multiplayManager?.multiplayController != null &&
             GameModeManager.Mode == GameMode.MultiPlayer)
         {
+            MultiplayManager.Instance.OnRoomLeft += OnRoomLeftHandler;
+
             multiplayManager.multiplayController.LeaveRoom();
-            yield return new WaitForSeconds(0.3f);
+
+            float timeout = 3f;
+            while (!isRoomLeft && timeout > 0)
+            {
+                timeout -= Time.deltaTime;
+                yield return null;
+            }
+
+            MultiplayManager.Instance.OnRoomLeft -= OnRoomLeftHandler;
         }
 
         SceneController.LoadScene(SceneType.Main, 0.5f);
+    }
 
-
-        // SceneController.LoadScene(SceneType.Main, 0.5f);
-        // // 방 나가기
-        // if (multiplayManager?.multiplayController != null)
-        // {
-        //     multiplayManager.multiplayController.LeaveRoom();
-        //     yield return new WaitForSeconds(0.5f); // 서버 처리 대기
-        // }
-        //
-        // // 소켓 연결 해제
-        // if (multiplayManager?.multiplayController != null)
-        // {
-        //     multiplayManager.multiplayController.Dispose();
-        //     yield return new WaitForSeconds(0.3f); // 소켓 해제 대기
-        // }
-        //
-        // SceneController.LoadScene(SceneType.Main, 0.5f);
+    private void OnRoomLeftHandler()
+    {
+        isRoomLeft = true;
     }
 
     private IEnumerator FakeRematch(float waitTime)
@@ -510,16 +508,20 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
         giboManager.StartNewRecord();
     }
 
+    public event UnityAction OnCancelSurrender;
+    
     /// <summary>
     /// 항복 버튼을 눌렀을 때 호출되는 메소드
     /// </summary>
     public void OnClickSurrenderButton()
     {
-        // TODO: 타이머 멈추기
         twoButtonPopup.SetButtonText("취소", "기권");
         twoButtonPopup.OpenWithSetMessageAndButtonEvent("기권 하시겠습니까?", () => { gamePlayManager.Surrender(); }, () =>
         {
-            // TODO: 타이머 다시 시작
+            if (GameModeManager.Mode == GameMode.SinglePlayer)
+            {
+                OnCancelSurrender?.Invoke();
+            }
         });
     }
 }
