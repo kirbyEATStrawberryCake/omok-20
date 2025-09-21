@@ -55,7 +55,11 @@ public class MultiplayManager : Singleton<MultiplayManager>
                         break;
                     case MultiplayControllerState.OpponentSurrender:
                         Debug.Log("<color=cyan>상대방이 항복했습니다.</color>");
-                        EndGame(GameResult.Victory);
+                        if (gamePlayManager != null)
+                        {
+                            gamePlayManager.EndGame(GameResult.Victory);
+                        }
+
                         break;
                     // ---------- 리매칭 ----------
                     case MultiplayControllerState.RematchRequested:
@@ -123,6 +127,23 @@ public class MultiplayManager : Singleton<MultiplayManager>
         if (scene.buildIndex != (int)SceneType.Game) return;
         if (GameModeManager.Mode == GameMode.SinglePlayer) return;
 
+        // 씬이 로드될 때마다 참조 업데이트
+        gamePlayManager = GamePlayManager.Instance;
+        boardManager = gamePlayManager?.BoardManager;
+        statsManager = NetworkManager.Instance.statsManager;
+        
+        if (gamePlayManager != null)
+        {
+            gamePlayManager.OnGameEnd -= EndGame;
+            gamePlayManager.OnGameEnd += EndGame;
+
+            gamePlayManager.OnSurrender -= multiplayController.Surrender;
+            gamePlayManager.OnSurrender += multiplayController.Surrender;
+
+            Debug.Log("MultiplayManager에서 GamePlayManager 이벤트 재구독 완료");
+        }
+
+
         if (roomId != null) // 이미 매칭 중이라면
         {
             MatchCallback?.Invoke(MultiplayControllerState.MatchFound);
@@ -174,6 +195,19 @@ public class MultiplayManager : Singleton<MultiplayManager>
     private void DoOpponent(int x, int y)
     {
         Debug.Log($"<color=yellow>상대방 돌 생성: ({x}, {y})</color>");
+        // boardManager가 null인 경우 다시 찾아서 설정
+        if (boardManager == null)
+        {
+            gamePlayManager = GamePlayManager.Instance;
+            boardManager = gamePlayManager?.BoardManager;
+
+            if (boardManager == null)
+            {
+                Debug.LogError("BoardManager를 찾을 수 없습니다!");
+                return;
+            }
+        }
+
         boardManager.PlaceOpponentStone(x, y);
     }
 

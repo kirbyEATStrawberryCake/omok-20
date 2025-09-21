@@ -69,7 +69,7 @@ public class BoardManager : MonoBehaviour
         gamePlayManager = GamePlayManager.Instance;
         giboManager = GiboManager.Instance;
         uiManager = gamePlayManager?.UIManager;
-        multiplayManager = gamePlayManager?.MultiplayManager;
+        multiplayManager = MultiplayManager.Instance;
         gameLogic = gamePlayManager?.GameLogicController;
         renjuRule = gamePlayManager?.RenjuRule;
 
@@ -271,6 +271,22 @@ public class BoardManager : MonoBehaviour
     /// <returns>돌을 놓을 수 있는지 여부</returns>
     private bool CanPlaceStone(int x, int y)
     {
+        // 참조가 null인 경우 다시 설정
+        if (gamePlayManager == null || gameLogic == null || renjuRule == null)
+        {
+            gamePlayManager = GamePlayManager.Instance;
+            gameLogic = gamePlayManager?.GameLogicController;
+            renjuRule = gamePlayManager?.RenjuRule;
+
+            // 여전히 null이면 false 반환
+            if (gameLogic == null)
+            {
+                Debug.LogWarning("GameLogicController가 null입니다. 돌을 놓을 수 없습니다.");
+                return false;
+            }
+        }
+
+
         // 범위 검사
         if (!IsValidPosition(x, y)) return false;
 
@@ -392,7 +408,33 @@ public class BoardManager : MonoBehaviour
     /// </summary>
     public void PlaceOpponentStone(int x, int y)
     {
-        if (!CanPlaceStone(x, y)) return;
+        // 참조가 null인 경우 다시 설정
+        if (gamePlayManager == null || gameLogic == null)
+        {
+            gamePlayManager = GamePlayManager.Instance;
+            gameLogic = gamePlayManager?.GameLogicController;
+
+            if (gameLogic == null)
+            {
+                Debug.LogWarning("GameLogicController가 null입니다. 상대방 돌을 놓을 수 없습니다.");
+                return;
+            }
+        }
+
+        // 기본적인 범위 체크만 수행
+        if (!IsValidPosition(x, y))
+        {
+            Debug.LogWarning($"잘못된 좌표입니다: ({x}, {y})");
+            return;
+        }
+
+        // 이미 돌이 있는지만 체크
+        if (board[x, y] != StoneType.None)
+        {
+            Debug.LogWarning($"이미 돌이 놓인 위치입니다: ({x}, {y})");
+            return;
+        }
+
 
         // 논리적 보드에 돌 정보 저장
         var opponentStoneType = gameLogic.GetCurrentStone();

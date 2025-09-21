@@ -38,7 +38,7 @@ public class SignUpUI : MonoBehaviour
     private Sprite redPandaGreySprite;
 
     // private string selectedProfile = ""; // 선택된 프로필사진 ("panda" or "red_panda")
-    private int selectedProfile = 0; // 선택된 프로필사진(0 : Panda, 1 : Panda, 2 : Red Panda)
+    private int selectedProfile = 0; // 선택된 프로필사진(0 : Unselected, 1 : Panda, 2 : Red Panda)
 
     private void Start()
     {
@@ -52,7 +52,8 @@ public class SignUpUI : MonoBehaviour
         passwordInput.text = "";
         confirmPasswordInput.text = "";
         nicknameInput.text = "";
-        // 프로필 사진 선택 초기홛
+        usernameInput.ActivateInputField();
+        // 프로필 사진 선택 초기화
         pandaImage.sprite = pandaSprite;
         redPandaImage.sprite = redPandaSprite;
         selectedProfile = 0;
