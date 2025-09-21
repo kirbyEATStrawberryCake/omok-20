@@ -12,10 +12,10 @@ public class GameTimer : MonoBehaviour
     [SerializeField] private TextMeshProUGUI timerText;
 
     [Header("Timer Settings")]
-    // TODO: 테스트때문에 인스펙터에서 10으로 바꿔놓은거 바꿔야함
     [SerializeField] private float turnTimeLimit = 30f; // 턴당 제한 시간 (초)
 
     private GamePlayManager gamePlayManager;
+    private GameSceneUIManager uiManager;
     private GameLogicController gameLogic;
 
     private float currentTime;
@@ -29,11 +29,20 @@ public class GameTimer : MonoBehaviour
     private void Start()
     {
         gamePlayManager = GamePlayManager.Instance;
+        uiManager = gamePlayManager.UIManager;
         gameLogic = gamePlayManager.GameLogicController;
 
         // GamePlayManager 이벤트 구독
-        gamePlayManager.OnGameStart += OnGameStart;
-        gamePlayManager.OnGameEnd += OnGameEnd;
+        if (gamePlayManager != null)
+        {
+            gamePlayManager.OnGameStart += OnGameStart;
+            gamePlayManager.OnGameEnd += OnGameEnd;
+        }
+
+        if (uiManager != null)
+        {
+            uiManager.OnCancelSurrender += StartTimer;
+        }
 
         // GameLogic 이벤트 구독
         if (gameLogic != null)
@@ -49,6 +58,11 @@ public class GameTimer : MonoBehaviour
         {
             gamePlayManager.OnGameStart -= OnGameStart;
             gamePlayManager.OnGameEnd -= OnGameEnd;
+        }
+
+        if (uiManager != null)
+        {
+            uiManager.OnCancelSurrender -= StartTimer;
         }
 
         if (gameLogic != null)
@@ -113,6 +127,7 @@ public class GameTimer : MonoBehaviour
 
         StartTimer();
     }
+
     #endregion
 
     #region Timer Control Methods
@@ -120,7 +135,7 @@ public class GameTimer : MonoBehaviour
     /// <summary>
     /// 타이머 시작
     /// </summary>
-    private void StartTimer()
+    public void StartTimer()
     {
         if (!isGameActive) return;
         isTimerActive = true;
@@ -129,9 +144,10 @@ public class GameTimer : MonoBehaviour
     /// <summary>
     /// 타이머 정지
     /// </summary>
-    private void StopTimer()
+    public void StopTimer()
     {
-        isTimerActive = false;
+        if (GameModeManager.Mode == GameMode.SinglePlayer)
+            isTimerActive = false;
     }
 
     /// <summary>

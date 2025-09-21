@@ -7,42 +7,42 @@ using UnityEngine.Events;
 public class GiboBoardManager : MonoBehaviour
 {
     [Header("Sprites")]
-    [SerializeField] private Sprite blackStoneSprite; // Èæµ¹ ½ºÇÁ¶óÀÌÆ®
+    [SerializeField] private Sprite blackStoneSprite; // í‘ëŒ ìŠ¤í”„ë¼ì´íŠ¸
 
-    [SerializeField] private Sprite whiteStoneSprite; // ¹éµ¹ ½ºÇÁ¶óÀÌÆ®
+    [SerializeField] private Sprite whiteStoneSprite; // ë°±ëŒ ìŠ¤í”„ë¼ì´íŠ¸
 
     [Header("Board Settings")]
-    [SerializeField] private float cellSize = 0.494f; // °¢ Ä­ÀÇ Å©±â
+    [SerializeField] private float cellSize = 0.494f; // ê° ì¹¸ì˜ í¬ê¸°
 
-    public int boardSize { get; private set; } = 15; // ¿À¸ñÆÇ Å©±â (15x15)
-    [SerializeField] private Vector2 boardOffset = Vector2.zero; // º¸µå ¿ÀÇÁ¼Â
+    public int boardSize { get; private set; } = 15; // ì˜¤ëª©íŒ í¬ê¸° (15x15)
+    [SerializeField] private Vector2 boardOffset = Vector2.zero; // ë³´ë“œ ì˜¤í”„ì…‹
 
     [Header("Maker Object")]
-    [SerializeField] private GameObject lastMoveMarker; // ¸¶Áö¸· ¼ö ¸¶Ä¿
+    [SerializeField] private GameObject lastMoveMarker; // ë§ˆì§€ë§‰ ìˆ˜ ë§ˆì»¤
 
     [Header("Marker Settings")]
     [SerializeField] private GameObject stonePrefab_White;
 
     [SerializeField] private GameObject stonePrefab_Black;
-    [SerializeField] private Transform stoneParent; // µ¹À» »ı¼ºÇÒ ºÎ¸ğ ¿ÀºêÁ§Æ®
-    [Space(10)][SerializeField] private GameObject forbiddenMarkerPrefab; // ±İÁö ¸¶Å© ÇÁ¸®ÆÕ
-    [SerializeField] private Transform forbiddenMarkerParent; // ±İÁö ¸¶Å©¸¦ »ı¼ºÇÒ ºÎ¸ğ ¿ÀºêÁ§Æ®
+    [SerializeField] private Transform stoneParent; // ëŒì„ ìƒì„±í•  ë¶€ëª¨ ì˜¤ë¸Œì íŠ¸
+    [Space(10)][SerializeField] private GameObject forbiddenMarkerPrefab; // ê¸ˆì§€ ë§ˆí¬ í”„ë¦¬íŒ¹
+    [SerializeField] private Transform forbiddenMarkerParent; // ê¸ˆì§€ ë§ˆí¬ë¥¼ ìƒì„±í•  ë¶€ëª¨ ì˜¤ë¸Œì íŠ¸
 
-    protected StoneType[,] board; // ¿À¸ñÆÇ ¹è¿­ (³í¸®Àû º¸µå)
-    private GameObject[,] stoneObjects; // µ¹ ¿ÀºêÁ§Æ® ¹è¿­
+    protected StoneType[,] board; // ì˜¤ëª©íŒ ë°°ì—´ (ë…¼ë¦¬ì  ë³´ë“œ)
+    private GameObject[,] stoneObjects; // ëŒ ì˜¤ë¸Œì íŠ¸ ë°°ì—´
 
-    private List<GameObject> forbiddenMarkers; // ±İÁö À§Ä¡ ¸¶Ä¿µé
+    private List<GameObject> forbiddenMarkers; // ê¸ˆì§€ ìœ„ì¹˜ ë§ˆì»¤ë“¤
 
-    // ±âº¸¿ë
+    // ê¸°ë³´ìš©
     private GameRecord currentRecord;
     private int currentMoveIndex = -1;
 
-    // ÀÌº¥Æ®
+    // ì´ë²¤íŠ¸
     public event UnityAction<int> OnButtonChanged;
     public event UnityAction<GameRecord> OnProfileImage;
 
 
-    #region À¯´ÏÆ¼ ÀÌº¥Æ®
+    #region ìœ ë‹ˆí‹° ì´ë²¤íŠ¸
 
     private void Awake()
     {
@@ -52,24 +52,24 @@ public class GiboBoardManager : MonoBehaviour
 
     #endregion
 
-    #region ÃÊ±âÈ­
+    #region ì´ˆê¸°í™”
 
     /// <summary>
-    /// ¿À¸ñÆÇ ÃÊ±âÈ­
+    /// ì˜¤ëª©íŒ ì´ˆê¸°í™”
     /// </summary>
     private void InitializeBoard()
     {
-        // ¹è¿­ ÃÊ±âÈ­
+        // ë°°ì—´ ì´ˆê¸°í™”
         board = new StoneType[boardSize, boardSize];
         stoneObjects = new GameObject[boardSize, boardSize];
         forbiddenMarkers = new List<GameObject>();
 
-        // ±âÁ¸ ¿ÀºêÁ§Æ®µé Á¦°Å
+        // ê¸°ì¡´ ì˜¤ë¸Œì íŠ¸ë“¤ ì œê±°
         ClearBoard();
     }
 
     /// <summary>
-    /// ¿À¸ñÆÇ Á¤¸®
+    /// ì˜¤ëª©íŒ ì •ë¦¬
     /// </summary>
     public void ClearBoard()
     {
@@ -91,16 +91,16 @@ public class GiboBoardManager : MonoBehaviour
     }
 
     /// <summary>
-    /// ¸¶Ä¿µé Á¦°Å
+    /// ë§ˆì»¤ë“¤ ì œê±°
     /// </summary>
     private void HideAllMarkers(GameResult result = GameResult.None)
     {
-        lastMoveMarker?.SetActive(false); // ¸¶Áö¸· ¼ö ¸¶Ä¿ ¼û±â±â
-        HideForbiddenMarkers(); // ±İÁö À§Ä¡ ¸¶Ä¿µé ¼û±â±â
+        lastMoveMarker?.SetActive(false); // ë§ˆì§€ë§‰ ìˆ˜ ë§ˆì»¤ ìˆ¨ê¸°ê¸°
+        HideForbiddenMarkers(); // ê¸ˆì§€ ìœ„ì¹˜ ë§ˆì»¤ë“¤ ìˆ¨ê¸°ê¸°
     }
 
     /// <summary>
-    /// ±İÁö À§Ä¡ ¸¶Ä¿µé ¼û±â±â
+    /// ê¸ˆì§€ ìœ„ì¹˜ ë§ˆì»¤ë“¤ ìˆ¨ê¸°ê¸°
     /// </summary>
     private void HideForbiddenMarkers()
     {
@@ -117,45 +117,48 @@ public class GiboBoardManager : MonoBehaviour
 
     #endregion
 
-    #region ¸¶¿ì½º ÀÔ·Â ¹× Âø¼ö ´ë±â
+    #region ë§ˆìš°ìŠ¤ ì…ë ¥ ë° ì°©ìˆ˜ ëŒ€ê¸°
 
 
     /// <summary>
-    /// º¸µå ÁÂÇ¥¸¦ ¿ùµå ÁÂÇ¥·Î º¯È¯
+    /// ë³´ë“œ ì¢Œí‘œë¥¼ ì›”ë“œ ì¢Œí‘œë¡œ ë³€í™˜
     /// </summary>
     private Vector3 BoardToWorldPosition(int x, int y)
     {
         float worldX = (x - (boardSize - 1) / 2.0f) * cellSize + boardOffset.x;
-        float worldY = ((boardSize - 1) / 2.0f - y) * cellSize + boardOffset.y; // YÃà ¹İÀü
+        float worldY = ((boardSize - 1) / 2.0f - y) * cellSize + boardOffset.y; // Yì¶• ë°˜ì „
         return transform.position + new Vector3(worldX, worldY, 0);
     }
 
     #endregion
 
-    #region Âø¼ö
+    #region ì°©ìˆ˜
 
     /// <summary>
-    /// ½Ã°¢Àû µ¹ ½ºÇÁ¶óÀÌÆ® »ı¼º ¹× ¸¶Áö¸· ¼ö ¸¶Ä¿ ¾÷µ¥ÀÌÆ®
+    /// ì‹œê°ì  ëŒ ìŠ¤í”„ë¼ì´íŠ¸ ìƒì„± ë° ë§ˆì§€ë§‰ ìˆ˜ ë§ˆì»¤ ì—…ë°ì´íŠ¸
     /// </summary>
     public void PlaceStoneVisual(int x, int y, StoneType stoneType)
     {
-        // ½Ã°¢Àû µ¹ ½ºÇÁ¶óÀÌÆ® »ı¼º
+        // ì‹œê°ì  ëŒ ìŠ¤í”„ë¼ì´íŠ¸ ìƒì„±
         Vector3 worldPos = BoardToWorldPosition(x, y);
         var stoneObj = Instantiate(stoneType == StoneType.Black ? stonePrefab_Black : stonePrefab_White,
             worldPos, Quaternion.identity, stoneParent);
         stoneObj.name = $"Stone_{x}_{y}";
         stoneObjects[x, y] = stoneObj;
 
-        // ¸¶Áö¸· ¼ö ¸¶Ä¿ ¾÷µ¥ÀÌÆ®
+        // ì°©ìˆ˜ ì‚¬ìš´ë“œ ì¬ìƒ
+        SoundManager.PlaySFX();
+        
+        // ë§ˆì§€ë§‰ ìˆ˜ ë§ˆì»¤ ì—…ë°ì´íŠ¸
         UpdateLastMoveMarker(x, y);
     }
 
     #endregion
 
-    #region ¸¶Áö¸· ¼ö ¸¶Ä¿
+    #region ë§ˆì§€ë§‰ ìˆ˜ ë§ˆì»¤
 
     /// <summary>
-    /// ¸¶Áö¸· ¼ö ¸¶Ä¿ ¾÷µ¥ÀÌÆ®
+    /// ë§ˆì§€ë§‰ ìˆ˜ ë§ˆì»¤ ì—…ë°ì´íŠ¸
     /// </summary>
     private void UpdateLastMoveMarker(int x, int y)
     {
@@ -165,30 +168,30 @@ public class GiboBoardManager : MonoBehaviour
 
     #endregion
 
-    #region ±âº¸¿ë - ÇØ´ç ÁÂÇ¥ µ¹ Á¦°Å, ¸¶Áö¸· ¸¶Ä¿ ¼û±â±â
+    #region ê¸°ë³´ìš© - í•´ë‹¹ ì¢Œí‘œ ëŒ ì œê±°, ë§ˆì§€ë§‰ ë§ˆì»¤ ìˆ¨ê¸°ê¸°
     /// <summary>
-    /// ÇØ´ç ÁÂÇ¥ÀÇ µ¹ Á¦°Å
+    /// í•´ë‹¹ ì¢Œí‘œì˜ ëŒ ì œê±°
     /// </summary>
     /// <param name="x"></param>
     /// <param name="y"></param>
     public void RemoveStone(int x, int y)
     {
-        // ³í¸®Àû º¸µå ÃÊ±âÈ­
+        // ë…¼ë¦¬ì  ë³´ë“œ ì´ˆê¸°í™”
         board[x, y] = StoneType.None;
 
-        // ½Ã°¢Àû µ¹ Á¦°Å
+        // ì‹œê°ì  ëŒ ì œê±°
         if (stoneObjects[x, y] != null)
         {
             Destroy(stoneObjects[x, y]);
             stoneObjects[x, y] = null;
         }
 
-        // ¸¶Áö¸· ¼ö ¸¶Ä¿ ¾÷µ¥ÀÌÆ®
+        // ë§ˆì§€ë§‰ ìˆ˜ ë§ˆì»¤ ì—…ë°ì´íŠ¸
         lastMoveMarker.SetActive(false);
     }
 
     /// <summary>
-    /// ±âº¸¿ë - ¸¶Áö¸· ¼ö ¸¶Ä¿ ¼û±â±â 
+    /// ê¸°ë³´ìš© - ë§ˆì§€ë§‰ ìˆ˜ ë§ˆì»¤ ìˆ¨ê¸°ê¸° 
     /// </summary>
     public void HideLastMoveMarker()
     {
@@ -210,19 +213,19 @@ public class GiboBoardManager : MonoBehaviour
         currentRecord = GiboManager.LoadRecord(gameId);
         if (currentRecord == null)
         {
-            Debug.LogError($"±âº¸¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù: {gameId}");
+            Debug.LogError($"ê¸°ë³´ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤: {gameId}");
             return;
         }
         Debug.Log(currentRecord.otherPlayerNickname + " " + currentRecord.otherProfileImage + " " + currentRecord.otherRank);
 
-        // ÃÊ±âÈ­: º¸µå ºñ¿ì±â
+        // ì´ˆê¸°í™”: ë³´ë“œ ë¹„ìš°ê¸°
         ClearBoard();
-        currentMoveIndex = -1; // ¾ÆÁ÷ µ¹ÀÌ ³õÀÌÁö ¾ÊÀº »óÅÂ
+        currentMoveIndex = -1; // ì•„ì§ ëŒì´ ë†“ì´ì§€ ì•Šì€ ìƒíƒœ
         OnProfileImage?.Invoke(currentRecord);
     }
 
 
-    #region ¹öÆ° ÀÌº¥Æ® (Ã³À½ / ÀÌÀü / ´ÙÀ½ / ³¡)
+    #region ë²„íŠ¼ ì´ë²¤íŠ¸ (ì²˜ìŒ / ì´ì „ / ë‹¤ìŒ / ë)
 
     public void OnClickFirst()
     {
@@ -235,7 +238,7 @@ public class GiboBoardManager : MonoBehaviour
     {
         if (currentMoveIndex < 0) return;
 
-        // ¸¶Áö¸· ¼ö Á¦°Å
+        // ë§ˆì§€ë§‰ ìˆ˜ ì œê±°
         MoveData lastMove = currentRecord.moves[currentMoveIndex];
         RemoveStone(lastMove.x, lastMove.y);
         currentMoveIndex--;
@@ -261,7 +264,7 @@ public class GiboBoardManager : MonoBehaviour
     {
         if (currentRecord == null) return;
 
-        // º¸µå ÃÊ±âÈ­ ÈÄ ¸ğµç µ¹ ¹èÄ¡
+        // ë³´ë“œ ì´ˆê¸°í™” í›„ ëª¨ë“  ëŒ ë°°ì¹˜
         ClearBoard();
         for (int i = 0; i < currentRecord.moves.Count; i++)
         {
@@ -269,7 +272,7 @@ public class GiboBoardManager : MonoBehaviour
             PlaceStoneVisual(move.x, move.y, move.stoneColor == 1 ? StoneType.Black : StoneType.White);
         }
         currentMoveIndex = currentRecord.moves.Count - 1;
-        OnButtonChanged?.Invoke(-2); // -2 °ªÀ» º¸³¾ °æ¿ì ¸¶Áö¸·ÀÌ¶ó°í ÀÎ½Ä
+        OnButtonChanged?.Invoke(-2); // -2 ê°’ì„ ë³´ë‚¼ ê²½ìš° ë§ˆì§€ë§‰ì´ë¼ê³  ì¸ì‹
     }
 
     #endregion

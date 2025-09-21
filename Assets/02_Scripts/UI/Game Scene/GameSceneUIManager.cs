@@ -1,6 +1,7 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -495,28 +496,32 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
 
     #endregion
 
-// 게임 종료 시, 기보 저장 함수 호출
+    // 게임 종료 시, 기보 저장 함수 호출
     private void SaveGibo(GameResult result)
     {
         giboManager.SaveCurrentRecord();
     }
 
-// 재대국 시, 기보 생성 함수 호출
+    // 재대국 시, 기보 생성 함수 호출
     private void StartGibo()
     {
         giboManager.StartNewRecord();
     }
 
+    public event UnityAction OnCancelSurrender;
+    
     /// <summary>
     /// 항복 버튼을 눌렀을 때 호출되는 메소드
     /// </summary>
     public void OnClickSurrenderButton()
     {
-        // TODO: 타이머 멈추기
         twoButtonPopup.SetButtonText("취소", "기권");
         twoButtonPopup.OpenWithSetMessageAndButtonEvent("기권 하시겠습니까?", () => { gamePlayManager.Surrender(); }, () =>
         {
-            // TODO: 타이머 다시 시작
+            if (GameModeManager.Mode == GameMode.SinglePlayer)
+            {
+                OnCancelSurrender?.Invoke();
+            }
         });
     }
 }

@@ -69,6 +69,7 @@ public class BoardManager : MonoBehaviour
         gamePlayManager = GamePlayManager.Instance;
         giboManager = GiboManager.Instance;
         uiManager = gamePlayManager?.UIManager;
+        multiplayManager = gamePlayManager?.MultiplayManager;
         gameLogic = gamePlayManager?.GameLogicController;
         renjuRule = gamePlayManager?.RenjuRule;
 
@@ -355,7 +356,7 @@ public class BoardManager : MonoBehaviour
     {
         if (GameModeManager.Mode == GameMode.MultiPlayer &&
             gameLogic.GetCurrentTurnPlayer() == PlayerType.Opponent) return;
-        
+
         if (!hasPendingMove) return;
 
         if (!CanPlaceStone(x, y))
@@ -382,6 +383,7 @@ public class BoardManager : MonoBehaviour
             multiplayManager.GoStone(x, y);
         }
 
+        SoundManager.PlaySFX();
         OnPlaceStone?.Invoke(x, y); // 착수 이벤트 발생
     }
 
@@ -397,7 +399,7 @@ public class BoardManager : MonoBehaviour
         board[x, y] = opponentStoneType;
 
         PlaceStoneVisual(x, y, opponentStoneType);
-
+        SoundManager.PlaySFX();
         OnPlaceStone?.Invoke(x, y); // 착수 이벤트 발생
     }
 
@@ -418,7 +420,7 @@ public class BoardManager : MonoBehaviour
         if (gamePlayManager.ShowForbiddenPositions && gamePlayManager.IsRenjuModeEnabled)
             UpdateForbiddenPositions();
 
-        MoveData move = new MoveData { x = x, y = y, stoneColor = stoneType == StoneType.Black ? 1 : 2};
+        MoveData move = new MoveData { x = x, y = y, stoneColor = stoneType == StoneType.Black ? 1 : 2 };
         giboManager.AddMove(move);
     }
 

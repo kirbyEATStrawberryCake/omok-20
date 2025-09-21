@@ -11,13 +11,19 @@ public class RankingUI : MonoBehaviour
     [SerializeField] [Tooltip("랭킹이 표시될 부모 오브젝트 트랜스폼(Content)")]
     private Transform rankingContentObject;
 
-    private void Start()
+    private void Awake()
     {
         mainSceneUIManager = MainSceneUIManager.Instance;
     }
 
     private void OnEnable()
     {
+        // 기존 랭킹 목록 지우기
+        foreach (Transform child in rankingContentObject)
+        {
+            Destroy(child.gameObject);
+        }
+        
         mainSceneUIManager.statsManager.GetRanking((response) =>
             {
                 foreach (var user in response.ranking)
@@ -34,12 +40,9 @@ public class RankingUI : MonoBehaviour
                     () => { mainSceneUIManager.OpenMainPanel(); });
             });
     }
-    
+
     public void OnClickBackButton()
     {
-        mainSceneUIManager.OpenTwoButtonPopup("랭킹을 종료하시겠습니까?", () =>
-        {
-            mainSceneUIManager.OpenMainPanel();
-        });
+        mainSceneUIManager.OpenTwoButtonPopup("랭킹을 종료하시겠습니까?", () => { mainSceneUIManager.OpenMainPanel(); });
     }
 }
