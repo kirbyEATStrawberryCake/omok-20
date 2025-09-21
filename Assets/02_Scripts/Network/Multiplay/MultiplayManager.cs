@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
@@ -17,16 +18,20 @@ public class MultiplayManager : Singleton<MultiplayManager>
     private string roomId;
     public MatchData MatchData { get; private set; }
 
-    public event UnityAction MatchWaitingCallback;
-    public event UnityAction MatchFoundCallback;
-    public event UnityAction MatchCanceledCallback;
+    public event UnityAction<MultiplayControllerState> MatchCallback;
     public event UnityAction<GameResultResponse, GameResult> MatchResultCallback;
     public event UnityAction<MultiplayControllerState> RematchCallback;
     public event UnityAction<string, bool> ErrorCallback;
 
+    public event UnityAction OnRoomLeft; // 방 나가기 완료 시 호출될 이벤트
+
     protected override void Awake()
     {
         base.Awake();
+        if (Instance == this)
+        {
+            DontDestroyOnLoad(gameObject);
+        }
 
         if (GameModeManager.Mode == GameMode.SinglePlayer) return;
 
@@ -35,30 +40,18 @@ public class MultiplayManager : Singleton<MultiplayManager>
                 switch (state)
                 {
                     // ---------- 매칭 ---------- 
-                    case MultiplayControllerState.MatchWaiting:
-                        // 매칭 중임을 알리는 팝업을 띄움
-                        MatchWaitingCallback?.Invoke();
-                        Debug.Log("<color=cyan>매칭 찾는 중...</color>");
-                        // TODO: 사용자가 매칭 중임을 알 수 있도록 로직 추가
-                        break;
-                    case MultiplayControllerState.MatchExpanded:
-                        // 매칭 확장
-                        Debug.Log("<color=cyan>매칭 범위 확장</color>");
-                        break;
                     case MultiplayControllerState.MatchFound:
-                        // 매칭 중임을 알리는 팝업을 강제로 닫음
                         this.roomId = response;
-                        MatchFoundCallback?.Invoke();
-                        Debug.Log("<color=green>매칭 성공!</color>");
+                        MatchCallback?.Invoke(state);
                         break;
+                    case MultiplayControllerState.MatchWaiting:
+                    case MultiplayControllerState.MatchExpanded:
                     case MultiplayControllerState.MatchCanceled:
-                        // 매칭 취소 팝업을 띄움, 확인 버튼을 누르면 메인 씬으로 이동
-                        MatchCanceledCallback?.Invoke();
-                        Debug.Log("<color=cyan>매칭을 취소합니다.</color>");
+                        MatchCallback?.Invoke(state);
                         break;
                     case MultiplayControllerState.MatchFailed:
-                        Debug.Log("<color=magenta>매칭 실패 AI 대전으로 전환합니다.</color>");
-                        // TODO: AI대전으로 전환
+                        GameModeManager.Mode = GameMode.AI;
+                        MatchCallback?.Invoke(state);
                         break;
                     case MultiplayControllerState.OpponentSurrender:
                         Debug.Log("<color=cyan>상대방이 항복했습니다.</color>");
@@ -73,7 +66,11 @@ public class MultiplayManager : Singleton<MultiplayManager>
                         RematchCallback?.Invoke(state);
                         break;
                     case MultiplayControllerState.OpponentLeft:
+                        this.roomId = null;
+                        RematchCallback?.Invoke(state);
+                        break;
                     case MultiplayControllerState.ExitRoom:
+                        OnRoomLeft?.Invoke();
                         this.roomId = null;
                         RematchCallback?.Invoke(state);
                         break;
@@ -114,14 +111,22 @@ public class MultiplayManager : Singleton<MultiplayManager>
         }
     }
 
+    protected override void OnDestroy()
+    {
+        base.OnDestroy();
+        multiplayController?.Dispose();
+        multiplayController = null;
+    }
+
     protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
     {
         if (scene.buildIndex != (int)SceneType.Game) return;
-
         if (GameModeManager.Mode == GameMode.SinglePlayer) return;
+
         if (roomId != null) // 이미 매칭 중이라면
         {
-            MatchFoundCallback?.Invoke();
+            MatchCallback?.Invoke(MultiplayControllerState.MatchFound);
+            return;
         }
 
         StartCoroutine(WaitForConnectionAndRequestMatch());

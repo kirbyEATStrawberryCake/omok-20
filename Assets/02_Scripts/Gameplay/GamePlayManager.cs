@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
@@ -77,21 +78,77 @@ public class GamePlayManager : Singleton<GamePlayManager>
     {
         if (GameLogicController != null)
         {
+            GameLogicController.Initialize(this);
             GameLogicController.WinConditionChecked += EndGame;
+            OnGameStart += GameLogicController.RandomizePlayerStones;
+            OnGameRestart += GameLogicController.ResetGame;
         }
 
         if (MultiplayManager.Instance != null && GameModeManager.Mode == GameMode.MultiPlayer)
         {
-            MultiplayManager.Instance.MatchFoundCallback += StartGame;
+            MultiplayManager.Instance.MatchCallback += StartGame;
         }
 
         currentGameState = GameState.Default;
 
-        if (GameModeManager.Mode == GameMode.SinglePlayer)
+        if (GameModeManager.Mode == GameMode.SinglePlayer || GameModeManager.Mode == GameMode.AI)
         {
             StartGame();
         }
         // 멀티플레이는 MultiplayManager에서 담당
+    }
+
+    private void Update()
+    {
+        if (currentGameState != GameState.Playing) return;
+
+        if (GameModeManager.Mode != GameMode.SinglePlayer && GameModeManager.Mode != GameMode.AI)
+            return;
+
+        // 현재 턴이 AI인지 확인
+        if (IsCurrentTurnAI())
+        {
+            if (!isAITurnHandled)
+            {
+                HandleAITurn();
+                isAITurnHandled = true;
+            }
+        }
+        else
+        {
+            isAITurnHandled = false;
+        }
+    }
+
+    private bool IsCurrentTurnAI()
+    {
+        if (GameModeManager.Mode == GameMode.AI)
+        {
+            return GameLogicController.GetCurrentTurnPlayer() == PlayerType.AI;
+        }
+
+        return false;
+    }
+
+    private void HandleAITurn()
+    {
+        if (!IsInvoking("ExecuteAITurn"))
+        {
+            Invoke("ExecuteAITurn", 1f);
+        }
+    }
+
+    private void ExecuteAITurn()
+    {
+        var watch = new System.Diagnostics.Stopwatch();
+        watch.Start();
+
+        Vector2Int aiMove = gomokuAIDebugger.GetNextMoveFromAI();
+        boardManager.HandleBoardClick(aiMove.x, aiMove.y);
+        boardManager.PlaceStone();
+
+        watch.Stop();
+        Debug.Log("AI 착수 시간: " + watch.ElapsedMilliseconds + "ms");
     }
 
     private void OnDisable()
@@ -99,11 +156,13 @@ public class GamePlayManager : Singleton<GamePlayManager>
         if (GameLogicController != null)
         {
             GameLogicController.WinConditionChecked -= EndGame;
+            OnGameStart += GameLogicController.RandomizePlayerStones;
+            OnGameRestart += GameLogicController.ResetGame;
         }
 
         if (MultiplayManager.Instance != null && GameModeManager.Mode == GameMode.MultiPlayer)
         {
-            MultiplayManager.Instance.MatchFoundCallback -= StartGame;
+            MultiplayManager.Instance.MatchCallback -= StartGame;
         }
     }
 
@@ -125,6 +184,26 @@ public class GamePlayManager : Singleton<GamePlayManager>
         OnGameStart?.Invoke();
     }
 
+    private void StartGame(MultiplayControllerState state)
+    {
+        if (state == MultiplayControllerState.MatchFound)
+            StartGame();
+        else if (state == MultiplayControllerState.MatchFailed)
+            StartAIGame();
+    }
+
+    private void StartAIGame()
+    {
+        if (currentGameState != GameState.Default) return;
+
+        if (MultiplayManager.Instance != null)
+        {
+            MultiplayManager.Instance.MatchCallback -= StartGame;
+        }
+
+        StartGame();
+    }
+
     /// <summary>
     /// 항복 처리
     /// </summary>
@@ -143,7 +222,7 @@ public class GamePlayManager : Singleton<GamePlayManager>
             Debug.Log($"{currentTurnPlayer}가 항복했습니다");
             EndGame(result);
         }
-        else if (GameModeManager.Mode == GameMode.MultiPlayer)
+        else if (GameModeManager.Mode == GameMode.MultiPlayer || GameModeManager.Mode == GameMode.AI)
         {
             Debug.Log("항복했습니다");
             OnSurrender?.Invoke();

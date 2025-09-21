@@ -9,6 +9,7 @@ public class BoardManager : MonoBehaviour
     private GamePlayManager gamePlayManager;
     private GameSceneUIManager uiManager;
     private MultiplayManager multiplayManager;
+    private GiboManager giboManager;
     private RenjuRule renjuRule;
     private GameLogicController gameLogic;
 
@@ -54,6 +55,7 @@ public class BoardManager : MonoBehaviour
     public event UnityAction<int, int> OnPlaceStone;
     public event UnityAction<string, bool> ViolateRenjuRule;
 
+
     #region 유니티 이벤트
 
     private void Awake()
@@ -65,7 +67,9 @@ public class BoardManager : MonoBehaviour
     {
         mainCamera = Camera.main;
         gamePlayManager = GamePlayManager.Instance;
+        giboManager = GiboManager.Instance;
         uiManager = gamePlayManager?.UIManager;
+        multiplayManager = gamePlayManager?.MultiplayManager;
         gameLogic = gamePlayManager?.GameLogicController;
         renjuRule = gamePlayManager?.RenjuRule;
 
@@ -97,6 +101,7 @@ public class BoardManager : MonoBehaviour
         if (gamePlayManager.currentGameState != GameState.Playing) return;
         if (GameModeManager.Mode == GameMode.MultiPlayer &&
             gameLogic.GetCurrentTurnPlayer() == PlayerType.Opponent) return;
+        if (GameModeManager.Mode == GameMode.AI && gameLogic.GetCurrentTurnPlayer() == PlayerType.AI) return;
 
         HandleMouseInput();
     }
@@ -242,11 +247,6 @@ public class BoardManager : MonoBehaviour
     {
         if (gamePlayManager.currentGameState != GameState.Playing) return;
         if (!IsValidPosition(x, y)) return;
-        /*if (GamePlayManager.Instance.IsCurrentTurnAI())
-        {
-            Debug.Log("AI 차례일 때는 플레이어의 마우스 입력을 무시합니다.");
-            // 여기에 AI 차례일때는 플레이어의 마우스 입력을 무시하도록 하는 내용이 필요합니다..!
-        }*/
 
         // 해당 위치에 돌을 놓을 수 있는지 검사
         if (CanPlaceStone(x, y))
@@ -356,6 +356,7 @@ public class BoardManager : MonoBehaviour
     {
         if (GameModeManager.Mode == GameMode.MultiPlayer &&
             gameLogic.GetCurrentTurnPlayer() == PlayerType.Opponent) return;
+
         if (!hasPendingMove) return;
 
         if (!CanPlaceStone(x, y))
@@ -382,6 +383,7 @@ public class BoardManager : MonoBehaviour
             multiplayManager.GoStone(x, y);
         }
 
+        SoundManager.PlaySFX();
         OnPlaceStone?.Invoke(x, y); // 착수 이벤트 발생
     }
 
@@ -397,7 +399,7 @@ public class BoardManager : MonoBehaviour
         board[x, y] = opponentStoneType;
 
         PlaceStoneVisual(x, y, opponentStoneType);
-
+        SoundManager.PlaySFX();
         OnPlaceStone?.Invoke(x, y); // 착수 이벤트 발생
     }
 
@@ -417,6 +419,9 @@ public class BoardManager : MonoBehaviour
         UpdateLastMoveMarker(x, y);
         if (gamePlayManager.ShowForbiddenPositions && gamePlayManager.IsRenjuModeEnabled)
             UpdateForbiddenPositions();
+
+        MoveData move = new MoveData { x = x, y = y, stoneColor = stoneType == StoneType.Black ? 1 : 2 };
+        giboManager.AddMove(move);
     }
 
     #endregion

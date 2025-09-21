@@ -107,6 +107,23 @@ public class GameLogic
                 Debug.Log("멀티플레이: 내가 후공 (백돌)");
             }
         }
+        else if (GameModeManager.Mode == GameMode.AI)
+        {
+            Debug.Log("AI 전환 모드: 플레이어 vs AI");
+
+            if (Random.Range(0, 2) == 0)
+            {
+                blackStonePlayer = PlayerType.Me;
+                whiteStonePlayer = PlayerType.AI;
+                Debug.Log("AI플레이: Player1이 선공 (흑돌)");
+            }
+            else
+            {
+                blackStonePlayer = PlayerType.AI;
+                whiteStonePlayer = PlayerType.Me;
+                Debug.Log("AI플레이: AI가 선공 (흑돌)");
+            }
+        }
         else
         {
             // 싱글플레이 (로컬): 랜덤 방식
@@ -127,6 +144,14 @@ public class GameLogic
         // 오목은 항상 흑돌부터 시작
         currentStone = StoneType.Black;
         currentTurnPlayer = blackStonePlayer;
+        
+        // AI 초기화 (플레이어 할당 완료 후)
+        if (blackStonePlayer == PlayerType.AI || whiteStonePlayer == PlayerType.AI)
+        {
+            StoneType aiStoneType = (blackStonePlayer == PlayerType.AI) ? StoneType.Black : StoneType.White;
+            gomokuAIDebugger.InstantiateGomokuAI(aiStoneType);
+        }
+
 
         OnPlayerTurnChanged?.Invoke(currentStone);
     }
@@ -220,7 +245,7 @@ public class GameLogic
     {
         PlayerType winnerPlayer = (winnerStone == StoneType.Black) ? blackStonePlayer : whiteStonePlayer;
 
-        if (GameModeManager.Mode == GameMode.MultiPlayer)
+        if (GameModeManager.Mode == GameMode.MultiPlayer || GameModeManager.Mode == GameMode.AI)
         {
             // 멀티플레이: 내가 이겼는지 확인
             return (winnerPlayer == PlayerType.Me) ? GameResult.Victory : GameResult.Defeat;

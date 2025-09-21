@@ -15,6 +15,7 @@ public class GameTimer : MonoBehaviour
     [SerializeField] private float turnTimeLimit = 30f; // 턴당 제한 시간 (초)
 
     private GamePlayManager gamePlayManager;
+    private GameSceneUIManager uiManager;
     private GameLogicController gameLogic;
 
     private float currentTime;
@@ -28,22 +29,25 @@ public class GameTimer : MonoBehaviour
     private void Start()
     {
         gamePlayManager = GamePlayManager.Instance;
+        uiManager = gamePlayManager.UIManager;
         gameLogic = gamePlayManager.GameLogicController;
 
         // GamePlayManager 이벤트 구독
-        gamePlayManager.OnGameStart += OnGameStart;
-        gamePlayManager.OnGameEnd += OnGameEnd;
+        if (gamePlayManager != null)
+        {
+            gamePlayManager.OnGameStart += OnGameStart;
+            gamePlayManager.OnGameEnd += OnGameEnd;
+        }
+
+        if (uiManager != null)
+        {
+            uiManager.OnCancelSurrender += StartTimer;
+        }
 
         // GameLogic 이벤트 구독
         if (gameLogic != null)
         {
             gameLogic.OnPlayerTurnChanged += OnPlayerTurnChanged;
-        }
-
-        // BoardManager OnPlaceStone 이벤트 구독 (착수 시에만 타이머 초기화)
-        if (gamePlayManager.BoardManager != null)
-        {
-            // gamePlayManager.BoardManager.OnPlaceStone += OnStonePlace;
         }
     }
 
@@ -56,14 +60,14 @@ public class GameTimer : MonoBehaviour
             gamePlayManager.OnGameEnd -= OnGameEnd;
         }
 
+        if (uiManager != null)
+        {
+            uiManager.OnCancelSurrender -= StartTimer;
+        }
+
         if (gameLogic != null)
         {
             gameLogic.OnPlayerTurnChanged -= OnPlayerTurnChanged;
-        }
-
-        if (gamePlayManager?.BoardManager != null)
-        {
-            // gamePlayManager.BoardManager.OnPlaceStone -= OnStonePlace;
         }
     }
 
@@ -111,7 +115,7 @@ public class GameTimer : MonoBehaviour
             StartCoroutine(WaitForGameActiveAndStart());
         }
 
-        Debug.Log($"턴 변경됨 - 현재 턴: {currentStone}, 타이머 리셋 및 시작");
+        // Debug.Log($"턴 변경됨 - 현재 턴: {currentStone}, 타이머 리셋 및 시작");
     }
 
     private IEnumerator WaitForGameActiveAndStart()
@@ -124,14 +128,6 @@ public class GameTimer : MonoBehaviour
         StartTimer();
     }
 
-    // private void OnStonePlace(int x, int y)
-    // {
-    //     // 실제 착수가 이루어졌을 때만 타이머 리셋 및 정지
-    //     Debug.Log($"착수 완료: ({x}, {y}) - 타이머 리셋 및 정지");
-    //     ResetTimer();
-    //     StopTimer();
-    // }
-
     #endregion
 
     #region Timer Control Methods
@@ -139,32 +135,19 @@ public class GameTimer : MonoBehaviour
     /// <summary>
     /// 타이머 시작
     /// </summary>
-    private void StartTimer()
+    public void StartTimer()
     {
         if (!isGameActive) return;
         isTimerActive = true;
-
-        // // 멀티플레이에서는 내 턴일 때만 타이머 활성화
-        // if (GameModeManager.Mode == GameMode.MultiPlayer)
-        // {
-        //     bool isMyTurn = (gameLogic.GetCurrentTurnPlayer() == PlayerType.Me);
-        //     isTimerActive = isMyTurn;
-        // }
-        // else
-        // {
-        //     // 싱글플레이에서는 항상 활성화
-        //     isTimerActive = true;
-        // }
-
-        Debug.Log($"타이머 시작 - 현재 턴: {gameLogic.GetCurrentTurnPlayer()}, 활성화: {isTimerActive}");
     }
 
     /// <summary>
     /// 타이머 정지
     /// </summary>
-    private void StopTimer()
+    public void StopTimer()
     {
-        isTimerActive = false;
+        if (GameModeManager.Mode == GameMode.SinglePlayer)
+            isTimerActive = false;
     }
 
     /// <summary>
@@ -188,34 +171,6 @@ public class GameTimer : MonoBehaviour
 
         // 다음 턴을 위해 타이머 리셋
         ResetTimer();
-
-        // 강제로 턴 넘기기
-        // ForceSkipTurn();
-    }
-
-    /// <summary>
-    /// 강제 턴 스킵 (시간 초과 시)
-    /// </summary>
-    private void ForceSkipTurn()
-    {
-        if (gamePlayManager.currentGameState != GameState.Playing) return;
-
-        if (GameModeManager.Mode == GameMode.MultiPlayer)
-        {
-            // 멀티플레이: 내 턴에서 시간 초과 시 상대방 턴으로
-            if (gameLogic.GetCurrentTurnPlayer() == PlayerType.Me)
-            {
-                // 서버에 턴 스킵 전송 (실제 구현에서는 MultiplayManager를 통해)
-                Debug.Log("멀티플레이: 시간 초과로 턴 스킵");
-                // gamePlayManager.multiplayManager.SendTurnSkip();
-            }
-        }
-        else
-        {
-            // 싱글플레이: GameLogic의 SkipTurn 메서드 호출
-            Debug.Log("싱글플레이: 시간 초과로 턴 스킵");
-            // gameLogic.SkipTurn();
-        }
     }
 
     #endregion

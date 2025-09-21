@@ -6,7 +6,8 @@ public enum SceneType
 {
     Login,
     Main,
-    Game
+    Game,
+    Gibo
 }
 
 /// <summary>
