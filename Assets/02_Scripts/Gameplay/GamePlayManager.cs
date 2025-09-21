@@ -78,7 +78,10 @@ public class GamePlayManager : Singleton<GamePlayManager>
     {
         if (GameLogicController != null)
         {
+            GameLogicController.Initialize(this);
             GameLogicController.WinConditionChecked += EndGame;
+            OnGameStart += GameLogicController.RandomizePlayerStones;
+            OnGameRestart += GameLogicController.ResetGame;
         }
 
         if (MultiplayManager.Instance != null && GameModeManager.Mode == GameMode.MultiPlayer)
@@ -153,6 +156,8 @@ public class GamePlayManager : Singleton<GamePlayManager>
         if (GameLogicController != null)
         {
             GameLogicController.WinConditionChecked -= EndGame;
+            OnGameStart += GameLogicController.RandomizePlayerStones;
+            OnGameRestart += GameLogicController.ResetGame;
         }
 
         if (MultiplayManager.Instance != null && GameModeManager.Mode == GameMode.MultiPlayer)
@@ -183,7 +188,7 @@ public class GamePlayManager : Singleton<GamePlayManager>
     {
         if (state == MultiplayControllerState.MatchFound)
             StartGame();
-        else if(state == MultiplayControllerState.MatchFailed)
+        else if (state == MultiplayControllerState.MatchFailed)
             StartAIGame();
     }
 

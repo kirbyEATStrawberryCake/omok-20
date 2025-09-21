@@ -23,9 +23,15 @@ public class MultiplayManager : Singleton<MultiplayManager>
     public event UnityAction<MultiplayControllerState> RematchCallback;
     public event UnityAction<string, bool> ErrorCallback;
 
+    public event UnityAction OnRoomLeft; // 방 나가기 완료 시 호출될 이벤트
+
     protected override void Awake()
     {
         base.Awake();
+        if (Instance == this)
+        {
+            DontDestroyOnLoad(gameObject);
+        }
 
         if (GameModeManager.Mode == GameMode.SinglePlayer) return;
 
@@ -60,7 +66,11 @@ public class MultiplayManager : Singleton<MultiplayManager>
                         RematchCallback?.Invoke(state);
                         break;
                     case MultiplayControllerState.OpponentLeft:
+                        this.roomId = null;
+                        RematchCallback?.Invoke(state);
+                        break;
                     case MultiplayControllerState.ExitRoom:
+                        OnRoomLeft?.Invoke();
                         this.roomId = null;
                         RematchCallback?.Invoke(state);
                         break;
@@ -104,6 +114,7 @@ public class MultiplayManager : Singleton<MultiplayManager>
     protected override void OnDestroy()
     {
         base.OnDestroy();
+        multiplayController?.Dispose();
         multiplayController = null;
     }
 

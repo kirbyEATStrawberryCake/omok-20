@@ -84,7 +84,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
             gamePlayManager.OnGameEnd += OpenEndGamePanelInSinglePlay;
             gamePlayManager.OnGameEnd += UpdateProfileImagesOnResult;
             gamePlayManager.OnGameEnd += SaveGibo;
-            
+
             gamePlayManager.OnGameRestart += ResetProfileImage;
             gamePlayManager.OnGameRestart += StartGibo;
 
@@ -255,8 +255,6 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
                     rightProfileImage.sprite = gameManager.profileImage == 1
                         ? winRedPandaProfileSprite
                         : winPandaProfileSprite;
-
-                ;
                 break;
 
             case GameResult.Draw:
@@ -348,7 +346,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
                 break;
             case MultiplayControllerState.MatchCanceled:
                 oneConfirmButtonPopup.OpenWithSetMessageAndButtonEvent("매칭이 취소되었습니다.",
-                    () => StartCoroutine(SafeExitGame()));
+                    () => SceneController.LoadScene(SceneType.Main, 0.5f));
                 break;
         }
     }
@@ -413,34 +411,33 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
         }
     }
 
+    bool isRoomLeft = false;
+
     private IEnumerator SafeExitGame()
     {
         if (multiplayManager?.multiplayController != null &&
             GameModeManager.Mode == GameMode.MultiPlayer)
         {
+            MultiplayManager.Instance.OnRoomLeft += OnRoomLeftHandler;
+
             multiplayManager.multiplayController.LeaveRoom();
-            yield return new WaitForSeconds(0.3f);
+
+            float timeout = 3f;
+            while (!isRoomLeft && timeout > 0)
+            {
+                timeout -= Time.deltaTime;
+                yield return null;
+            }
+
+            MultiplayManager.Instance.OnRoomLeft -= OnRoomLeftHandler;
         }
 
         SceneController.LoadScene(SceneType.Main, 0.5f);
+    }
 
-
-        // SceneController.LoadScene(SceneType.Main, 0.5f);
-        // // 방 나가기
-        // if (multiplayManager?.multiplayController != null)
-        // {
-        //     multiplayManager.multiplayController.LeaveRoom();
-        //     yield return new WaitForSeconds(0.5f); // 서버 처리 대기
-        // }
-        //
-        // // 소켓 연결 해제
-        // if (multiplayManager?.multiplayController != null)
-        // {
-        //     multiplayManager.multiplayController.Dispose();
-        //     yield return new WaitForSeconds(0.3f); // 소켓 해제 대기
-        // }
-        //
-        // SceneController.LoadScene(SceneType.Main, 0.5f);
+    private void OnRoomLeftHandler()
+    {
+        isRoomLeft = true;
     }
 
     private IEnumerator FakeRematch(float waitTime)
@@ -498,13 +495,13 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
 
     #endregion
 
-    // 게임 종료 시, 기보 저장 함수 호출
+// 게임 종료 시, 기보 저장 함수 호출
     private void SaveGibo(GameResult result)
     {
         giboManager.SaveCurrentRecord();
     }
 
-    // 재대국 시, 기보 생성 함수 호출
+// 재대국 시, 기보 생성 함수 호출
     private void StartGibo()
     {
         giboManager.StartNewRecord();
