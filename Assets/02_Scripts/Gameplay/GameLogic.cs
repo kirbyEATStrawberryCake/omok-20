@@ -45,12 +45,13 @@ public class GameLogic
         //     gomokuAIDebugger.InstantiateGomokuAI(boardManager, aiStone);
         // }
         // Debug.Log("boardManager" + boardManager);
+        this.gamePlayManager = gamePlayManager;
         this.boardManager = gamePlayManager.BoardManager;
         this.gomokuAIDebugger = gamePlayManager.GomokuAIDebugger;
         this.renjuRule = gamePlayManager.RenjuRule;
-        this.multiplayManager = gamePlayManager.MultiplayManager;
         this.gameTimer = gamePlayManager.GameTimer;
 
+        this.multiplayManager = MultiplayManager.Instance;
         if (boardManager != null)
         {
             boardManager.OnPlaceStone += CheckWinCondition;
@@ -144,7 +145,7 @@ public class GameLogic
         // 오목은 항상 흑돌부터 시작
         currentStone = StoneType.Black;
         currentTurnPlayer = blackStonePlayer;
-        
+
         // AI 초기화 (플레이어 할당 완료 후)
         if (blackStonePlayer == PlayerType.AI || whiteStonePlayer == PlayerType.AI)
         {

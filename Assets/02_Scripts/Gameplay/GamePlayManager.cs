@@ -29,12 +29,11 @@ public class GamePlayManager : Singleton<GamePlayManager>
 {
     [SerializeField] private BoardManager boardManager;
     [SerializeField] private GameSceneUIManager uiManager;
-    [SerializeField] private MultiplayManager multiplayManager;
     [SerializeField] private GomokuAIDebugger gomokuAIDebugger;
     [SerializeField] private GameTimer gameTimer;
     public BoardManager BoardManager => boardManager;
     public GameSceneUIManager UIManager => uiManager;
-    public MultiplayManager MultiplayManager => multiplayManager;
+    public MultiplayManager MultiplayManager => MultiplayManager.Instance;
     public GomokuAIDebugger GomokuAIDebugger => gomokuAIDebugger;
     public GameTimer GameTimer => gameTimer;
 
@@ -233,7 +232,7 @@ public class GamePlayManager : Singleton<GamePlayManager>
     /// <summary>
     /// 게임 종료 처리
     /// </summary>
-    private void EndGame(GameResult result)
+    public void EndGame(GameResult result)
     {
         if (currentGameState != GameState.Playing) return;
 
@@ -268,7 +267,7 @@ public class GamePlayManager : Singleton<GamePlayManager>
         OnGameEnd?.Invoke(result);
     }
 
-    public void ResterGame()
+    public void RestartGame()
     {
         if (currentGameState != GameState.GameOver) return;
 
@@ -276,6 +275,7 @@ public class GamePlayManager : Singleton<GamePlayManager>
         OnGameRestart?.Invoke();
         StartGame();
     }
+
 
     /*private void Update()
     {

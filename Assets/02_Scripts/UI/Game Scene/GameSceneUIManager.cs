@@ -102,13 +102,17 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
         }
 
 
-        if (multiplayManager != null &&
-            (GameModeManager.Mode == GameMode.MultiPlayer || GameModeManager.Mode == GameMode.AI))
+        if (GameModeManager.Mode == GameMode.MultiPlayer)
         {
-            multiplayManager.MatchCallback += HandleMatchUI;
-            multiplayManager.MatchResultCallback += OpenEndGamePanelInMultiplay;
-            multiplayManager.RematchCallback += HandleRematchUI;
-            multiplayManager.ErrorCallback += OnError;
+            var multiplayManager = MultiplayManager.Instance;
+            if (multiplayManager != null)
+            {
+                multiplayManager.MatchCallback += HandleMatchUI;
+                multiplayManager.MatchResultCallback += OpenEndGamePanelInMultiplay;
+                multiplayManager.RematchCallback += HandleRematchUI;
+                multiplayManager.ErrorCallback += OnError;
+                Debug.Log("Start()에서 멀티플레이 이벤트 구독");
+            }
         }
     }
 
@@ -145,7 +149,43 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
 
     protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
     {
+        // 게임 씬이 아니면 무시
+        if (scene.buildIndex != (int)SceneType.Game) return;
+
+        // UI 초기화가 완료될 때까지 잠시 기다린 후 이벤트 구독
+        if (GameModeManager.Mode == GameMode.MultiPlayer)
+        {
+            StartCoroutine(DelayedEventSubscription());
+        }
     }
+
+    private IEnumerator DelayedEventSubscription()
+    {
+        // UI 요소들이 초기화될 때까지 기다림
+        yield return new WaitForEndOfFrame();
+        yield return new WaitForSeconds(0.1f);
+
+        var multiplayManager = MultiplayManager.Instance;
+        if (multiplayManager != null)
+        {
+            Debug.Log("지연된 멀티플레이 이벤트 재구독 시작");
+
+            // 기존 구독 해제
+            multiplayManager.MatchCallback -= HandleMatchUI;
+            multiplayManager.MatchResultCallback -= OpenEndGamePanelInMultiplay;
+            multiplayManager.RematchCallback -= HandleRematchUI;
+            multiplayManager.ErrorCallback -= OnError;
+
+            // 이벤트 재구독
+            multiplayManager.MatchCallback += HandleMatchUI;
+            multiplayManager.MatchResultCallback += OpenEndGamePanelInMultiplay;
+            multiplayManager.RematchCallback += HandleRematchUI;
+            multiplayManager.ErrorCallback += OnError;
+
+            Debug.Log("지연된 멀티플레이 이벤트 재구독 완료");
+        }
+    }
+
 
     #region 공용
 
@@ -314,7 +354,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
         if (gameResultPopup != null)
         {
             gameResultPopup.OpenWithButtonEvent(result, () => { SceneController.LoadScene(SceneType.Main, 0.5f); },
-                () => { gamePlayManager.ResterGame(); });
+                () => { gamePlayManager.RestartGame(); });
         }
     }
 
@@ -448,7 +488,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
         yield return new WaitForSeconds(waitTime);
         CloseButtonPopup();
         gameResultPopupPanel.gameObject.SetActive(false);
-        gamePlayManager.ResterGame();
+        gamePlayManager.RestartGame();
     }
 
     /// <summary>
@@ -482,7 +522,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
             case MultiplayControllerState.RematchStarted:
                 CloseButtonPopup();
                 gameResultPopupPanel.SetActive(false);
-                gamePlayManager.ResterGame();
+                gamePlayManager.RestartGame();
                 break;
             case MultiplayControllerState.ExitRoom:
                 break;
@@ -509,7 +549,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
     }
 
     public event UnityAction OnCancelSurrender;
-    
+
     /// <summary>
     /// 항복 버튼을 눌렀을 때 호출되는 메소드
     /// </summary>

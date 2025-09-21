@@ -7,8 +7,11 @@ public class LoginUI : MonoBehaviour
 {
     private LoginSceneUIManager loginSceneUIManager;
 
-    [SerializeField][Tooltip("ID(이메일) InputField")] private TMP_InputField usernameInput;
-    [SerializeField][Tooltip("비밀번호 InputField")] private TMP_InputField passwordInput;
+    [SerializeField] [Tooltip("ID(이메일) InputField")]
+    private TMP_InputField usernameInput;
+
+    [SerializeField] [Tooltip("비밀번호 InputField")]
+    private TMP_InputField passwordInput;
 
     private void Start()
     {
@@ -20,6 +23,8 @@ public class LoginUI : MonoBehaviour
         // InputField 초기화
         usernameInput.text = "";
         passwordInput.text = "";
+        usernameInput.ActivateInputField();
+        passwordInput.ActivateInputField();
     }
 
     public void OnClickLoginButton()
