@@ -30,7 +30,7 @@ public class SelectGamePlayModeUI : MonoBehaviour
     {
         if (enableDebugLogs)
         {
-            Debug.Log($"<color=cyan>게임 모드 변경: {mode}</color>");
+            Debug.Log($"<color=cyan>[SelectGamePlayModeUI] 게임 모드 변경: {mode}</color>");
         }
 
         GameModeManager.Mode = mode;

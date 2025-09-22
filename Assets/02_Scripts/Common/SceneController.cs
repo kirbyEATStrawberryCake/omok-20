@@ -28,7 +28,7 @@ public class SceneController : Singleton<SceneController>
     {
         if (enableSceneLoadLogs)
         {
-            Debug.Log($"<color=green>씬 로드 완료: {scene.name}</color>");
+            Debug.Log($"<color=green>[SceneController] 씬 로드 완료: {scene.name}</color>");
         }
     }
 
@@ -41,7 +41,7 @@ public class SceneController : Singleton<SceneController>
     {
         if (!ValidateSceneType(sceneType))
         {
-            Debug.LogError($"잘못된 씬 타입: {sceneType}");
+            Debug.LogError($"[SceneController] 잘못된 씬 타입: {sceneType}");
             return;
         }
 
@@ -71,7 +71,7 @@ public class SceneController : Singleton<SceneController>
     {
         if (enableSceneLoadLogs)
         {
-            Debug.Log($"<color=yellow>씬 로드 시작: {sceneType}</color>");
+            Debug.Log($"<color=yellow>[SceneController] 씬 로드 시작: {sceneType}</color>");
         }
 
         SceneManager.LoadScene((int)sceneType);
@@ -84,7 +84,7 @@ public class SceneController : Singleton<SceneController>
     {
         if (enableSceneLoadLogs)
         {
-            Debug.Log($"<color=yellow>지연 씬 로드 시작: {sceneType} (지연: {delay}초)</color>");
+            Debug.Log($"<color=yellow>[SceneController] 지연 씬 로드 시작: {sceneType} (지연: {delay}초)</color>");
         }
 
         // 딜레이 대기

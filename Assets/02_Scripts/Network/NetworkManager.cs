@@ -64,7 +64,7 @@ public class NetworkManager : Singleton<NetworkManager>
 
     protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
     {
-        // Debug.Log($"<color=blue>NetworkManager - 씬 로드됨: {scene.name}</color>");
+        // Debug.Log($"<color=blue>[NetworkManager] 씬 로드됨: {scene.name}</color>");
     }
 
     #endregion
@@ -89,13 +89,13 @@ public class NetworkManager : Singleton<NetworkManager>
     private void ValidateComponents()
     {
         if (authManager == null)
-            Debug.LogError("AuthManager 컴포넌트를 찾을 수 없습니다.");
+            Debug.LogError("[NetworkManager] AuthManager 컴포넌트를 찾을 수 없습니다.");
 
         if (statsManager == null)
-            Debug.LogError("StatsManager 컴포넌트를 찾을 수 없습니다.");
+            Debug.LogError("[NetworkManager] StatsManager 컴포넌트를 찾을 수 없습니다.");
 
         if (pointsManager == null)
-            Debug.LogError("PointsManager 컴포넌트를 찾을 수 없습니다.");
+            Debug.LogError("[NetworkManager] PointsManager 컴포넌트를 찾을 수 없습니다.");
     }
 
     #endregion
@@ -106,34 +106,20 @@ public class NetworkManager : Singleton<NetworkManager>
     /// POST 요청 - 요청 데이터 없음
     /// </summary>
     /// <param name="endpoint">접근 주소</param>
-    /// <param name="onComplete">완료 시 콜백</param>
+    /// <param name="onError">에러 시 콜백</param>
+    /// <param name="onSuccess">성공 시 콜백</param>
     /// <typeparam name="TResponse">에러 응답 타입</typeparam>
-    public IEnumerator PostRequest<TResponse>(string endpoint,
-        Action<NetworkResponse<TResponse>> onComplete)
+    /// <typeparam name="TSuccess">성공 응답 타입</typeparam>
+    public IEnumerator PostRequest<TResponse, TSuccess>(string endpoint,
+        Action<NetworkResponse<TResponse>> onError, Action<TSuccess> onSuccess)
         where TResponse : class
+        where TSuccess : class
     {
-        return SendPostRequest<TResponse>(endpoint, EmptyJsonObject, onComplete);
+        return SendPostRequest<TResponse, TSuccess>(endpoint, EmptyJsonObject, onError, onSuccess);
     }
 
     /// <summary>
     /// POST 요청 - 요청 데이터 포함
-    /// </summary>
-    /// <param name="endpoint">접근 주소</param>
-    /// <param name="requestData">요청 데이터</param>
-    /// <param name="onComplete">완료 시 콜백</param>
-    /// <typeparam name="TRequest">요청 데이터 타입</typeparam>
-    /// <typeparam name="TResponse">에러 응답 타입</typeparam>
-    public IEnumerator PostRequest<TRequest, TResponse>(string endpoint, TRequest requestData,
-        Action<NetworkResponse<TResponse>> onComplete)
-        where TRequest : class
-        where TResponse : class
-    {
-        string jsonData = JsonUtility.ToJson(requestData);
-        return SendPostRequest<TResponse>(endpoint, jsonData, onComplete);
-    }
-
-    /// <summary>
-    /// POST 요청 - 요청 데이터 포함, 성공/실패 콜백 분리
     /// </summary>
     /// <param name="endpoint">접근 주소</param>
     /// <param name="requestData">요청 데이터</param>
@@ -216,7 +202,7 @@ public class NetworkManager : Singleton<NetworkManager>
         {
             response.connectionResult = NetworkConnectionResult.Success;
 
-            if (request.responseCode == 200)
+            if (request.responseCode >= 200 && request.responseCode < 300)
             {
                 // 성공 - TSuccess 타입으로 파싱
                 try
@@ -226,7 +212,7 @@ public class NetworkManager : Singleton<NetworkManager>
                 }
                 catch (System.Exception ex)
                 {
-                    Debug.LogError($"Success JSON 파싱 오류: {ex.Message}");
+                    Debug.LogError($"[NetworkManager] Success JSON 파싱 오류: {ex.Message}");
                 }
             }
             else
@@ -239,7 +225,7 @@ public class NetworkManager : Singleton<NetworkManager>
                 }
                 catch (System.Exception ex)
                 {
-                    Debug.LogError($"Error JSON 파싱 오류: {ex.Message}");
+                    Debug.LogError($"[NetworkManager] Error JSON 파싱 오류: {ex.Message}");
                 }
             }
         }
@@ -292,7 +278,7 @@ public class NetworkManager : Singleton<NetworkManager>
         if (request.result == UnityWebRequest.Result.ConnectionError)
         {
             response.connectionResult = NetworkConnectionResult.NetworkError;
-            Debug.LogError($"네트워크 연결 오류: {request.error}");
+            Debug.LogError($"[NetworkManager] 네트워크 연결 오류: {request.error}");
         }
         else
         {
@@ -306,7 +292,7 @@ public class NetworkManager : Singleton<NetworkManager>
                 }
                 catch (System.Exception ex)
                 {
-                    Debug.LogError($"JSON 파싱 오류: {ex.Message}");
+                    Debug.LogError($"[NetworkManager] JSON 파싱 오류: {ex.Message}");
                 }
             }
         }
@@ -326,7 +312,7 @@ public class NetworkManager : Singleton<NetworkManager>
         if (request.result == UnityWebRequest.Result.ConnectionError)
         {
             response.connectionResult = NetworkConnectionResult.NetworkError;
-            Debug.LogError($"네트워크 연결 오류: {request.error}");
+            Debug.LogError($"[NetworkManager] 네트워크 연결 오류: {request.error}");
         }
         else
         {
@@ -342,7 +328,7 @@ public class NetworkManager : Singleton<NetworkManager>
                 catch (System.Exception ex)
                 {
                     response.data = JsonUtility.FromJson<TResponse>(request.downloadHandler.text);
-                    Debug.LogError($"JSON 파싱 오류: {ex.Message}");
+                    Debug.LogError($"[NetworkManager] JSON 파싱 오류: {ex.Message}");
                     onError?.Invoke(response);
                 }
             }
