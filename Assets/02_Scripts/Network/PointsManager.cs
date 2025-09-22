@@ -23,7 +23,7 @@ public class PointsManager : MonoBehaviour
 
     private IEnumerator GetPointsCoroutine(Action<GetPoints> onSuccess, Action<PointsResponseType> onFail)
     {
-        yield return networkManager.SendGetRequest<PointsResponse, GetPoints>("/points/getPoints", (response) =>
+        yield return networkManager.GetRequest<PointsResponse, GetPoints>("/points/getPoints", (response) =>
             {
                 if (response.connectionResult == NetworkManager.NetworkConnectionResult.NetworkError)
                 {
@@ -54,7 +54,7 @@ public class PointsManager : MonoBehaviour
 
     private IEnumerator GetGradeCoroutine(Action<GetGrade> onSuccess, Action<PointsResponseType> onFail)
     {
-        yield return networkManager.SendGetRequest<PointsResponse, GetGrade>("/points/getGrade", (response) =>
+        yield return networkManager.GetRequest<PointsResponse, GetGrade>("/points/getGrade", (response) =>
             {
                 if (response.connectionResult == NetworkManager.NetworkConnectionResult.NetworkError)
                 {

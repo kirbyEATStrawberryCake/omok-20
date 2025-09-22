@@ -4,26 +4,40 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 
+/// <summary>
+/// 멀티플레이 게임의 전반적인 관리를 담당하는 싱글톤 매니저
+/// 매칭, 게임 진행, 결과 처리 등을 관리
+/// </summary>
 public class MultiplayManager : Singleton<MultiplayManager>
 {
-    // 테스트용
-    // public string username;
-    // public string password;
+    #region Properties
 
     public MultiplayController multiplayController { get; private set; }
+    public MatchData MatchData { get; private set; }
+
+    #endregion
+
+
+    #region Private Fields
 
     private BoardManager boardManager;
     private GamePlayManager gamePlayManager;
     private StatsManager statsManager;
     private string roomId;
-    public MatchData MatchData { get; private set; }
+
+    #endregion
+
+    #region Events
 
     public event UnityAction<MultiplayControllerState> MatchCallback;
     public event UnityAction<GameResultResponse, GameResult> MatchResultCallback;
     public event UnityAction<MultiplayControllerState> RematchCallback;
     public event UnityAction<string, bool> ErrorCallback;
+    public event UnityAction OnRoomLeft;
 
-    public event UnityAction OnRoomLeft; // 방 나가기 완료 시 호출될 이벤트
+    #endregion
+
+    #region Unity Lifecycle
 
     protected override void Awake()
     {
@@ -32,87 +46,16 @@ public class MultiplayManager : Singleton<MultiplayManager>
         {
             DontDestroyOnLoad(gameObject);
         }
-
-        if (GameModeManager.Mode == GameMode.SinglePlayer) return;
-
-        multiplayController = new MultiplayController((state, response) =>
-            {
-                switch (state)
-                {
-                    // ---------- 매칭 ---------- 
-                    case MultiplayControllerState.MatchFound:
-                        this.roomId = response;
-                        MatchCallback?.Invoke(state);
-                        break;
-                    case MultiplayControllerState.MatchWaiting:
-                    case MultiplayControllerState.MatchExpanded:
-                    case MultiplayControllerState.MatchCanceled:
-                        MatchCallback?.Invoke(state);
-                        break;
-                    case MultiplayControllerState.MatchFailed:
-                        GameModeManager.Mode = GameMode.AI;
-                        MatchCallback?.Invoke(state);
-                        break;
-                    case MultiplayControllerState.OpponentSurrender:
-                        Debug.Log("<color=cyan>상대방이 항복했습니다.</color>");
-                        if (gamePlayManager != null)
-                        {
-                            gamePlayManager.EndGame(GameResult.Victory);
-                        }
-
-                        break;
-                    // ---------- 리매칭 ----------
-                    case MultiplayControllerState.RematchRequested:
-                    case MultiplayControllerState.RematchRequestSent:
-                    case MultiplayControllerState.RematchRejected:
-                    case MultiplayControllerState.RematchCanceled:
-                    case MultiplayControllerState.RematchStarted:
-                        RematchCallback?.Invoke(state);
-                        break;
-                    case MultiplayControllerState.OpponentLeft:
-                        this.roomId = null;
-                        RematchCallback?.Invoke(state);
-                        break;
-                    case MultiplayControllerState.ExitRoom:
-                        OnRoomLeft?.Invoke();
-                        this.roomId = null;
-                        RematchCallback?.Invoke(state);
-                        break;
-                    // ---------- 에러 ----------
-                    case MultiplayControllerState.Error:
-                        ErrorCallback?.Invoke(response, true);
-                        Debug.Log($"<color=red>에러! {response}</color>");
-                        break;
-                }
-            },
-            DoOpponent);
-
-        multiplayController.Connect(GameManager.Instance.username);
     }
 
     private void Start()
     {
-        if (GameModeManager.Mode == GameMode.SinglePlayer) return;
-
         statsManager = NetworkManager.Instance.statsManager;
-        gamePlayManager = GamePlayManager.Instance;
-        boardManager = gamePlayManager?.BoardManager;
-        if (gamePlayManager != null)
-        {
-            gamePlayManager.OnGameEnd += EndGame;
-            gamePlayManager.OnSurrender += multiplayController.Surrender;
-        }
     }
 
     private void OnDisable()
     {
-        if (GameModeManager.Mode == GameMode.SinglePlayer) return;
-
-        if (gamePlayManager != null)
-        {
-            gamePlayManager.OnGameEnd -= EndGame;
-            gamePlayManager.OnSurrender -= multiplayController.Surrender;
-        }
+        UnsubscribeFromGamePlayManagerEvents();
     }
 
     protected override void OnDestroy()
@@ -127,42 +70,166 @@ public class MultiplayManager : Singleton<MultiplayManager>
         if (scene.buildIndex != (int)SceneType.Game) return;
         if (GameModeManager.Mode == GameMode.SinglePlayer) return;
 
-        // 씬이 로드될 때마다 참조 업데이트
-        gamePlayManager = GamePlayManager.Instance;
-        boardManager = gamePlayManager?.BoardManager;
-        statsManager = NetworkManager.Instance.statsManager;
-        
-        if (gamePlayManager != null)
+        if (multiplayController == null)
         {
-            gamePlayManager.OnGameEnd -= EndGame;
-            gamePlayManager.OnGameEnd += EndGame;
-
-            gamePlayManager.OnSurrender -= multiplayController.Surrender;
-            gamePlayManager.OnSurrender += multiplayController.Surrender;
-
-            Debug.Log("MultiplayManager에서 GamePlayManager 이벤트 재구독 완료");
+            InitializeMultiplayController();
         }
 
+        StartCoroutine(DelayedGameSceneInitialization());
+    }
 
-        if (roomId != null) // 이미 매칭 중이라면
+    protected override void OnApplicationQuit()
+    {
+        multiplayController?.ApplicationQuit();
+        multiplayController?.Dispose();
+        multiplayController = null;
+    }
+
+    #endregion
+
+    #region Initialization
+
+    /// <summary>
+    /// MultiplayController 초기화
+    /// </summary>
+    private void InitializeMultiplayController()
+    {
+        try
+        {
+            multiplayController = new MultiplayController(
+                HandleMultiplayStateChanged,
+                HandleOpponentMove);
+
+            multiplayController.Connect(GameManager.Instance.username);
+            Debug.Log("<color=green>MultiplayController 생성 및 연결 완료</color>");
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"<color=red>MultiplayController 초기화 실패: {ex.Message}</color>");
+            multiplayController = null;
+        }
+    }
+
+    /// <summary>
+    /// 게임 씬에서의 지연된 초기화
+    /// </summary>
+    private IEnumerator DelayedGameSceneInitialization()
+    {
+        yield return StartCoroutine(WaitForGamePlayManager());
+
+        if (gamePlayManager == null)
+        {
+            Debug.LogError("<color=red>GamePlayManager 초기화 시간 초과!</color>");
+            yield break;
+        }
+
+        boardManager = gamePlayManager.BoardManager; // 참조 업데이트
+        SubscribeToGamePlayManagerEvents();
+
+        if (roomId != null)
         {
             MatchCallback?.Invoke(MultiplayControllerState.MatchFound);
-            return;
+            Debug.Log($"<color=cyan>기존 매칭 복원 - 방 ID: {roomId}</color>");
         }
-
-        StartCoroutine(WaitForConnectionAndRequestMatch());
+        else
+        {
+            StartCoroutine(WaitForConnectionAndRequestMatch());
+        }
     }
 
-    private IEnumerator WaitForConnectionAndRequestMatch()
+    /// <summary>
+    /// GamePlayManager가 준비될 때까지 대기
+    /// </summary>
+    private IEnumerator WaitForGamePlayManager()
     {
-        while (!multiplayController.isConnected)
+        float timeout = 5f;
+        float elapsed = 0f;
+
+        while (elapsed < timeout)
         {
+            gamePlayManager = GamePlayManager.Instance;
+            if (gamePlayManager != null && gamePlayManager.GameLogicController != null)
+            {
+                Debug.Log("<color=green>GamePlayManager 준비 완료</color>");
+                yield break;
+            }
+
+            elapsed += 0.1f;
             yield return new WaitForSeconds(0.1f);
         }
-
-        Debug.Log("소켓 연결 완료. 매칭 요청 시작.");
-        multiplayController.RequestMatch();
     }
+
+    #endregion
+
+    #region Event Management
+
+    /// <summary>
+    /// GamePlayManager 이벤트 구독
+    /// </summary>
+    private void SubscribeToGamePlayManagerEvents()
+    {
+        if (!ValidateEventSubscriptionRequirements()) return;
+
+        try
+        {
+            UnsubscribeFromGamePlayManagerEvents();
+
+            gamePlayManager.OnGameEnd += HandleGameEnd;
+            gamePlayManager.OnSurrender += multiplayController.Surrender;
+
+            Debug.Log("<color=green>GamePlayManager 이벤트 구독 완료</color>");
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"<color=red>이벤트 구독 실패: {ex.Message}</color>");
+        }
+    }
+
+    /// <summary>
+    /// GamePlayManager 이벤트 구독 해제
+    /// </summary>
+    private void UnsubscribeFromGamePlayManagerEvents()
+    {
+        if (gamePlayManager == null) return;
+
+        try
+        {
+            gamePlayManager.OnGameEnd -= HandleGameEnd;
+
+            if (multiplayController != null)
+            {
+                gamePlayManager.OnSurrender -= multiplayController.Surrender;
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogWarning($"<color=yellow>이벤트 구독 해제 중 오류 (무시): {ex.Message}</color>");
+        }
+    }
+
+    /// <summary>
+    /// 이벤트 구독 요구사항 검증
+    /// </summary>
+    private bool ValidateEventSubscriptionRequirements()
+    {
+        if (gamePlayManager == null)
+        {
+            Debug.LogWarning("<color=yellow>GamePlayManager가 null입니다.</color>");
+            return false;
+        }
+
+        if (multiplayController == null)
+        {
+            Debug.LogWarning("<color=yellow>MultiplayController가 null입니다.</color>");
+            return false;
+        }
+
+        return true;
+    }
+
+    #endregion
+
+    #region Public API
 
     /// <summary>
     /// 매칭 완료시 서버에서 보낸 상대방 정보를 저장하는 메소드
@@ -185,27 +252,154 @@ public class MultiplayManager : Singleton<MultiplayManager>
             return;
         }
 
+        if (multiplayController == null)
+        {
+            Debug.LogError("<color=red>MultiplayController가 null입니다.</color>");
+            return;
+        }
+
+
         // Debug.Log($"멀티플레이 착수 : {x}, {y}, roomId : {roomId}");
         multiplayController?.DoPlayer(roomId, x, y);
     }
 
+    #endregion
+
+    #region Multiplay State Handling
+
     /// <summary>
-    /// 상대방이 착수한 정보를 받아서 BoardManager로 넘겨줌
+    /// 멀티플레이 상태 변화 처리
     /// </summary>
-    private void DoOpponent(int x, int y)
+    private void HandleMultiplayStateChanged(MultiplayControllerState state, string response)
     {
-        Debug.Log($"<color=yellow>상대방 돌 생성: ({x}, {y})</color>");
+        switch (state)
+        {
+            case MultiplayControllerState.MatchFound:
+                HandleMatchFound(response);
+                break;
+
+            case MultiplayControllerState.MatchWaiting:
+            case MultiplayControllerState.MatchExpanded:
+            case MultiplayControllerState.MatchCanceled:
+                MatchCallback?.Invoke(state);
+                break;
+
+            case MultiplayControllerState.MatchFailed:
+                HandleMatchFailed();
+                break;
+
+            case MultiplayControllerState.OpponentSurrender:
+                HandleOpponentSurrender();
+                break;
+
+            case MultiplayControllerState.RematchRequested:
+            case MultiplayControllerState.RematchRequestSent:
+            case MultiplayControllerState.RematchRejected:
+            case MultiplayControllerState.RematchCanceled:
+            case MultiplayControllerState.RematchStarted:
+                RematchCallback?.Invoke(state);
+                break;
+
+            case MultiplayControllerState.OpponentLeft:
+                HandleOpponentLeft();
+                break;
+
+            case MultiplayControllerState.ExitRoom:
+                HandleExitRoom();
+                break;
+
+            case MultiplayControllerState.Error:
+                HandleError(response);
+                break;
+
+            default:
+                Debug.LogWarning($"<color=yellow>처리되지 않은 멀티플레이 상태: {state}</color>");
+                break;
+        }
+    }
+
+    private void HandleMatchFound(string response)
+    {
+        roomId = response;
+        MatchCallback?.Invoke(MultiplayControllerState.MatchFound);
+        Debug.Log($"<color=green>매칭 성공 - 방 ID: {roomId}</color>");
+    }
+
+    private void HandleMatchFailed()
+    {
+        GameModeManager.Mode = GameMode.AI;
+        MatchCallback?.Invoke(MultiplayControllerState.MatchFailed);
+        Debug.Log("<color=yellow>매칭 실패 - AI 모드로 전환</color>");
+    }
+
+    private void HandleOpponentSurrender()
+    {
+        Debug.Log("<color=cyan>상대방이 항복했습니다.</color>");
+        gamePlayManager?.EndGame(GameResult.Victory);
+    }
+
+    private void HandleOpponentLeft()
+    {
+        roomId = null;
+        RematchCallback?.Invoke(MultiplayControllerState.OpponentLeft);
+        Debug.Log("<color=yellow>상대방이 나갔습니다.</color>");
+    }
+
+    private void HandleExitRoom()
+    {
+        OnRoomLeft?.Invoke();
+        roomId = null;
+        RematchCallback?.Invoke(MultiplayControllerState.ExitRoom);
+        Debug.Log("<color=yellow>방에서 나갔습니다.</color>");
+    }
+
+    private void HandleError(string response)
+    {
+        ErrorCallback?.Invoke(response, true);
+        Debug.LogError($"<color=red>멀티플레이 에러: {response}</color>");
+    }
+
+    #endregion
+
+    #region Game Flow
+
+    /// <summary>
+    /// 연결 대기 후 매칭 요청
+    /// </summary>
+    private IEnumerator WaitForConnectionAndRequestMatch()
+    {
+        if (multiplayController == null)
+        {
+            Debug.LogError("<color=red>MultiplayController가 null입니다.</color>");
+            yield break;
+        }
+
+        while (!multiplayController.isConnected)
+        {
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        Debug.Log("<color=green>소켓 연결 완료. 매칭 요청 시작.</color>");
+        multiplayController.RequestMatch();
+    }
+
+    /// <summary>
+    /// 상대방 수 처리
+    /// </summary>
+    private void HandleOpponentMove(int x, int y)
+    {
+        Debug.Log($"<color=yellow>상대방 착수: ({x}, {y})</color>");
         // boardManager가 null인 경우 다시 찾아서 설정
         if (boardManager == null)
         {
             gamePlayManager = GamePlayManager.Instance;
             boardManager = gamePlayManager?.BoardManager;
+        }
 
-            if (boardManager == null)
-            {
-                Debug.LogError("BoardManager를 찾을 수 없습니다!");
-                return;
-            }
+        if (boardManager == null)
+        {
+            Debug.LogError("<color=red>BoardManager를 찾을 수 없습니다!</color>");
+            return;
         }
 
         boardManager.PlaceOpponentStone(x, y);
@@ -214,7 +408,7 @@ public class MultiplayManager : Singleton<MultiplayManager>
     /// <summary>
     /// 게임이 끝났을 때 서버로 게임 결과를 전송
     /// </summary>
-    private void EndGame(GameResult result)
+    private void HandleGameEnd(GameResult result)
     {
         statsManager.UpdateGameResult(result,
             (response) =>
@@ -222,31 +416,26 @@ public class MultiplayManager : Singleton<MultiplayManager>
                 MatchResultCallback?.Invoke(response, result);
                 Debug.Log($"<color=green>### 게임 결과({result.ToString()}) 등록 성공 ! ###</color>");
             },
-            (errorType) =>
-            {
-                switch (errorType)
-                {
-                    case StatsResponseType.INVALID_GAME_RESULT:
-                        Debug.LogError("<color=red>경기 결과 등록 실패 : 게임 결과가 올바르지 않습니다.</color>");
-                        break;
-                    case StatsResponseType.CANNOT_FOUND_USER:
-                        Debug.LogError("<color=red>경기 결과 등록 실패 : 유저를 찾지 못했습니다.</color>");
-                        break;
-                    case StatsResponseType.NOT_LOGGED_IN:
-                        Debug.LogError("<color=red>경기 결과 등록 실패 : 로그인 상태가 아닙니다.</color>");
-                        break;
-                }
-            });
+            HandleGameResultError);
 
         multiplayController?.NotifyGameEnded();
     }
 
     /// <summary>
-    /// 어플리케이션 종료 시 연결 끊음
+    /// 게임 결과 등록 실패 처리
     /// </summary>
-    private void OnApplicationQuit()
+    private void HandleGameResultError(StatsResponseType errorType)
     {
-        multiplayController?.ApplicationQuit();
-        multiplayController?.Dispose();
+        string errorMessage = errorType switch
+        {
+            StatsResponseType.INVALID_GAME_RESULT => "게임 결과가 올바르지 않습니다.",
+            StatsResponseType.CANNOT_FOUND_USER => "유저를 찾지 못했습니다.",
+            StatsResponseType.NOT_LOGGED_IN => "로그인 상태가 아닙니다.",
+            _ => "알 수 없는 오류가 발생했습니다."
+        };
+
+        Debug.LogError($"<color=red>게임 결과 등록 실패: {errorMessage}</color>");
     }
+
+    #endregion
 }

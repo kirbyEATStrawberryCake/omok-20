@@ -51,11 +51,6 @@ public class MainSceneUIManager : Singleton<MainSceneUIManager>
 
     public StatsManager statsManager { get; private set; }
 
-    // TODO: 테스트용 지우기
-    // 테스트용
-    // public string username;
-    // public string password;
-
     protected override void Awake()
     {
         base.Awake();

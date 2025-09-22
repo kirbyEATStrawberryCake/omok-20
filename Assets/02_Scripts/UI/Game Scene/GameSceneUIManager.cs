@@ -101,7 +101,6 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
             }
         }
 
-
         if (GameModeManager.Mode == GameMode.MultiPlayer)
         {
             var multiplayManager = MultiplayManager.Instance;

@@ -9,13 +9,26 @@ using UnityEngine.SceneManagement;
 [RequireComponent(typeof(PointsManager))]
 public class NetworkManager : Singleton<NetworkManager>
 {
+    #region Constants
+
     public const string ServerURL = "http://localhost:3000";
     public const string SocketServerURL = "ws://localhost:3000";
+    private const string EmptyJsonObject = "{}";
+    private const string ContentTypeJson = "application/json";
+
+    #endregion
+
+
+    #region Properties
 
     public AuthManager authManager { get; private set; }
     public StatsManager statsManager { get; private set; }
     public PointsManager pointsManager { get; private set; }
 
+    #endregion
+
+
+    #region Enum & Classes
 
     /// <summary>
     /// 네트워크 연결 결과
@@ -33,32 +46,83 @@ public class NetworkManager : Singleton<NetworkManager>
     {
         public NetworkConnectionResult connectionResult;
         public T data;
+
+        public bool IsSuccess => connectionResult == NetworkConnectionResult.Success;
+        public bool HasError => connectionResult == NetworkConnectionResult.NetworkError;
     }
+
+    #endregion
+
+    #region Unity Events
 
     protected override void Awake()
     {
         base.Awake();
         DontDestroyOnLoad(gameObject);
-
-        authManager = GetComponent<AuthManager>();
-        statsManager = GetComponent<StatsManager>();
-        pointsManager = GetComponent<PointsManager>();
+        InitializeComponents();
     }
 
     protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
     {
-        // 씬 로드 공통 처리
+        // Debug.Log($"<color=blue>NetworkManager - 씬 로드됨: {scene.name}</color>");
+    }
+
+    #endregion
+
+    #region Initialization
+
+    /// <summary>
+    /// 컴포넌트 초기화
+    /// </summary>
+    private void InitializeComponents()
+    {
+        authManager = GetComponent<AuthManager>();
+        statsManager = GetComponent<StatsManager>();
+        pointsManager = GetComponent<PointsManager>();
+
+        ValidateComponents();
     }
 
     /// <summary>
-    /// POST 요청
+    /// 필수 컴포넌트 유효성 검사
+    /// </summary>
+    private void ValidateComponents()
+    {
+        if (authManager == null)
+            Debug.LogError("AuthManager 컴포넌트를 찾을 수 없습니다.");
+
+        if (statsManager == null)
+            Debug.LogError("StatsManager 컴포넌트를 찾을 수 없습니다.");
+
+        if (pointsManager == null)
+            Debug.LogError("PointsManager 컴포넌트를 찾을 수 없습니다.");
+    }
+
+    #endregion
+
+    #region Public API - POST Request
+
+    /// <summary>
+    /// POST 요청 - 요청 데이터 없음
     /// </summary>
     /// <param name="endpoint">접근 주소</param>
-    /// <param name="requestData">송신 데이터</param>
-    /// <param name="onComplete">네트워크 처리 완료 시 실행할 액션</param>
-    /// <typeparam name="TRequest">송신 타입</typeparam>
-    /// <typeparam name="TResponse">수신 타입</typeparam>
-    /// <returns></returns>
+    /// <param name="onComplete">완료 시 콜백</param>
+    /// <typeparam name="TResponse">에러 응답 타입</typeparam>
+    public IEnumerator PostRequest<TResponse>(string endpoint,
+        Action<NetworkResponse<TResponse>> onComplete)
+        where TResponse : class
+    {
+        return SendPostRequest<TResponse>(endpoint, EmptyJsonObject, onComplete);
+    }
+
+    /// <summary>
+    /// POST 요청 - 요청 데이터 포함
+    /// </summary>
+    /// <param name="endpoint">접근 주소</param>
+    /// <param name="requestData">요청 데이터</param>
+    /// <param name="onComplete">완료 시 콜백</param>
+    /// <typeparam name="TRequest">요청 데이터 타입</typeparam>
+    /// <typeparam name="TResponse">에러 응답 타입</typeparam>
     public IEnumerator PostRequest<TRequest, TResponse>(string endpoint, TRequest requestData,
         Action<NetworkResponse<TResponse>> onComplete)
         where TRequest : class
@@ -69,125 +133,221 @@ public class NetworkManager : Singleton<NetworkManager>
     }
 
     /// <summary>
-    /// POST 요청(Request 데이터 없음)
+    /// POST 요청 - 요청 데이터 포함, 성공/실패 콜백 분리
     /// </summary>
     /// <param name="endpoint">접근 주소</param>
-    /// <param name="onComplete">네트워크 처리 완료 시 실행할 액션</param>
-    /// <typeparam name="TResponse">수신 타입</typeparam>
-    /// <returns></returns>
-    public IEnumerator PostRequest<TResponse>(string endpoint,
-        Action<NetworkResponse<TResponse>> onComplete)
-        where TResponse : class
-    {
-        string emptyJson = "{}"; // 빈 JSON 객체
-        return SendPostRequest<TResponse>(endpoint, emptyJson, onComplete);
-    }
-
-    public IEnumerator PostRequestWithSuccess<TRequest, TResponse, TSuccess>(string endpoint, TRequest requestData,
-        Action<NetworkResponse<TResponse>> onComplete, Action<TSuccess> onSuccess) where TRequest : class
+    /// <param name="requestData">요청 데이터</param>
+    /// <param name="onError">에러 시 콜백</param>
+    /// <param name="onSuccess">성공 시 콜백</param>
+    /// <typeparam name="TRequest">요청 데이터 타입</typeparam>
+    /// <typeparam name="TResponse">에러 응답 타입</typeparam>
+    /// <typeparam name="TSuccess">성공 응답 타입</typeparam>
+    public IEnumerator PostRequest<TRequest, TResponse, TSuccess>(string endpoint, TRequest requestData,
+        Action<NetworkResponse<TResponse>> onError, Action<TSuccess> onSuccess) where TRequest : class
         where TResponse : class
         where TSuccess : class
     {
         string jsonData = JsonUtility.ToJson(requestData);
-        using UnityWebRequest www = new UnityWebRequest(ServerURL + endpoint, UnityWebRequest.kHttpVerbPOST);
-        www.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(jsonData));
-        www.downloadHandler = new DownloadHandlerBuffer();
-        www.SetRequestHeader("Content-Type", "application/json");
-
-        yield return www.SendWebRequest();
-
-        NetworkResponse<TResponse> response = new NetworkResponse<TResponse>();
-
-        if (www.result == UnityWebRequest.Result.ConnectionError)
-        {
-            // 네트워크 연결 실패
-            response.connectionResult = NetworkConnectionResult.NetworkError;
-            onComplete?.Invoke(response);
-        }
-        else
-        {
-            response.connectionResult = NetworkConnectionResult.Success;
-            if (www.responseCode == 200)
-            {
-                // 성공 시 데이터 파싱하여 onSuccess 호출
-                var result = JsonUtility.FromJson<TSuccess>(www.downloadHandler.text);
-                onSuccess?.Invoke(result);
-            }
-            else
-            {
-                // 실패 시 에러 응답 파싱
-                response.data = JsonUtility.FromJson<TResponse>(www.downloadHandler.text);
-                onComplete?.Invoke(response);
-            }
-        }
+        return SendPostRequest<TResponse, TSuccess>(endpoint, jsonData, onError, onSuccess);
     }
 
+    #endregion
+
+    #region public API - Get Requests
+
     /// <summary>
-    /// 공통 POST 요청 메서드
+    /// GET 요청 - 성공/실패 콜백 분리
     /// </summary>
-    public IEnumerator SendPostRequest<TResponse>(string endpoint, string jsonData,
+    /// <param name="endpoint">접근 주소</param>
+    /// <param name="onError">에러 시 콜백</param>
+    /// <param name="onSuccess">성공 시 콜백</param>
+    /// <typeparam name="TResponse">에러 응답 타입</typeparam>
+    /// <typeparam name="TSuccess">성공 응답 타입</typeparam>
+    public IEnumerator GetRequest<TResponse, TSuccess>(
+        string endpoint,
+        Action<NetworkResponse<TResponse>> onError,
+        Action<TSuccess> onSuccess)
+        where TResponse : class
+        where TSuccess : class
+    {
+        return SendGetRequest<TResponse, TSuccess>(endpoint, onError, onSuccess);
+    }
+
+    #endregion
+
+    #region Internal Request Methods - POST
+
+    /// <summary>
+    /// 내부 POST 요청 메서드 - 기본형
+    /// </summary>
+    private IEnumerator SendPostRequest<TResponse>(string endpoint, string jsonData,
         Action<NetworkResponse<TResponse>> onComplete)
         where TResponse : class
     {
-        using UnityWebRequest www = new UnityWebRequest(ServerURL + endpoint, UnityWebRequest.kHttpVerbPOST);
-        www.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(jsonData));
-        www.downloadHandler = new DownloadHandlerBuffer();
-        www.SetRequestHeader("Content-Type", "application/json");
+        using var request = CreatePostRequest(endpoint, jsonData);
+        yield return request.SendWebRequest();
 
-        yield return www.SendWebRequest();
-
-        NetworkResponse<TResponse> response = new NetworkResponse<TResponse>();
-
-        if (www.result == UnityWebRequest.Result.ConnectionError)
-        {
-            // 네트워크 연결 실패
-            response.connectionResult = NetworkConnectionResult.NetworkError;
-        }
-        else
-        {
-            // 서버와 통신 성공
-            response.connectionResult = NetworkConnectionResult.Success;
-            response.data = JsonUtility.FromJson<TResponse>(www.downloadHandler.text);
-        }
-
+        var response = ProcessResponse<TResponse>(request);
         onComplete?.Invoke(response);
     }
 
     /// <summary>
-    /// 공통 GET 요청 메서드
+    /// 내부 POST 요청 메서드 - 성공/실패 분리형
     /// </summary>
-    public IEnumerator SendGetRequest<TResponse, TSuccess>(string endpoint,
-        Action<NetworkResponse<TResponse>> onComplete, Action<TSuccess> onSuccess)
+    private IEnumerator SendPostRequest<TResponse, TSuccess>(
+        string endpoint,
+        string jsonData,
+        Action<NetworkResponse<TResponse>> onError,
+        Action<TSuccess> onSuccess)
         where TResponse : class
+        where TSuccess : class
     {
-        using UnityWebRequest www = UnityWebRequest.Get(ServerURL + endpoint);
+        using var request = CreatePostRequest(endpoint, jsonData);
+        yield return request.SendWebRequest();
 
-        yield return www.SendWebRequest();
+        var response = new NetworkResponse<TResponse>();
 
-        NetworkResponse<TResponse> response = new NetworkResponse<TResponse>();
-
-        if (www.result == UnityWebRequest.Result.ConnectionError)
+        if (request.result == UnityWebRequest.Result.ConnectionError)
         {
-            // 네트워크 연결 실패
             response.connectionResult = NetworkConnectionResult.NetworkError;
-            onComplete?.Invoke(response);
+            onError?.Invoke(response);
         }
         else
         {
-            // 서버와 통신 성공
             response.connectionResult = NetworkConnectionResult.Success;
-            if (www.responseCode == 200)
+
+            if (request.responseCode == 200)
             {
-                // 데이터 수신 성공
-                var result = JsonUtility.FromJson<TSuccess>(www.downloadHandler.text);
-                onSuccess?.Invoke(result);
+                // 성공 - TSuccess 타입으로 파싱
+                try
+                {
+                    var result = JsonUtility.FromJson<TSuccess>(request.downloadHandler.text);
+                    onSuccess?.Invoke(result);
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogError($"Success JSON 파싱 오류: {ex.Message}");
+                }
             }
             else
             {
-                // 데이터 수신 실패
-                response.data = JsonUtility.FromJson<TResponse>(www.downloadHandler.text);
-                onComplete?.Invoke(response);
+                // 실패 - TResponse 타입으로 파싱
+                try
+                {
+                    response.data = JsonUtility.FromJson<TResponse>(request.downloadHandler.text);
+                    onError?.Invoke(response);
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogError($"Error JSON 파싱 오류: {ex.Message}");
+                }
             }
         }
     }
+
+    #endregion
+
+    #region Internal Request Methods - GET
+
+    /// <summary>
+    /// 내부 GET 요청 메서드 - 성공/실패 분리형
+    /// </summary>
+    private IEnumerator SendGetRequest<TResponse, TSuccess>(string endpoint,
+        Action<NetworkResponse<TResponse>> onError, Action<TSuccess> onSuccess)
+        where TResponse : class where TSuccess : class
+    {
+        using var request = UnityWebRequest.Get(ServerURL + endpoint);
+        yield return request.SendWebRequest();
+
+        ProcessResponse<TResponse, TSuccess>(request, onError, onSuccess);
+    }
+
+    #endregion
+
+    #region Request Creation & Response Processing
+
+    /// <summary>
+    /// POST 요청 객체 생성
+    /// </summary>
+    private UnityWebRequest CreatePostRequest(string endpoint, string jsonData)
+    {
+        var request = new UnityWebRequest(ServerURL + endpoint, UnityWebRequest.kHttpVerbPOST)
+        {
+            uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(jsonData)),
+            downloadHandler = new DownloadHandlerBuffer()
+        };
+
+        request.SetRequestHeader("Content-Type", ContentTypeJson);
+        return request;
+    }
+
+    /// <summary>
+    /// 기본 응답 처리
+    /// </summary>
+    private NetworkResponse<TResponse> ProcessResponse<TResponse>(UnityWebRequest request)
+        where TResponse : class
+    {
+        var response = new NetworkResponse<TResponse>();
+
+        if (request.result == UnityWebRequest.Result.ConnectionError)
+        {
+            response.connectionResult = NetworkConnectionResult.NetworkError;
+            Debug.LogError($"네트워크 연결 오류: {request.error}");
+        }
+        else
+        {
+            response.connectionResult = NetworkConnectionResult.Success;
+
+            if (!string.IsNullOrEmpty(request.downloadHandler.text))
+            {
+                try
+                {
+                    response.data = JsonUtility.FromJson<TResponse>(request.downloadHandler.text);
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogError($"JSON 파싱 오류: {ex.Message}");
+                }
+            }
+        }
+
+        return response;
+    }
+
+    /// <summary>
+    /// 성공/실패 분리 응답 처리
+    /// </summary>
+    private void ProcessResponse<TResponse, TSuccess>(UnityWebRequest request,
+        Action<NetworkResponse<TResponse>> onError, Action<TSuccess> onSuccess) where TSuccess : class
+        where TResponse : class
+    {
+        var response = new NetworkResponse<TResponse>();
+
+        if (request.result == UnityWebRequest.Result.ConnectionError)
+        {
+            response.connectionResult = NetworkConnectionResult.NetworkError;
+            Debug.LogError($"네트워크 연결 오류: {request.error}");
+        }
+        else
+        {
+            response.connectionResult = NetworkConnectionResult.Success;
+
+            if (!string.IsNullOrEmpty(request.downloadHandler.text))
+            {
+                try
+                {
+                    var result = JsonUtility.FromJson<TSuccess>(request.downloadHandler.text);
+                    onSuccess?.Invoke(result);
+                }
+                catch (System.Exception ex)
+                {
+                    response.data = JsonUtility.FromJson<TResponse>(request.downloadHandler.text);
+                    Debug.LogError($"JSON 파싱 오류: {ex.Message}");
+                    onError?.Invoke(response);
+                }
+            }
+        }
+    }
+
+    #endregion
 }

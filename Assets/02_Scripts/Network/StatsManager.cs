@@ -42,7 +42,7 @@ public class StatsManager : MonoBehaviour
         }
 
         GameResultRequest gameResultRequest = new(requestData);
-        yield return networkManager.PostRequestWithSuccess<GameResultRequest, StatsResponse, GameResultResponse>(
+        yield return networkManager.PostRequest<GameResultRequest, StatsResponse, GameResultResponse>(
             "/stats/updateGameResult",
             gameResultRequest,
             (response) =>
@@ -78,7 +78,7 @@ public class StatsManager : MonoBehaviour
 
     private IEnumerator GetUserInfoCoroutine(Action<UserInfo_Network> onSuccess, Action<StatsResponseType> onFail)
     {
-        yield return networkManager.SendGetRequest<StatsResponse, UserInfo_Network>("/stats/getUserInfo", (response) =>
+        yield return networkManager.GetRequest<StatsResponse, UserInfo_Network>("/stats/getUserInfo", (response) =>
             {
                 if (response.connectionResult == NetworkManager.NetworkConnectionResult.NetworkError)
                 {
@@ -110,7 +110,7 @@ public class StatsManager : MonoBehaviour
 
     private IEnumerator GetRecordCoroutine(Action<GetRecord> onSuccess, Action<StatsResponseType> onFail)
     {
-        yield return networkManager.SendGetRequest<StatsResponse, GetRecord>("/stats/getRecord", (response) =>
+        yield return networkManager.GetRequest<StatsResponse, GetRecord>("/stats/getRecord", (response) =>
             {
                 if (response.connectionResult == NetworkManager.NetworkConnectionResult.NetworkError)
                 {
@@ -141,7 +141,7 @@ public class StatsManager : MonoBehaviour
 
     private IEnumerator GetRankingCoroutine(Action<GetRanking> onSuccess, Action<StatsResponseType> onFail)
     {
-        yield return networkManager.SendGetRequest<StatsResponse, GetRanking>("/stats/ranking", (response) =>
+        yield return networkManager.GetRequest<StatsResponse, GetRanking>("/stats/ranking", (response) =>
             {
                 if (response.connectionResult == NetworkManager.NetworkConnectionResult.NetworkError)
                 {
