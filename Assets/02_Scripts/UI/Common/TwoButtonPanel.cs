@@ -1,8 +1,7 @@
 using System;
-using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.UI;
 
 public enum TwoButtonType
@@ -12,145 +11,246 @@ public enum TwoButtonType
     All
 }
 
-public class TwoButtonPanel : MonoBehaviour
+public class TwoButtonPanel : BasePanel
 {
-    [SerializeField] [Tooltip("취소 버튼")] private Button buttonCancel;
-    [SerializeField] [Tooltip("확인 버튼")] private Button buttonConfirm;
+    [SerializeField] [Tooltip("취소 버튼")] private Button cancelButton;
+    [SerializeField] [Tooltip("확인 버튼")] private Button confirmButton;
 
     [SerializeField] [Tooltip("취소 버튼 텍스트")]
-    private TextMeshProUGUI cancelButtonText;
+    private TMP_Text cancelButtonText;
 
     [SerializeField] [Tooltip("확인 버튼 텍스트")]
-    private TextMeshProUGUI confirmButtonText;
+    private TMP_Text confirmButtonText;
 
-    [SerializeField] [Tooltip("팝업 창에 띄울 메세지")]
-    private TextMeshProUGUI message;
+    private const string DEFAULT_CANCEL_TEXT = "취소";
+    private const string DEFAULT_CONFIRM_TEXT = "확인";
 
-
-    private void Awake()
+    /// <summary>
+    /// 버튼에 대한 액션을 설정
+    /// </summary>
+    public TwoButtonPanel OnButtons(Action onConfirm, Action onCancel = null)
     {
-        // cancelButtonText = buttonCancel.transform.GetChild(0).GetComponent<TextMeshProUGUI>();
-        // confirmButtonText = buttonConfirm.transform.GetChild(0).GetComponent<TextMeshProUGUI>();
-    }
-
-    private void InitPanel()
-    {
-        buttonCancel.interactable = true;
-        buttonConfirm.interactable = true;
-        buttonCancel.onClick.RemoveAllListeners();
-        buttonConfirm.onClick.RemoveAllListeners();
-        cancelButtonText.text = "취소";
-        confirmButtonText.text = "확인";
-        message.text = "";
-    }
-
-    private void SetButtonEvent(UnityAction onConfirm = null, UnityAction onCancel = null)
-    {
-        if (onConfirm == null && onCancel == null) return;
-
-        if (onConfirm != null)
+        SetButtonListener(confirmButton, () =>
         {
-            buttonConfirm.onClick.RemoveAllListeners();
-            buttonConfirm.onClick.AddListener(onConfirm);
-        }
+            onConfirm?.Invoke();
+            ClosePanel();
+        });
 
-        if (onCancel != null)
+        SetButtonListener(cancelButton, () =>
         {
-            buttonCancel.onClick.RemoveAllListeners();
-            buttonCancel.onClick.AddListener(onCancel);
-        }
-    }
+            onCancel?.Invoke();
+            ClosePanel();
+        });
 
-    private void SetMessage(string message)
-    {
-        this.message.text = message;
+        return this;
     }
 
     /// <summary>
-    /// 외부에서 OneButtonPanel의 메세지와 버튼 클릭 시 수행할 액션을 설정하는 메소드
+    /// 버튼 텍스트를 설정
     /// </summary>
-    /// <param name="message">메세지</param>
+    public TwoButtonPanel WithButtonText(string confirmText = null, string cancelText = null)
+    {
+        if (confirmButtonText != null && !string.IsNullOrEmpty(confirmText))
+            confirmButtonText.text = confirmText;
+
+        if (cancelButtonText != null && !string.IsNullOrEmpty(cancelText))
+            cancelButtonText.text = cancelText;
+
+        return this;
+    }
+
+    /// <summary>
+    /// 특정 버튼의 활성화를 지연시킴
+    /// </summary>
+    public TwoButtonPanel WithDelay(float delay, TwoButtonType buttonType)
+    {
+        if (delay <= 0) return this;
+
+        List<Button> buttonsToDelay = new();
+        if (buttonType == TwoButtonType.Confirm || buttonType == TwoButtonType.All)
+            buttonsToDelay.Add(confirmButton);
+        if (buttonType == TwoButtonType.Cancel || buttonType == TwoButtonType.All)
+            buttonsToDelay.Add(cancelButton);
+
+        HandleButtonDelay(delay, buttonsToDelay.ToArray());
+
+        return this;
+    }
+
+    protected override void ResetButtons()
+    {
+        if (confirmButton != null)
+        {
+            confirmButton.interactable = true;
+            confirmButton.onClick.RemoveAllListeners();
+        }
+
+        if (cancelButton != null)
+        {
+            cancelButton.interactable = true;
+            cancelButton.onClick.RemoveAllListeners();
+        }
+
+        if (confirmButtonText != null) confirmButtonText.text = DEFAULT_CONFIRM_TEXT;
+        if (cancelButtonText != null) cancelButtonText.text = DEFAULT_CANCEL_TEXT;
+    }
+
+
+    /*private Action confirmButtonAction;
+    private Action cancelButtonAction;
+
+    #region Abstract Methods
+
+    protected override void InitializeButtons()
+    {
+        SetButtonInteractable(true, true);
+        ClearButtonListeners();
+        ResetButtonTexts();
+    }
+
+    protected override void SetButtons()
+    {
+        SetButtonListener(confirmButton, () =>
+        {
+            confirmButtonAction?.Invoke();
+            ClosePanel();
+        });
+
+        SetButtonListener(cancelButton, () =>
+        {
+            cancelButtonAction?.Invoke();
+            ClosePanel();
+        });
+    }
+
+    #endregion
+
+    #region Public Methods
+
+    /// <summary>
+    /// 투버튼 패널을 열고 메세지와 버튼 이벤트를 설정
+    /// </summary>
+    /// <param name="messageText">표시할 메세지</param>
     /// <param name="onConfirm">확인 버튼을 눌렀을 때 실행할 액션</param>
     /// <param name="onCancel">취소 버튼을 눌렀을 때 실행할 액션</param>
-    public void OpenWithSetMessageAndButtonEvent(string message, Action onConfirm = null, Action onCancel = null)
+    public void OpenWithSetMessageAndButtonEvent(string messageText, Action onConfirm = null, Action onCancel = null)
     {
-        gameObject.SetActive(true);
-        InitPanel();
-        SetMessage(message);
-        SetButtonEvent(() =>
-            {
-                onConfirm?.Invoke();
-                gameObject.SetActive(false);
-            },
-            () =>
-            {
-                onCancel?.Invoke();
-                gameObject.SetActive(false);
-            });
+        confirmButtonAction = onConfirm;
+        cancelButtonAction = onCancel;
+
+        OpenPanel(messageText);
+    }
+
+
+    /// <summary>
+    /// 투버튼 패널을 열고 메세지와 버튼 이벤트를 설정, 지연 후 버튼을 활성화
+    /// </summary>
+    /// <param name="messageText">표시할 메세지</param>
+    /// <param name="buttonType">딜레이 후 활성화할 버튼 타입</param>
+    /// <param name="delay">버튼 활성화 딜레이</param>
+    /// <param name="onConfirm">확인 버튼을 눌렀을 때 실행할 액션</param>
+    /// <param name="onCancel">취소 버튼을 눌렀을 때 실행할 액션</param>
+    public void OpenWithSetMessageAndButtonEvent(string messageText, TwoButtonType buttonType, float delay,
+        Action onConfirm = null, Action onCancel = null)
+    {
+        confirmButtonAction = onConfirm;
+        cancelButtonAction = onCancel;
+
+        OpenPanel(messageText);
+        DisableButtonsByType(buttonType);
+
+        switch (buttonType)
+        {
+            case TwoButtonType.Confirm:
+                StartCoroutine(EnableButtonWithDelay(delay, confirmButton));
+                break;
+            case TwoButtonType.Cancel:
+                StartCoroutine(EnableButtonWithDelay(delay, cancelButton));
+                break;
+            case TwoButtonType.All:
+                StartCoroutine(EnableButtonWithDelay(delay, confirmButton, cancelButton));
+                break;
+        }
     }
 
     /// <summary>
-    /// 외부에서 OneButtonPanel의 메세지와 버튼 클릭 시 수행할 액션을 설정하는 메소드, 버튼을 딜레이 이후 활성화 시킴
+    /// 버튼 텍스트 설정
     /// </summary>
-    /// <param name="message">메세지</param>
-    /// <param name="onConfirm">확인 버튼을 눌렀을 때 실행할 액션</param>
-    /// <param name="delay">버튼 활성화 딜레이</param>
-    public void OpenWithSetMessageAndButtonEvent(string message, TwoButtonType buttonType, float delay,
-        Action onConfirm = null, Action onCancel = null)
-    {
-        gameObject.SetActive(true);
-        InitPanel();
-        SetMessage(message);
-        switch (buttonType)
-        {
-            case TwoButtonType.Confirm:
-                buttonConfirm.interactable = false;
-                break;
-            case TwoButtonType.Cancel:
-                buttonCancel.interactable = false;
-                break;
-            case TwoButtonType.All:
-                buttonConfirm.interactable = false;
-                buttonCancel.interactable = false;
-                break;
-        }
-
-        StartCoroutine(EnableButtonWithDelay(buttonType, delay, onConfirm, onCancel));
-    }
-
-    private IEnumerator EnableButtonWithDelay(TwoButtonType buttonType, float delay, Action onConfirm = null,
-        Action onCancel = null)
-    {
-        yield return new WaitForSeconds(delay);
-        switch (buttonType)
-        {
-            case TwoButtonType.Confirm:
-                buttonConfirm.interactable = true;
-                break;
-            case TwoButtonType.Cancel:
-                buttonCancel.interactable = true;
-                break;
-            case TwoButtonType.All:
-                buttonConfirm.interactable = true;
-                buttonCancel.interactable = true;
-                break;
-        }
-
-        SetButtonEvent(() =>
-            {
-                onConfirm?.Invoke();
-                gameObject.SetActive(false);
-            },
-            () =>
-            {
-                onCancel?.Invoke();
-                gameObject.SetActive(false);
-            });
-    }
-
+    /// <param name="confirmText">확인 버튼 텍스트</param>
+    /// <param name="cancelText">취소 버튼 텍스트</param>
     public void SetButtonText(string confirmText, string cancelText)
     {
-        cancelButtonText.text = cancelText;
-        confirmButtonText.text = confirmText;
+        if (cancelButtonText != null)
+            cancelButtonText.text = cancelText;
+
+        if (confirmButtonText != null)
+            confirmButtonText.text = confirmText;
     }
+
+    #endregion
+
+    #region Private Methods
+
+    private void SetButtonInteractable(bool confirmInteractable, bool cancelInteractable)
+    {
+        if (confirmButton != null)
+            confirmButton.interactable = confirmInteractable;
+
+        if (cancelButton != null)
+            cancelButton.interactable = cancelInteractable;
+    }
+
+    private void ClearButtonListeners()
+    {
+        if (confirmButton != null)
+            confirmButton.onClick.RemoveAllListeners();
+
+        if (cancelButton != null)
+            cancelButton.onClick.RemoveAllListeners();
+    }
+
+    private void ResetButtonTexts()
+    {
+        if (confirmButtonText != null)
+            confirmButtonText.text = DEFAULT_CONFIRM_TEXT;
+
+        if (cancelButtonText != null)
+            cancelButtonText.text = DEFAULT_CANCEL_TEXT;
+    }
+
+    private void DisableButtonsByType(TwoButtonType buttonType)
+    {
+        switch (buttonType)
+        {
+            case TwoButtonType.Confirm:
+                SetButtonInteractable(false, true);
+                break;
+            case TwoButtonType.Cancel:
+                SetButtonInteractable(true, false);
+                break;
+            case TwoButtonType.All:
+                SetButtonInteractable(true, true);
+                break;
+        }
+    }
+
+    private void EnableButtonsByType(TwoButtonType buttonType)
+    {
+        switch (buttonType)
+        {
+            case TwoButtonType.Confirm:
+                if (confirmButton != null)
+                    confirmButton.interactable = true;
+                break;
+            case TwoButtonType.Cancel:
+                if (cancelButton != null)
+                    cancelButton.interactable = true;
+                break;
+            case TwoButtonType.All:
+                SetButtonInteractable(true, true);
+                break;
+        }
+    }
+
+    #endregion*/
 }

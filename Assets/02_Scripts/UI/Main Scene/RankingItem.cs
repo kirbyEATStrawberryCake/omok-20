@@ -21,6 +21,15 @@ public class RankingItem : MonoBehaviour
         backgroundImage = GetComponent<Image>();
     }
 
+    /// <summary>
+    /// 각 랭킹 패널의 데이터를 설정
+    /// </summary>
+    /// <param name="rank">랭킹</param>
+    /// <param name="profileImage">프로필 이미지(1: panda, 2: redPanda</param>
+    /// <param name="grade">급수</param>
+    /// <param name="nickname">닉네임</param>
+    /// <param name="win">승리 수</param>
+    /// <param name="lose">패배 수</param>
     public void SetData(int rank, int profileImage, int grade, string nickname, int win, int lose)
     {
         this.rank.text = rank.ToString();

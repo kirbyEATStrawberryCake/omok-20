@@ -50,7 +50,7 @@ public class LoginSceneUIManager : Singleton<LoginSceneUIManager>
     protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
     {
         if (scene.name != "Login_Scene") return;
-        
+
         // 로그인 씬 호출 시 로그인 화면이 보이게 설정
         OpenLoginPanel();
     }
@@ -97,7 +97,7 @@ public class LoginSceneUIManager : Singleton<LoginSceneUIManager>
                 break;
         }
 
-        popup.OpenWithSetMessageAndButtonEvent(message, onConfirm);
+        popup.Show<OneButtonPanel>(message).OnConfirm(onConfirm);
     }
 
     /// <summary>
@@ -133,6 +133,6 @@ public class LoginSceneUIManager : Singleton<LoginSceneUIManager>
                 break;
         }
 
-        popup.OpenWithSetMessageAndButtonEvent(message, onConfirm);
+        popup.Show<OneButtonPanel>(message).OnConfirm(onConfirm);
     }
 }

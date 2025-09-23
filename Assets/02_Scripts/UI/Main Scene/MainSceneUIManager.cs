@@ -147,7 +147,7 @@ public class MainSceneUIManager : Singleton<MainSceneUIManager>
     /// <param name="onConfirm">버튼을 눌렀을 때 실행할 액션</param>
     public void OpenOneButtonPopup(string message, Action onConfirm = null)
     {
-        oneButtonPopup.OpenWithSetMessageAndButtonEvent(message, onConfirm);
+        oneButtonPopup.Show<OneButtonPanel>(message).OnConfirm(onConfirm);
     }
 
     /// <summary>
@@ -158,6 +158,6 @@ public class MainSceneUIManager : Singleton<MainSceneUIManager>
     /// <param name="onCancel">취소 버튼을 눌렀을 때 실행할 액션</param>
     public void OpenTwoButtonPopup(string message, Action onConfirm = null, Action onCancel = null)
     {
-        twoButtonPopup.OpenWithSetMessageAndButtonEvent(message, onConfirm, onCancel);
+        twoButtonPopup.Show<TwoButtonPanel>(message).OnButtons(onConfirm, onCancel);
     }
 }

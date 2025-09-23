@@ -332,10 +332,11 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
     private void OnError(string errorMessage, bool goToMainScene)
     {
         if (goToMainScene)
-            oneConfirmButtonPopup.OpenWithSetMessageAndButtonEvent($"오류가 발생했습니다.\n {errorMessage}",
-                () => SceneController.LoadScene(SceneType.Main, 0.5f));
+            oneConfirmButtonPopup.Show<OneButtonPanel>($"오류가 발생했습니다.\n {errorMessage}").OnConfirm(() =>
+                SceneController.LoadScene(SceneType.Main, 0.5f)
+            );
         else
-            oneConfirmButtonPopup.OpenWithSetMessageAndButtonEvent($"오류가 발생했습니다.\n {errorMessage}");
+            oneConfirmButtonPopup.Show<OneButtonPanel>($"오류가 발생했습니다.\n {errorMessage}");
     }
 
     #endregion
@@ -367,8 +368,8 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
         {
             case MultiplayControllerState.MatchWaiting:
                 surrenderButton.enabled = false;
-                oneCancelButtonPopup.OpenWithSetMessageAndButtonEvent("매칭 찾는 중...", 2f,
-                    () => { multiplayManager.multiplayController?.CancelMatch(); });
+                oneCancelButtonPopup.Show<OneButtonPanel>("매칭 찾는 중...")
+                    .OnConfirm(() => multiplayManager.multiplayController?.CancelMatch(), 2f);
                 break;
             case MultiplayControllerState.MatchExpanded:
                 Debug.Log("<color=cyan>매칭 범위 확장</color>");
@@ -385,8 +386,8 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
                 UpdatePlayerProfileInMultiPlay();
                 break;
             case MultiplayControllerState.MatchCanceled:
-                oneConfirmButtonPopup.OpenWithSetMessageAndButtonEvent("매칭이 취소되었습니다.",
-                    () => SceneController.LoadScene(SceneType.Main, 0.5f));
+                oneCancelButtonPopup.Show<OneButtonPanel>("매칭이 취소되었습니다.")
+                    .OnConfirm(() => SceneController.LoadScene(SceneType.Main, 0.5f));
                 break;
         }
     }
@@ -433,7 +434,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
             {
                 string message = $"{response.rank.grade} 등급으로 ";
                 message += result == GameResult.Victory ? "승급했습니다." : "강등됐습니다.";
-                oneConfirmButtonPopup.OpenWithSetMessageAndButtonEvent(message);
+                oneConfirmButtonPopup.Show<OneButtonPanel>(message).OnConfirm(null);
             }
 
             gameResultPopup.OpenWithButtonEvent(response, result,
@@ -482,8 +483,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
 
     private IEnumerator FakeRematch(float waitTime)
     {
-        oneCancelButtonPopup.OpenWithSetMessageAndButtonEvent("재대국 신청 중입니다...", 2f,
-            () => { StartCoroutine(SafeExitGame()); });
+        oneCancelButtonPopup.Show<OneButtonPanel>("재대국 신청 중입니다...").OnConfirm(() => StartCoroutine(SafeExitGame()), 2f);
         yield return new WaitForSeconds(waitTime);
         CloseButtonPopup();
         gameResultPopupPanel.gameObject.SetActive(false);
@@ -499,24 +499,25 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
         switch (state)
         {
             case MultiplayControllerState.RematchRequested:
-                twoButtonPopup.SetButtonText("거절", "수락");
-                twoButtonPopup.OpenWithSetMessageAndButtonEvent("상대가 재대국 신청을 하였습니다.\n받으시겠습니까?",
-                    () => { multiplayManager.multiplayController?.AcceptRematch(); },
-                    () => { multiplayManager.multiplayController?.RejectRematch(); });
+                twoButtonPopup.Show<TwoButtonPanel>("상대가 재대국 신청을 하였습니다.\n받으시겠습니까?")
+                    .WithButtonText("수락", "거절")
+                    .OnButtons(
+                        () => multiplayManager.multiplayController?.AcceptRematch(),
+                        () => multiplayManager.multiplayController?.RejectRematch()
+                    );
                 break;
             case MultiplayControllerState.RematchRequestSent:
-                oneCancelButtonPopup.OpenWithSetMessageAndButtonEvent("재대국 신청 중입니다...", 2f,
-                    () => { multiplayManager.multiplayController?.CancelRematch(); });
+                oneCancelButtonPopup.Show<OneButtonPanel>("재대국 신청 중입니다...")
+                    .OnConfirm(() => multiplayManager.multiplayController?.CancelRematch(), 2f);
                 break;
             case MultiplayControllerState.RematchRejected:
                 CloseButtonPopup();
-                oneConfirmButtonPopup.OpenWithSetMessageAndButtonEvent("상대방이 재대국을 거절했습니다.",
-                    () => { gameResultPopup.DisableRematchButton(); });
+                oneConfirmButtonPopup.Show<OneButtonPanel>("상대방이 재대국을 거절했습니다.")
+                    .OnConfirm(() => gameResultPopup.DisableRematchButton());
                 break;
             case MultiplayControllerState.RematchCanceled:
                 CloseButtonPopup();
-                oneConfirmButtonPopup.OpenWithSetMessageAndButtonEvent("상대방이 재대국을 취소했습니다.",
-                    () => { });
+                oneConfirmButtonPopup.Show<OneButtonPanel>("상대방이 재대국을 취소했습니다.").OnConfirm(null);
                 break;
             case MultiplayControllerState.RematchStarted:
                 CloseButtonPopup();
@@ -527,8 +528,8 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
                 break;
             case MultiplayControllerState.OpponentLeft:
                 CloseButtonPopup();
-                oneConfirmButtonPopup.OpenWithSetMessageAndButtonEvent("상대방이 나갔습니다.",
-                    () => { SceneController.LoadScene(SceneType.Main, 0.5f); });
+                oneConfirmButtonPopup.Show<OneButtonPanel>("상대방이 나갔습니다.")
+                    .OnConfirm(() => SceneController.LoadScene(SceneType.Main, 0.5f));
                 break;
         }
     }
@@ -554,13 +555,14 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
     /// </summary>
     public void OnClickSurrenderButton()
     {
-        twoButtonPopup.SetButtonText("취소", "기권");
-        twoButtonPopup.OpenWithSetMessageAndButtonEvent("기권 하시겠습니까?", () => { gamePlayManager.Surrender(); }, () =>
-        {
-            if (GameModeManager.Mode == GameMode.SinglePlayer)
+        twoButtonPopup.Show<TwoButtonPanel>("기권 하시겠습니까?")
+            .WithButtonText("기권", "취소")
+            .OnButtons(() => gamePlayManager.Surrender(), () =>
             {
-                OnCancelSurrender?.Invoke();
-            }
-        });
+                if (GameModeManager.Mode == GameMode.SinglePlayer)
+                {
+                    OnCancelSurrender?.Invoke();
+                }
+            });
     }
 }

@@ -23,7 +23,7 @@ public class RankingUI : MonoBehaviour
         {
             Destroy(child.gameObject);
         }
-        
+
         mainSceneUIManager.statsManager.GetRanking((response) =>
             {
                 foreach (var user in response.ranking)
@@ -43,6 +43,6 @@ public class RankingUI : MonoBehaviour
 
     public void OnClickBackButton()
     {
-        mainSceneUIManager.OpenTwoButtonPopup("랭킹을 종료하시겠습니까?", () => { mainSceneUIManager.OpenMainPanel(); });
+        mainSceneUIManager.OpenTwoButtonPopup("랭킹을 종료하시겠습니까?", () => mainSceneUIManager.OpenMainPanel());
     }
 }

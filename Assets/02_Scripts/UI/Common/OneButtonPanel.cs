@@ -1,79 +1,93 @@
 using System;
-using System.Collections;
-using TMPro;
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.UI;
 
-public class OneButtonPanel : MonoBehaviour
+public class OneButtonPanel : BasePanel
 {
     [SerializeField] private Button button;
 
-    [SerializeField] [Tooltip("팝업 창에 띄울 메세지")]
-    private TextMeshProUGUI message;
-
-    private void InitPanel()
-    {
-        button.interactable = true;
-        button.onClick.RemoveAllListeners();
-        message.text = "";
-    }
-
-    private void SetButtonEvent(UnityAction onClick = null)
-    {
-        if (onClick == null) return;
-
-        button.onClick.RemoveAllListeners();
-        button.onClick.AddListener(onClick);
-    }
-
-    private void SetMessage(string message)
-    {
-        this.message.text = message;
-    }
-
     /// <summary>
-    /// 외부에서 OneButtonPanel의 메세지와 버튼 클릭 시 수행할 액션을 설정하는 메소드
+    /// 확인 버튼에 대한 액션을 설정
     /// </summary>
-    /// <param name="message">메세지</param>
-    /// <param name="onConfirm">확인 버튼을 눌렀을 때 실행할 액션</param>
-    public void OpenWithSetMessageAndButtonEvent(string message, Action onConfirm = null)
+    /// <param name="onConfirmAction">확인 버튼 클릭 시 실행될 액션</param>
+    /// <param name="delay">버튼 활성화 지연 시간</param>
+    public OneButtonPanel OnConfirm(Action onConfirmAction, float delay = 0f)
     {
-        gameObject.SetActive(true);
-        InitPanel();
-        SetMessage(message);
-        SetButtonEvent(() =>
+        SetButtonListener(button, () =>
         {
-            onConfirm?.Invoke();
-            gameObject.SetActive(false);
+            onConfirmAction?.Invoke();
+            ClosePanel();
+        });
+
+        HandleButtonDelay(delay, button);
+
+        return this;
+    }
+
+    protected override void ResetButtons()
+    {
+        if (button != null)
+        {
+            button.interactable = true;
+            button.onClick.RemoveAllListeners();
+        }
+    }
+
+    /*private Action buttonAction;
+
+    #region Abstract Methods
+
+    protected override void InitializeButtons()
+    {
+        if (button != null)
+        {
+            button.interactable = true;
+            button.onClick.RemoveAllListeners();
+        }
+    }
+
+
+    protected override void SetButtons()
+    {
+        SetButtonListener(button, () =>
+        {
+            buttonAction?.Invoke();
+            ClosePanel();
         });
     }
 
+    #endregion
+
+    #region Public Methods
+
     /// <summary>
-    /// 외부에서 OneButtonPanel의 메세지와 버튼 클릭 시 수행할 액션을 설정하는 메소드, 버튼을 딜레이 이후 활성화 시킴
+    /// 원버튼 패널을 열고 메세지와 버튼 이벤트를 설정
     /// </summary>
-    /// <param name="message">메세지</param>
+    /// <param name="messageText">표시할 메세지</param>
     /// <param name="onConfirm">확인 버튼을 눌렀을 때 실행할 액션</param>
+    public void OpenWithSetMessageAndButtonEvent(string messageText, Action onConfirm = null)
+    {
+        buttonAction = onConfirm;
+        OpenPanel(messageText);
+    }
+
+    /// <summary>
+    /// 원버튼 패널을 열고 메세지와 버튼 이벤트를 설정, 지연 후 버튼을 활성화
+    /// </summary>
+    /// <param name="messageText">표시할 메세지</param>
     /// <param name="delay">버튼 활성화 딜레이</param>
-    public void OpenWithSetMessageAndButtonEvent(string message, float delay, Action onConfirm = null)
+    /// <param name="onConfirm">확인 버튼을 눌렀을 때 실행할 액션</param>
+    public void OpenWithSetMessageAndButtonEvent(string messageText, float delay, Action onConfirm = null)
     {
-        gameObject.SetActive(true);
-        InitPanel();
-        SetMessage(message);
-        button.interactable = false;
+        buttonAction = onConfirm;
 
-        StartCoroutine(EnableButtonWithDelay(delay, onConfirm));
+        if (button != null)
+            button.interactable = false;
+
+        OpenPanel(messageText);
+
+        StartCoroutine(EnableButtonWithDelay(delay, button));
     }
 
-    private IEnumerator EnableButtonWithDelay(float delay, Action onConfirm = null)
-    {
-        yield return new WaitForSeconds(delay);
-
-        button.interactable = true;
-        SetButtonEvent(() =>
-        {
-            onConfirm?.Invoke();
-            gameObject.SetActive(false);
-        });
-    }
+    #endregion*/
 }

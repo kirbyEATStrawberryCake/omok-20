@@ -7,8 +7,8 @@ using System;
 public class GiboListUI : MonoBehaviour
 {
     [Header("UI References")]
-    [SerializeField] private Transform contentParent;   // ScrollViewÀÇ Content
-    [SerializeField] private GameObject listItemPrefab; // ¹öÆ° ÇÁ¸®ÆÕ
+    [SerializeField] private Transform contentParent;   // ScrollViewì˜ Content
+    [SerializeField] private GameObject listItemPrefab; // ë²„íŠ¼ í”„ë¦¬íŒ¹
 
     private readonly List<GameObject> spawnedItems = new();
 
@@ -19,25 +19,24 @@ public class GiboListUI : MonoBehaviour
         LoadGiboList();
     }
 
-
     private void LoadGiboList()
     {
-        // ±âÁ¸ ¸®½ºÆ® Á¦°Å
+        // ê¸°ì¡´ ë¦¬ìŠ¤íŠ¸ ì œê±°
         foreach (var item in spawnedItems)
         {
             Destroy(item);
         }
         spawnedItems.Clear();
 
-        // PlayerPrefs¿¡¼­ ±âº¸ ÀÎµ¦½º ·Îµå
+        // PlayerPrefsì—ì„œ ê¸°ë³´ ì¸ë±ìŠ¤ ë¡œë“œ
         GiboIndex giboIndex = GiboManager.LoadIndex();
         if (giboIndex == null || giboIndex.startTimes.Count == 0)
         {
-            Debug.Log("ÀúÀåµÈ ±âº¸°¡ ¾ø½À´Ï´Ù.");
+            Debug.Log("ì €ì¥ëœ ê¸°ë³´ê°€ ì—†ìŠµë‹ˆë‹¤.");
             return;
         }
 
-        // ±âº¸ Å°(startTime) ¼øÈ¸ÇÏ¸ç ¹öÆ° »ı¼º
+        // ê¸°ë³´ í‚¤(startTime) ìˆœíšŒí•˜ë©° ë²„íŠ¼ ìƒì„±
         foreach (string startTime in giboIndex.startTimes)
         {
             GameRecord record = GiboManager.LoadRecord(startTime);
@@ -46,18 +45,18 @@ public class GiboListUI : MonoBehaviour
             GameObject item = Instantiate(listItemPrefab, contentParent);
             spawnedItems.Add(item);
 
-            // ¹öÆ°ÀÇ ÅØ½ºÆ® º¯°æ
+            // ë²„íŠ¼ì˜ í…ìŠ¤íŠ¸ ë³€ê²½
             TMP_Text text = item.GetComponentInChildren<TMP_Text>();
             if (text != null)
             {
                 text.text = $"{record.displayTime}";
             }
 
-            // ¹öÆ° ÀÌº¥Æ® µî·Ï
+            // ë²„íŠ¼ ì´ë²¤íŠ¸ ë“±ë¡
             Button button = item.GetComponent<Button>();
             if (button != null)
             {
-                string selectedId = startTime; // Å¬·ÎÀú ¹æÁö
+                string selectedId = startTime; // í´ë¡œì € ë°©ì§€
                 button.onClick.AddListener(() => OnClickGiboItem(selectedId));
             }
         }
@@ -65,10 +64,10 @@ public class GiboListUI : MonoBehaviour
 
     private void OnClickGiboItem(string gameId)
     {
-        Debug.Log($"¼±ÅÃµÈ ±âº¸ ID: {gameId}");
+        Debug.Log($"ì„ íƒëœ ê¸°ë³´ ID: {gameId}");
         SelectedGiboGameId.selectedGameId = gameId;
 
-        // ±âº¸ Àç»ı ¾ÀÀ¸·Î ÀÌµ¿ (¾À ÀÌ¸§ ¼öÁ¤ ÇÊ¿ä)
+        // ê¸°ë³´ ì¬ìƒ ì”¬ìœ¼ë¡œ ì´ë™ (ì”¬ ì´ë¦„ ìˆ˜ì • í•„ìš”)
         SceneController.LoadScene(SceneType.Gibo);
     }
 }
