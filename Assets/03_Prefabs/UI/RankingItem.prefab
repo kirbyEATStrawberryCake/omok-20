@@ -441,7 +441,7 @@ GameObject:
   - component: {fileID: 7134545187742461243}
   - component: {fileID: 6903583207985654602}
   m_Layer: 5
-  m_Name: RankingSlot
+  m_Name: RankingItem
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -464,11 +464,11 @@ RectTransform:
   - {fileID: 2809833781065782386}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 480, y: 120}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: -20}
+  m_SizeDelta: {x: -100, y: 120}
+  m_Pivot: {x: 0.5, y: 1}
 --- !u!222 &8965218394620207828
 CanvasRenderer:
   m_ObjectHideFlags: 0

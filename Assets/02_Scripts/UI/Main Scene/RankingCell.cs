@@ -1,9 +1,8 @@
-using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class RankingItem : MonoBehaviour
+public class RankingCell : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI rank;
     [SerializeField] private Image profileImage;
@@ -16,6 +15,9 @@ public class RankingItem : MonoBehaviour
     private Image backgroundImage;
     [SerializeField] private Color[] rankColor;
 
+    public int Index { get; private set; }
+
+
     private void Awake()
     {
         backgroundImage = GetComponent<Image>();
@@ -24,24 +26,21 @@ public class RankingItem : MonoBehaviour
     /// <summary>
     /// 각 랭킹 패널의 데이터를 설정
     /// </summary>
-    /// <param name="rank">랭킹</param>
-    /// <param name="profileImage">프로필 이미지(1: panda, 2: redPanda</param>
-    /// <param name="grade">급수</param>
-    /// <param name="nickname">닉네임</param>
-    /// <param name="win">승리 수</param>
-    /// <param name="lose">패배 수</param>
-    public void SetData(int rank, int profileImage, int grade, string nickname, int win, int lose)
+    /// <param name="rankingUser">유저 정보</param>
+    /// <param name="index">각 패널 인덱스</param>
+    public void SetData(RankingUser rankingUser, int index)
     {
-        this.rank.text = rank.ToString();
-        this.profileImage.sprite = profileImage == 1 ? panda : redPanda;
-        gradeAndNickname.text = $"{grade}급 {nickname}";
-        winAndLose.text = $"{win}승 {lose}패";
+        this.rank.text = rankingUser.rank.ToString();
+        this.profileImage.sprite = rankingUser.profileImage == 1 ? panda : redPanda;
+        gradeAndNickname.text = $"{rankingUser.grade}급 {rankingUser.identity.nickname}";
+        winAndLose.text = $"{rankingUser.record.totalWins}승 {rankingUser.record.totalLoses}패";
+        this.Index = index;
 
-        if (rank == 1)
+        if (rankingUser.rank == 1)
             backgroundImage.color = rankColor[0];
-        else if (rank == 2)
+        else if (rankingUser.rank == 2)
             backgroundImage.color = rankColor[1];
-        else if (rank == 3)
+        else if (rankingUser.rank == 3)
             backgroundImage.color = rankColor[2];
         else
             backgroundImage.color = rankColor[3];

@@ -1,15 +1,13 @@
-using System;
+using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public class RankingUI : MonoBehaviour
 {
     private MainSceneUIManager mainSceneUIManager;
 
-    [SerializeField] [Tooltip("랭킹 정보가 들어갈 오브젝트")]
-    private GameObject rankingItemPrefab;
+    [SerializeField] private ScrollViewController scrollViewController;
 
-    [SerializeField] [Tooltip("랭킹이 표시될 부모 오브젝트 트랜스폼(Content)")]
-    private Transform rankingContentObject;
 
     private void Awake()
     {
@@ -18,22 +16,8 @@ public class RankingUI : MonoBehaviour
 
     private void OnEnable()
     {
-        // 기존 랭킹 목록 지우기
-        foreach (Transform child in rankingContentObject)
-        {
-            Destroy(child.gameObject);
-        }
-
-        mainSceneUIManager.statsManager.GetRanking((response) =>
-            {
-                foreach (var user in response.ranking)
-                {
-                    var item = Instantiate(rankingItemPrefab, rankingContentObject);
-                    var rankingItem = item.GetComponent<RankingItem>();
-                    rankingItem?.SetData(user.rank, user.profileImage, user.grade, user.identity.nickname,
-                        user.record.totalWins, user.record.totalLoses);
-                }
-            },
+        mainSceneUIManager.statsManager.GetRanking(
+            (response) => scrollViewController.Initialize(response.ranking.ToList()),
             (errorType) =>
             {
                 mainSceneUIManager.OpenOneButtonPopup("랭킹 정보를 가져올 수 없습니다.",
