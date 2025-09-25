@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -5,37 +6,21 @@ using UnityEngine.UI;
 public class SignUpUI : MonoBehaviour
 {
     private LoginSceneUIManager loginSceneUIManager;
+    private AuthManager authManager;
 
     [Header("Input Fields")]
-    [SerializeField] [Tooltip("유저 ID(이메일) InputField")]
-    private TMP_InputField usernameInput;
-
-    [SerializeField] [Tooltip("패스워드 InputField")]
-    private TMP_InputField passwordInput;
-
-    [SerializeField] [Tooltip("패스워드 확인 InputField")]
-    private TMP_InputField confirmPasswordInput;
-
-    [SerializeField] [Tooltip("닉네임 InputField")]
-    private TMP_InputField nicknameInput;
+    [SerializeField] [Tooltip("유저 ID(이메일) InputField")] private TMP_InputField usernameInput;
+    [SerializeField] [Tooltip("패스워드 InputField")] private TMP_InputField passwordInput;
+    [SerializeField] [Tooltip("패스워드 확인 InputField")] private TMP_InputField confirmPasswordInput;
+    [SerializeField] [Tooltip("닉네임 InputField")] private TMP_InputField nicknameInput;
 
     [Header("프로필 이미지")]
-    [SerializeField] [Tooltip("판다 이미지(프로필 이미지)")]
-    private Image pandaImage;
-
-    [SerializeField] [Tooltip("레드 판다 이미지(프로필 이미지)")]
-    private Image redPandaImage;
-
+    [SerializeField] [Tooltip("판다 이미지(프로필 이미지)")] private Image pandaImage;
+    [SerializeField] [Tooltip("레드 판다 이미지(프로필 이미지)")] private Image redPandaImage;
     [SerializeField] [Tooltip("판다 스프라이트")] private Sprite pandaSprite;
-
-    [SerializeField] [Tooltip("판다 스프라이트(회색, Unselected)")]
-    private Sprite pandaGreySprite;
-
-    [SerializeField] [Tooltip("레드 판다 스프라이트")]
-    private Sprite redPandaSprite;
-
-    [SerializeField] [Tooltip("레드 판다 스프라이트(회색, Unselected)")]
-    private Sprite redPandaGreySprite;
+    [SerializeField] [Tooltip("판다 스프라이트(회색, Unselected)")] private Sprite pandaGreySprite;
+    [SerializeField] [Tooltip("레드 판다 스프라이트")] private Sprite redPandaSprite;
+    [SerializeField] [Tooltip("레드 판다 스프라이트(회색, Unselected)")] private Sprite redPandaGreySprite;
 
     // private string selectedProfile = ""; // 선택된 프로필사진 ("panda" or "red_panda")
     private int selectedProfile = 0; // 선택된 프로필사진(0 : Unselected, 1 : Panda, 2 : Red Panda)
@@ -43,6 +28,7 @@ public class SignUpUI : MonoBehaviour
     private void Start()
     {
         loginSceneUIManager = LoginSceneUIManager.Instance;
+        authManager = NetworkManager.Instance.authManager;
     }
 
     private void OnEnable()
@@ -75,64 +61,63 @@ public class SignUpUI : MonoBehaviour
     /// </summary>
     public void OnClickSignUpButton()
     {
-        string username = usernameInput.text;
-        string password = passwordInput.text;
-        string confirmPassword = confirmPasswordInput.text;
-        string nickname = nicknameInput.text;
-
-        // InputField 공백 체크
-        if (string.IsNullOrEmpty(username))
+        var validationResult = ValidateInput();
+        if (validationResult == SignUpValidationResult.Success)
         {
-            loginSceneUIManager.OpenSignUpPopup(SignUpPanelType.Empty_Username);
-            return;
-        }
-
-        if (string.IsNullOrEmpty(password) || string.IsNullOrEmpty(confirmPassword))
-        {
-            loginSceneUIManager.OpenSignUpPopup(SignUpPanelType.Empty_Password);
-            return;
-        }
-
-        if (string.IsNullOrEmpty(nickname))
-        {
-            loginSceneUIManager.OpenSignUpPopup(SignUpPanelType.Empty_Nickname);
-            return;
-        }
-
-        // 프로필 이미지를 선택했는지 체크
-        if (selectedProfile != 1 && selectedProfile != 2)
-        {
-            loginSceneUIManager.OpenSignUpPopup(SignUpPanelType.Fail_NotSelectedProfileImage);
-            return;
-        }
-
-        // 패스워드 일치 체크
-        if (password != confirmPassword)
-        {
-            loginSceneUIManager.OpenSignUpPopup(SignUpPanelType.Fail_Password_NotMatch,
+            // 서버에 회원가입 요청
+            authManager.SignUp(usernameInput.text, passwordInput.text, nicknameInput.text, selectedProfile,
                 () =>
                 {
-                    passwordInput.text = "";
-                    confirmPasswordInput.text = "";
+                    loginSceneUIManager.ShowPopup(ValidationMessageMapper.GetMessage(validationResult),
+                        () => loginSceneUIManager.OpenLoginPanel());
+                },
+                (errorType) =>
+                {
+                    string message = AuthMessageMapper.GetMessage(errorType);
+                    loginSceneUIManager.ShowPopup(message, () =>
+                    {
+                        usernameInput.text = "";
+                        usernameInput.ActivateInputField();
+                    });
                 });
             return;
         }
 
-        // 서버에 회원가입 요청
-        loginSceneUIManager.authManager.SignUp(username, password, nickname, selectedProfile,
-            () =>
-            {
-                loginSceneUIManager.OpenSignUpPopup(SignUpPanelType.Success,
-                    () => loginSceneUIManager.OpenLoginPanel());
-            }, (errorType) =>
-            {
-                switch (errorType)
+        // --- 유효성 검사 실패 시 처리 ---
+        string message = ValidationMessageMapper.GetMessage(validationResult);
+        Action onConfirmAction = null;
+
+        switch (validationResult)
+        {
+            case SignUpValidationResult.UsernameEmpty:
+                onConfirmAction = () => usernameInput.ActivateInputField();
+                break;
+            case SignUpValidationResult.PasswordEmpty:
+                onConfirmAction = () => passwordInput.ActivateInputField();
+                break;
+            case SignUpValidationResult.NicknameEmpty:
+                onConfirmAction = () => nicknameInput.ActivateInputField();
+                break;
+            case SignUpValidationResult.PasswordsDoNotMatch:
+                onConfirmAction = () =>
                 {
-                    case AuthResponseType.DUPLICATED_USERNAME:
-                        loginSceneUIManager.OpenSignUpPopup(SignUpPanelType.Fail_Username,
-                            () => usernameInput.text = "");
-                        break;
-                }
-            });
+                    passwordInput.text = "";
+                    confirmPasswordInput.text = "";
+                    passwordInput.ActivateInputField();
+                };
+                break;
+        }
+
+        loginSceneUIManager.ShowPopup(message, onConfirmAction);
+    }
+
+    private SignUpValidationResult ValidateInput()
+    {
+        if (string.IsNullOrEmpty(usernameInput.text)) return SignUpValidationResult.UsernameEmpty;
+        if (string.IsNullOrEmpty(passwordInput.text)) return SignUpValidationResult.PasswordEmpty;
+        if (string.IsNullOrEmpty(nicknameInput.text)) return SignUpValidationResult.NicknameEmpty;
+        if (passwordInput.text != confirmPasswordInput.text) return SignUpValidationResult.PasswordsDoNotMatch;
+        if (selectedProfile == 0) return SignUpValidationResult.ProfileNotSelected;
+        return SignUpValidationResult.Success;
     }
 }

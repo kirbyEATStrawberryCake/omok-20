@@ -20,7 +20,8 @@ public enum AuthResponseType
     INVALID_USERNAME,
     INVALID_PASSWORD,
     DUPLICATED_USERNAME,
-    NOT_LOGGED_IN
+    NOT_LOGGED_IN,
+    NETWORK_ERROR,
 }
 
 /// <summary>

@@ -14,6 +14,7 @@ public class MultiplayManager : Singleton<MultiplayManager>
 
     public MultiplayController multiplayController { get; private set; }
     public MatchData MatchData { get; private set; }
+    public UserInfo_Network UserInfo { get; private set; }
 
     #endregion
 
@@ -104,7 +105,7 @@ public class MultiplayManager : Singleton<MultiplayManager>
                 HandleMultiplayStateChanged,
                 HandleOpponentMove);
 
-            multiplayController.Connect(GameManager.Instance.username);
+            multiplayController.Connect(UserInfo.username);
             Debug.Log("<color=green>[MultiplayManager] MultiplayController 생성 및 연결 완료</color>");
         }
         catch (Exception ex)
@@ -236,6 +237,14 @@ public class MultiplayManager : Singleton<MultiplayManager>
     #region Public API
 
     /// <summary>
+    /// 사용자 정보를 저장하는 메소드
+    /// </summary>
+    public void SetUserInfo(UserInfo_Network userInfo)
+    {
+        UserInfo = userInfo;
+    }
+
+    /// <summary>
     /// 매칭 완료시 서버에서 보낸 상대방 정보를 저장하는 메소드
     /// </summary>
     public void SetOpponentData(MatchData data)
@@ -261,7 +270,7 @@ public class MultiplayManager : Singleton<MultiplayManager>
             Debug.LogError("<color=red>[MultiplayManager] MultiplayController가 null입니다.</color>");
             return;
         }
-        
+
         multiplayController?.DoPlayer(roomId, x, y);
     }
 

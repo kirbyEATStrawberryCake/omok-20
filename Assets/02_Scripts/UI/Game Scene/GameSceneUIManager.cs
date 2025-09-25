@@ -255,7 +255,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
             return;
         }
 
-        GameManager gameManager = GameManager.Instance;
+        var userInfo = MultiplayManager.Instance.UserInfo;
 
         switch (result)
         {
@@ -270,7 +270,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
                 break;
 
             case GameResult.Victory: // 내가 승리 (멀티)
-                leftProfileImage.sprite = gameManager.profileImage == 1
+                leftProfileImage.sprite = userInfo.profileImage == 1
                     ? winPandaProfileSprite
                     : winRedPandaProfileSprite;
                 if (GameModeManager.Mode == GameMode.MultiPlayer)
@@ -278,13 +278,13 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
                         ? losePandaProfileSprite
                         : loseRedPandaProfileSprite;
                 else if (GameModeManager.Mode == GameMode.AI)
-                    rightProfileImage.sprite = gameManager.profileImage == 1
+                    rightProfileImage.sprite = userInfo.profileImage == 1
                         ? loseRedPandaProfileSprite
                         : losePandaProfileSprite;
                 break;
 
             case GameResult.Defeat: // 내가 패배 (멀티)
-                leftProfileImage.sprite = gameManager.profileImage == 1
+                leftProfileImage.sprite = userInfo.profileImage == 1
                     ? losePandaProfileSprite
                     : loseRedPandaProfileSprite;
                 if (GameModeManager.Mode == GameMode.MultiPlayer)
@@ -292,7 +292,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
                         ? winPandaProfileSprite
                         : winRedPandaProfileSprite;
                 else if (GameModeManager.Mode == GameMode.AI)
-                    rightProfileImage.sprite = gameManager.profileImage == 1
+                    rightProfileImage.sprite = userInfo.profileImage == 1
                         ? winRedPandaProfileSprite
                         : winPandaProfileSprite;
                 break;
@@ -402,20 +402,21 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
         TextMeshProUGUI player1GradeAndNickname = player1.transform.GetChild(2).GetComponent<TextMeshProUGUI>();
         TextMeshProUGUI player2GradeAndNickname = player2.transform.GetChild(2).GetComponent<TextMeshProUGUI>();
         // 나의 프로필은 기기에 있는 정보 사용
-        GameManager gameManager = GameManager.Instance;
-        leftProfileImage.sprite = gameManager.profileImage == 1 ? pandaSprite : redPandaSprite;
-        player1GradeAndNickname.text = $"{gameManager.grade}급 {gameManager.nickname}";
+        MultiplayManager multiplayManager = MultiplayManager.Instance;
+        var userInfo = multiplayManager.UserInfo;
+        leftProfileImage.sprite = userInfo.profileImage == 1 ? pandaSprite : redPandaSprite;
+        player1GradeAndNickname.text = $"{userInfo.grade}급 {userInfo.nickname}";
         // 상대의 프로필은 서버에서 받아온 정보를 사용하여 프로필 업데이트
         if (GameModeManager.Mode == GameMode.MultiPlayer)
         {
-            opponentData = MultiplayManager.Instance.MatchData;
+            opponentData = multiplayManager.MatchData;
             rightProfileImage.sprite = opponentData.profileImage == 1 ? pandaSprite : redPandaSprite;
             player2GradeAndNickname.text = $"{opponentData.grade}급 {opponentData.nickname}";
             giboManager.SetGiboProfileData(opponentData.nickname, opponentData.profileImage, opponentData.grade);
         }
         else if (GameModeManager.Mode == GameMode.AI)
         {
-            rightProfileImage.sprite = gameManager.profileImage == 1 ? redPandaSprite : pandaSprite;
+            rightProfileImage.sprite = userInfo.profileImage == 1 ? redPandaSprite : pandaSprite;
             // TODO: AI 랜덤이름? -> 일단 값은 고정적으로 세팅했습니다!
             giboManager.SetGiboProfileData("AI1", 2, 10);
         }

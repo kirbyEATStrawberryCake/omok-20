@@ -6,16 +6,15 @@ using UnityEngine.SceneManagement;
 public class LoginUI : MonoBehaviour
 {
     private LoginSceneUIManager loginSceneUIManager;
+    private AuthManager authManager;
 
-    [SerializeField] [Tooltip("ID(이메일) InputField")]
-    private TMP_InputField usernameInput;
-
-    [SerializeField] [Tooltip("비밀번호 InputField")]
-    private TMP_InputField passwordInput;
+    [SerializeField] [Tooltip("ID(이메일) InputField")] private TMP_InputField usernameInput;
+    [SerializeField] [Tooltip("비밀번호 InputField")] private TMP_InputField passwordInput;
 
     private void Start()
     {
         loginSceneUIManager = LoginSceneUIManager.Instance;
+        authManager = NetworkManager.Instance.authManager;
     }
 
     private void OnEnable()
@@ -24,44 +23,55 @@ public class LoginUI : MonoBehaviour
         usernameInput.text = "";
         passwordInput.text = "";
         usernameInput.ActivateInputField();
-        passwordInput.ActivateInputField();
     }
 
+    /// <summary>
+    /// 로그인 버튼 클릭 시 호출되는 함수
+    /// </summary>
     public void OnClickLoginButton()
     {
-        string username = usernameInput.text;
-        string password = passwordInput.text;
-
-        // InputField 공백 체크
-        if (string.IsNullOrEmpty(username))
+        var validationResult = ValidateInput();
+        if (validationResult == SignInValidationResult.Success)
         {
-            loginSceneUIManager.OpenLoginPopup(LoginPanelType.Empty_Username);
+            // 서버에 로그인 요청
+            authManager.SignIn(usernameInput.text, passwordInput.text,
+                () =>
+                {
+                    Debug.Log("<color=green>로그인 성공!</color>");
+                    // TODO: 사용자 정보 받아서 저장해두기
+                    SceneController.LoadScene(SceneType.Main);
+                }, (errorType) =>
+                {
+                    string message = AuthMessageMapper.GetMessage(errorType);
+                    loginSceneUIManager.ShowPopup(message, () => passwordInput.text = "");
+                });
             return;
         }
 
-        if (string.IsNullOrEmpty(password))
+        // --- 유효성 검사 실패 시 처리 ---
+        string message = ValidationMessageMapper.GetMessage(validationResult);
+        Action onConfirmAction = null;
+        switch (validationResult)
         {
-            loginSceneUIManager.OpenLoginPopup(LoginPanelType.Empty_Password);
-            return;
+            case SignInValidationResult.UsernameEmpty:
+                onConfirmAction = () => usernameInput.ActivateInputField();
+                break;
+            case SignInValidationResult.PasswordEmpty:
+                onConfirmAction = () => passwordInput.ActivateInputField();
+                break;
         }
 
-        // 서버에 로그인 요청
-        loginSceneUIManager.authManager.SignIn(username, password, () =>
-        {
-            Debug.Log("<color=green>로그인 성공!</color>");
-            // TODO: 사용자 정보 받아서 저장해두기
-            SceneController.LoadScene(SceneType.Main);
-        }, (errorType) =>
-        {
-            switch (errorType)
-            {
-                case AuthResponseType.INVALID_USERNAME:
-                    loginSceneUIManager.OpenLoginPopup(LoginPanelType.Invalid_Username, () => usernameInput.text = "");
-                    break;
-                case AuthResponseType.INVALID_PASSWORD:
-                    loginSceneUIManager.OpenLoginPopup(LoginPanelType.Invalid_Password, () => passwordInput.text = "");
-                    break;
-            }
-        });
+        loginSceneUIManager.ShowPopup(message, onConfirmAction);
+    }
+
+    /// <summary>
+    /// 로그인 입력값에 대한 유효성을 검사하는 메서드
+    /// </summary>
+    private SignInValidationResult ValidateInput()
+    {
+        if (string.IsNullOrEmpty(usernameInput.text)) return SignInValidationResult.UsernameEmpty;
+        if (string.IsNullOrEmpty(passwordInput.text)) return SignInValidationResult.PasswordEmpty;
+
+        return SignInValidationResult.Success;
     }
 }

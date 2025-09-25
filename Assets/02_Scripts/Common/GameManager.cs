@@ -17,12 +17,4 @@ public class GameManager : Singleton<GameManager>
     protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
     {
     }
-
-    public void SetUserInfo(string username, string nickname, int grade, int profileImage)
-    {
-        this.username = username;
-        this.nickname = nickname;
-        this.grade = grade;
-        this.profileImage = profileImage;
-    }
 }

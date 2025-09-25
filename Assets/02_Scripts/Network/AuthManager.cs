@@ -129,6 +129,7 @@ public class AuthManager : MonoBehaviour
         if (response.HasError)
         {
             Debug.LogError($"[AuthManager] {operationType} - 네트워크 연결 실패");
+            onFail?.Invoke(AuthResponseType.NETWORK_ERROR);
             return;
         }
 

@@ -13,7 +13,7 @@ public class GiboUIManager : Singleton<GiboUIManager>
     [SerializeField] private GameObject AfterButton;
     [SerializeField] private GameObject LastButton;
 
-    [Header("È­¸é UI ¼³Á¤")]
+    [Header("í™”ë©´ UI ì„¤ì •")]
     [SerializeField] private GameObject gibo;
     [SerializeField] private GameObject popUpGiboExit;
     [SerializeField] private Image leftProfile_Image;
@@ -21,7 +21,7 @@ public class GiboUIManager : Singleton<GiboUIManager>
     [SerializeField] private Image rightProfile_Image;
     [SerializeField] private TextMeshProUGUI rightProfile_Grade;
 
-    [Header("ÇÁ·ÎÇÊ ÀÌ¹ÌÁö")]
+    [Header("í”„ë¡œí•„ ì´ë¯¸ì§€")]
     [SerializeField] private Sprite panda;
     [SerializeField] private Sprite red_panda;
 
@@ -54,46 +54,46 @@ public class GiboUIManager : Singleton<GiboUIManager>
     }
 
     /// <summary>
-    /// currentIndex°¡ -1 : Ã³À½
-    /// currentIndex°¡ -2 : ¸¶Áö¸·
+    /// currentIndexê°€ -1 : ì²˜ìŒ
+    /// currentIndexê°€ -2 : ë§ˆì§€ë§‰
     /// </summary>
     /// <param name="currentIndex"></param>
     private void UpdateButtonDisplay(int currentIndex) 
     {
-        // ±âº»°ª: ÀüºÎ È°¼ºÈ­
+        // ê¸°ë³¸ê°’: ì „ë¶€ í™œì„±í™”
         FirstButton.GetComponent<Button>().interactable = true;
         BeforeButton.GetComponent<Button>().interactable = true;
         AfterButton.GetComponent<Button>().interactable = true;
         LastButton.GetComponent<Button>().interactable = true;
 
-        if (currentIndex == -1) // µ¹À» µÎÁö ¾ÊÀ½
+        if (currentIndex == -1) // ëŒì„ ë‘ì§€ ì•ŠìŒ
         {
-            // ¸Ç Ã³À½: First, Before ºñÈ°¼ºÈ­
+            // ë§¨ ì²˜ìŒ: First, Before ë¹„í™œì„±í™”
             FirstButton.GetComponent<Button>().interactable = false;
             BeforeButton.GetComponent<Button>().interactable = false;
         }
-        else if (currentIndex == -2) // µ¹À» ´Ù µÒ
+        else if (currentIndex == -2) // ëŒì„ ë‹¤ ë‘ 
         {
-            // ¸Ç ³¡: After, Last ºñÈ°¼ºÈ­
+            // ë§¨ ë: After, Last ë¹„í™œì„±í™”
             AfterButton.GetComponent<Button>().interactable = false;
             LastButton.GetComponent<Button>().interactable = false;
         }
     }
 
     /// <summary>
-    /// ÇöÀç ÇÁ·ÎÇÊ UI ¾÷µ¥ÀÌÆ®
+    /// í˜„ì¬ í”„ë¡œí•„ UI ì—…ë°ì´íŠ¸
     /// </summary>
     /// <param name="curRecord"></param>
     private void UpdateProfileImage(GameRecord curRecord) 
     {
-        // Todo: ÀÚ±â°Å ¶ç¿ì±â
-        GameManager gameManager = GameManager.Instance;
-        leftProfile_Image.sprite = gameManager.profileImage == 1 ? panda : red_panda;
-        leftProfile_Grade.text = curRecord.otherRank == 0 ? $"{gameManager.nickname}": $"{gameManager.grade}±Ş {gameManager.nickname}";
-        // »ó´ë¹æ Á¤º¸ ¶ç¿ì±â
+        // Todo: ìê¸°ê±° ë„ìš°ê¸°
+        var userInfo = MultiplayManager.Instance.UserInfo;
+        leftProfile_Image.sprite = userInfo.profileImage == 1 ? panda : red_panda;
+        leftProfile_Grade.text = curRecord.otherRank == 0 ? $"{userInfo.nickname}": $"{userInfo.grade}ê¸‰ {userInfo.nickname}";
+        // ìƒëŒ€ë°© ì •ë³´ ë„ìš°ê¸°
         rightProfile_Image.sprite = curRecord.otherProfileImage == 1 ? panda :
                              (curRecord.otherProfileImage == 2 ? red_panda : null);
-        rightProfile_Grade.text = curRecord.otherRank == 0 ? $"{curRecord.otherPlayerNickname}": $"{curRecord.otherRank}±Ş {curRecord.otherPlayerNickname}";
+        rightProfile_Grade.text = curRecord.otherRank == 0 ? $"{curRecord.otherPlayerNickname}": $"{curRecord.otherRank}ê¸‰ {curRecord.otherPlayerNickname}";
 
     }
 

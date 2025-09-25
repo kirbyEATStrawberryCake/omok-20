@@ -10,24 +10,17 @@ public class MainSceneUIManager : Singleton<MainSceneUIManager>
     [Header("유저 정보")]
     [SerializeField] [Tooltip("프로필 오브젝트")] private GameObject profileObject;
 
-    [Space(10)] [SerializeField] [Tooltip("프로필 이미지")]
-    private Image profileImage;
-
+    [Space(10)]
+    [SerializeField] [Tooltip("프로필 이미지")] private Image profileImage;
     [SerializeField] [Tooltip("판다 스프라이트")] private Sprite pandaSprite;
+    [SerializeField] [Tooltip("레드 판다 스프라이트")] private Sprite redPandaSprite;
 
-    [SerializeField] [Tooltip("레드 판다 스프라이트")]
-    private Sprite redPandaSprite;
-
-    [Space(10)] [SerializeField] [Tooltip("유저의 급수와 닉네임을 표시할 텍스트")]
-    private TextMeshProUGUI gradeAndNickname;
-
-    public string nickname { get; private set; }
-    public int grade { get; private set; }
+    [Space(10)]
+    [SerializeField] [Tooltip("유저의 급수와 닉네임을 표시할 텍스트")] private TextMeshProUGUI gradeAndNickname;
 
     [Header("패널")]
-    [SerializeField] [Tooltip("메인 씬에서 사용할 패널들")]
-    private List<GameObject> mainScenePanels;
-
+    [SerializeField] [Tooltip("메인 씬에서 사용할 패널들")] private List<GameObject> mainScenePanels;
+    [SerializeField] [Tooltip("메인 패널")] private GameObject mainPanel;
     /*
      * 패널 순서
      * 0: Main
@@ -35,16 +28,14 @@ public class MainSceneUIManager : Singleton<MainSceneUIManager>
      * 2: Gibo
      * 3: Rank
      * 4: Setting
-     * 5: Store(사용 여부 불확실)
      */
-    [SerializeField] [Tooltip("메인 패널")] private GameObject mainPanel;
 
     [Header("팝업")]
-    [SerializeField] [Tooltip("메인 씬에서 사용할 버튼 1개짜리 팝업")]
-    private GameObject oneButtonPopupPanel;
+    [SerializeField] [Tooltip("메인 씬에서 사용할 버튼 1개짜리 팝업")] private GameObject oneButtonPopupPanel;
+    [SerializeField] [Tooltip("메인 씬에서 사용할 버튼 2개짜리 팝업")] private GameObject twoButtonPopupPanel;
 
-    [SerializeField] [Tooltip("메인 씬에서 사용할 버튼 2개짜리 팝업")]
-    private GameObject twoButtonPopupPanel;
+    public string Nickname { get; private set; }
+    public int Grade { get; private set; }
 
     private OneButtonPanel oneButtonPopup;
     private TwoButtonPanel twoButtonPopup;
@@ -74,13 +65,12 @@ public class MainSceneUIManager : Singleton<MainSceneUIManager>
         // 메인 씬 호출 시 유저 정보를 가져와서 띄워줌
         statsManager.GetUserInfo((response) =>
             {
-                nickname = response.nickname;
+                Nickname = response.nickname;
                 profileImage.sprite = (response.profileImage == 1) ? pandaSprite : redPandaSprite;
-                grade = response.grade;
+                Grade = response.grade;
 
-                gradeAndNickname.text = $"{grade}급 {nickname}";
-                GameManager.Instance.SetUserInfo(response.username, response.nickname, response.grade,
-                    response.profileImage);
+                gradeAndNickname.text = $"{Grade}급 {Nickname}";
+                MultiplayManager.Instance.SetUserInfo(response);
             },
             (errorType) =>
             {
