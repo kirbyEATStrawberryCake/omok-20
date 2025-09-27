@@ -14,7 +14,6 @@ public class MultiplayManager : Singleton<MultiplayManager>
 
     public MultiplayController multiplayController { get; private set; }
     public MatchData MatchData { get; private set; }
-    public UserInfo_Network UserInfo { get; private set; }
 
     #endregion
 
@@ -105,7 +104,7 @@ public class MultiplayManager : Singleton<MultiplayManager>
                 HandleMultiplayStateChanged,
                 HandleOpponentMove);
 
-            multiplayController.Connect(UserInfo.username);
+            multiplayController.Connect(NetworkManager.Instance.userDataManager.UserInfo.username);
             Debug.Log("<color=green>[MultiplayManager] MultiplayController 생성 및 연결 완료</color>");
         }
         catch (Exception ex)
@@ -235,14 +234,6 @@ public class MultiplayManager : Singleton<MultiplayManager>
     #endregion
 
     #region Public API
-
-    /// <summary>
-    /// 사용자 정보를 저장하는 메소드
-    /// </summary>
-    public void SetUserInfo(UserInfo_Network userInfo)
-    {
-        UserInfo = userInfo;
-    }
 
     /// <summary>
     /// 매칭 완료시 서버에서 보낸 상대방 정보를 저장하는 메소드

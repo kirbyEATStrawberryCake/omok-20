@@ -86,8 +86,8 @@ public class GiboUIManager : Singleton<GiboUIManager>
     /// <param name="curRecord"></param>
     private void UpdateProfileImage(GameRecord curRecord) 
     {
-        // Todo: 자기거 띄우기
-        var userInfo = MultiplayManager.Instance.UserInfo;
+        // 자기거 띄우기
+        var userInfo = NetworkManager.Instance.userDataManager.UserInfo;
         leftProfile_Image.sprite = userInfo.profileImage == 1 ? panda : red_panda;
         leftProfile_Grade.text = curRecord.otherRank == 0 ? $"{userInfo.nickname}": $"{userInfo.grade}급 {userInfo.nickname}";
         // 상대방 정보 띄우기

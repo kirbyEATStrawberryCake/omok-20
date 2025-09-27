@@ -9,46 +9,37 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
 {
     [Header("UI Components")]
     [SerializeField] private GameObject blackStonePlayerTurnImage; // 흑돌 플레이어 차례 표시 GameObject
-
     [SerializeField] private GameObject whiteStonePlayerTurnImage; // 백돌 플레이어 차례 표시 GameObject
-    [Space(7)] [SerializeField] private GameObject player1;
+    [Space(7)]
+    [SerializeField] private GameObject player1;
     [SerializeField] private GameObject player2;
     [SerializeField] private GameObject currentPlayerTurnCircleLeft; // 현재 턴 플레이어 표시용 GameObject / Left
     [SerializeField] private GameObject currentPlayerTurnCircleRight; // 현재 턴 플레이어 표시용 GameObject / Right
-    [Space(7)] [SerializeField] private Button confirmMoveButton; // 착수 확정 버튼
+    [Space(7)]
+    [SerializeField] private Button confirmMoveButton; // 착수 확정 버튼
     [SerializeField] private Button surrenderButton; // 항복 버튼
 
     [Header("플레이어 프로필 이미지")]
     [SerializeField] private Image leftProfileImage;
-
     [SerializeField] private Image rightProfileImage;
 
     [Header("프로필용 스프라이트")]
     [SerializeField] private Sprite pandaSprite;
-
     [SerializeField] private Sprite redPandaSprite;
-
     [SerializeField] private Sprite winPandaProfileSprite;
     [SerializeField] private Sprite losePandaProfileSprite;
-
     [SerializeField] private Sprite winRedPandaProfileSprite;
     [SerializeField] private Sprite loseRedPandaProfileSprite;
 
     [Header("팝업")]
-    [SerializeField] [Tooltip("게임 씬에서 사용할 확인 버튼 1개짜리 팝업")]
-    private GameObject oneConfirmButtonPopupPanel;
-
-    [SerializeField] [Tooltip("메인 씬에서 사용할 취소 버튼 1개짜리 팝업")]
-    private GameObject oneCancelButtonPopupPanel;
-
-    [SerializeField] [Tooltip("게임 씬에서 사용할 버튼 2개짜리 팝업")]
-    private GameObject twoButtonPopupPanel;
-
-    [SerializeField] [Tooltip("게임 결과창 팝업")]
-    private GameObject gameResultPopupPanel;
+    [SerializeField] [Tooltip("게임 씬에서 사용할 확인 버튼 1개짜리 팝업")] private GameObject oneConfirmButtonPopupPanel;
+    [SerializeField] [Tooltip("메인 씬에서 사용할 취소 버튼 1개짜리 팝업")] private GameObject oneCancelButtonPopupPanel;
+    [SerializeField] [Tooltip("게임 씬에서 사용할 버튼 2개짜리 팝업")] private GameObject twoButtonPopupPanel;
+    [SerializeField] [Tooltip("게임 결과창 팝업")] private GameObject gameResultPopupPanel;
 
     private GamePlayManager gamePlayManager;
     private MultiplayManager multiplayManager;
+    private UserInfo_Network userInfo;
 
     private OneButtonPanel oneConfirmButtonPopup;
     private OneButtonPanel oneCancelButtonPopup;
@@ -78,6 +69,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
         gamePlayManager = GamePlayManager.Instance;
         multiplayManager = MultiplayManager.Instance;
         giboManager = GiboManager.Instance;
+        userInfo = NetworkManager.Instance.userDataManager.UserInfo;
         giboManager.StartNewRecord(); // 새 기보 데이터 생성
 
         if (gamePlayManager != null)
@@ -99,11 +91,20 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
             {
                 gamePlayManager.BoardManager.ViolateRenjuRule += OnError;
             }
+
+            if (gameResultPopup != null)
+            {
+                gameResultPopup.onExitClicked.AddListener(() =>
+                {
+                    StartCoroutine(SafeExitGame());
+                    gameResultPopupPanel.SetActive(false);
+                });
+                gameResultPopup.onRematchClicked.AddListener(HandleRematchRequest);
+            }
         }
 
         if (GameModeManager.Mode == GameMode.MultiPlayer)
         {
-            var multiplayManager = MultiplayManager.Instance;
             if (multiplayManager != null)
             {
                 multiplayManager.MatchCallback += HandleMatchUI;
@@ -164,7 +165,6 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
         yield return new WaitForEndOfFrame();
         yield return new WaitForSeconds(0.1f);
 
-        var multiplayManager = MultiplayManager.Instance;
         if (multiplayManager != null)
         {
             Debug.Log("지연된 멀티플레이 이벤트 재구독 시작");
@@ -255,8 +255,6 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
             return;
         }
 
-        var userInfo = MultiplayManager.Instance.UserInfo;
-
         switch (result)
         {
             case GameResult.Player1Win:
@@ -339,6 +337,22 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
             oneConfirmButtonPopup.Show<OneButtonPanel>($"오류가 발생했습니다.\n {errorMessage}");
     }
 
+    private void HandleRematchRequest()
+    {
+        if (GameModeManager.Mode == GameMode.MultiPlayer)
+            multiplayManager.multiplayController?.RequestRematch();
+        else if (GameModeManager.Mode == GameMode.AI)
+        {
+            float waitTime = Random.Range(1f, 3f);
+            StartCoroutine(FakeRematch(waitTime));
+        }
+        else // 싱글플레이
+        {
+            gamePlayManager.RestartGame();
+            gameResultPopupPanel.SetActive(false);
+        }
+    }
+
     #endregion
 
     #region 싱글플레이
@@ -353,8 +367,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
 
         if (gameResultPopup != null)
         {
-            gameResultPopup.OpenWithButtonEvent(result, () => { SceneController.LoadScene(SceneType.Main, 0.5f); },
-                () => { gamePlayManager.RestartGame(); });
+            gameResultPopup.Show(result);
         }
     }
 
@@ -402,8 +415,6 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
         TextMeshProUGUI player1GradeAndNickname = player1.transform.GetChild(2).GetComponent<TextMeshProUGUI>();
         TextMeshProUGUI player2GradeAndNickname = player2.transform.GetChild(2).GetComponent<TextMeshProUGUI>();
         // 나의 프로필은 기기에 있는 정보 사용
-        MultiplayManager multiplayManager = MultiplayManager.Instance;
-        var userInfo = multiplayManager.UserInfo;
         leftProfileImage.sprite = userInfo.profileImage == 1 ? pandaSprite : redPandaSprite;
         player1GradeAndNickname.text = $"{userInfo.grade}급 {userInfo.nickname}";
         // 상대의 프로필은 서버에서 받아온 정보를 사용하여 프로필 업데이트
@@ -438,18 +449,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
                 oneConfirmButtonPopup.Show<OneButtonPanel>(message).OnConfirm(null);
             }
 
-            gameResultPopup.OpenWithButtonEvent(response, result,
-                () => { StartCoroutine(SafeExitGame()); },
-                () =>
-                {
-                    if (GameModeManager.Mode == GameMode.MultiPlayer)
-                        multiplayManager.multiplayController?.RequestRematch();
-                    else if (GameModeManager.Mode == GameMode.AI)
-                    {
-                        float waitTime = Random.Range(1f, 3f);
-                        StartCoroutine(FakeRematch(waitTime));
-                    }
-                });
+            gameResultPopup.Show(result, response);
         }
     }
 

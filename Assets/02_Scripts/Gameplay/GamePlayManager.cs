@@ -12,17 +12,6 @@ public enum GameState
     Paused // 게임 일시정지
 }
 
-public enum GameResult
-{
-    None,
-    Player1Win, // 싱글플레이 전용
-    Player2Win, // 싱글플레이 전용
-    Victory, // 멀티플레이: 내가 승리
-    Defeat, // 멀티플레이: 내가 패배
-    Draw,
-    Disconnect // 멀티플레이: 상대방 나감
-}
-
 [RequireComponent(typeof(RenjuRule))]
 [RequireComponent(typeof(GameLogicController))]
 public class GamePlayManager : Singleton<GamePlayManager>
