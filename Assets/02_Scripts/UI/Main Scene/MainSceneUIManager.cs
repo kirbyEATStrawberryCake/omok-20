@@ -21,26 +21,14 @@ public class MainSceneUIManager : Singleton<MainSceneUIManager>
     [Header("패널")]
     [SerializeField] [Tooltip("메인 씬에서 사용할 패널들")] private List<GameObject> mainScenePanels;
     [SerializeField] [Tooltip("메인 패널")] private GameObject mainPanel;
-    /*
-     * 패널 순서
-     * 0: Main
-     * 1: Gameplay
-     * 2: Gibo
-     * 3: Rank
-     * 4: Setting
-     */
+    [SerializeField] [Tooltip("게임플레이 정보 패널")] private GameObject gameplayPanel;
 
     [Header("팝업")]
     [SerializeField] [Tooltip("메인 씬에서 사용할 버튼 1개짜리 팝업")] private GameObject oneButtonPopupPanel;
     [SerializeField] [Tooltip("메인 씬에서 사용할 버튼 2개짜리 팝업")] private GameObject twoButtonPopupPanel;
 
-    public string Nickname { get; private set; }
-    public int Grade { get; private set; }
-
     private OneButtonPanel oneButtonPopup;
     private TwoButtonPanel twoButtonPopup;
-
-    public StatsManager statsManager { get; private set; }
 
     protected override void Awake()
     {
@@ -59,35 +47,6 @@ public class MainSceneUIManager : Singleton<MainSceneUIManager>
             return;
         }
 #endif
-
-        statsManager = NetworkManager.Instance.statsManager;
-
-        // 메인 씬 호출 시 유저 정보를 가져와서 띄워줌
-        statsManager.GetUserInfo((response) =>
-            {
-                Nickname = response.nickname;
-                profileImage.sprite = (response.profileImage == 1) ? pandaSprite : redPandaSprite;
-                Grade = response.grade;
-
-                gradeAndNickname.text = $"{Grade}급 {Nickname}";
-                MultiplayManager.Instance.SetUserInfo(response);
-            },
-            (errorType) =>
-            {
-                switch (errorType)
-                {
-                    case StatsResponseType.CANNOT_FOUND_USER:
-                        OpenOneButtonPopup("유저를 찾지 못했습니다.");
-                        //TODO: 로그인 씬으로 되돌아가는 기능을 OpenOneButtonPopup에 추가
-                        Debug.LogWarning("기본 정보 가져오기 실패 : 유저를 찾지 못했습니다.");
-                        break;
-                    case StatsResponseType.NOT_LOGGED_IN:
-                        OpenOneButtonPopup("로그인 상태가 아닙니다.");
-                        //TODO: 로그인 씬으로 되돌아가는 기능을 OpenOneButtonPopup에 추가
-                        Debug.LogWarning("기본 정보 가져오기 실패 : 로그인 상태가 아닙니다.");
-                        break;
-                }
-            });
     }
 
     protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
@@ -95,39 +54,26 @@ public class MainSceneUIManager : Singleton<MainSceneUIManager>
         if (scene.name != "Main_Scene") return;
 
         // 메인 씬 호출 시 메인 패널을 띄워줌
-        OpenMainPanel();
+        OpenPanel();
+        SetUserProfile();
     }
 
     /// <summary>
     /// 지정한 패널만 보여주는 메소드
     /// </summary>
     /// <param name="panelToOpen">열고자 하는 패널의 GameObject</param>
-    public void OpenPanel(GameObject panelToOpen)
+    public void OpenPanel(GameObject panelToOpen = null)
     {
+        panelToOpen = panelToOpen ?? mainPanel;
         foreach (GameObject panel in mainScenePanels)
         {
             // 만약 현재 패널이 열고자 하는 패널이라면 활성화하고, 아니라면 비활성화
             panel.SetActive(panel == panelToOpen);
         }
 
-        int openedPanelIndex = mainScenePanels.IndexOf(panelToOpen);
-
         // 메인 패널이나 게임플레이 패널일때만 profileObject를 활성화
-        bool shouldShowProfile = (openedPanelIndex == 0 || openedPanelIndex == 1);
+        bool shouldShowProfile = (panelToOpen == mainPanel) || (panelToOpen == gameplayPanel);
         profileObject.SetActive(shouldShowProfile);
-    }
-
-    /// <summary>
-    /// 메인 패널을 보여주는 메소드
-    /// </summary>
-    public void OpenMainPanel()
-    {
-        for (int i = 0; i < mainScenePanels.Count; i++)
-        {
-            mainScenePanels[i].SetActive(i == 0);
-        }
-
-        profileObject.SetActive(true);
     }
 
     /// <summary>
@@ -149,5 +95,12 @@ public class MainSceneUIManager : Singleton<MainSceneUIManager>
     public void OpenTwoButtonPopup(string message, Action onConfirm = null, Action onCancel = null)
     {
         twoButtonPopup.Show<TwoButtonPanel>(message).OnButtons(onConfirm, onCancel);
+    }
+
+    private void SetUserProfile()
+    {
+        UserInfo_Network userInfo = NetworkManager.Instance.userDataManager.UserInfo;
+        profileImage.sprite = (userInfo.profileImage == 1) ? pandaSprite : redPandaSprite;
+        gradeAndNickname.text = $"{userInfo.grade}급 {userInfo.nickname}";
     }
 }

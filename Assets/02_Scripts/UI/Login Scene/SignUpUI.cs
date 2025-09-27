@@ -68,7 +68,7 @@ public class SignUpUI : MonoBehaviour
             authManager.SignUp(usernameInput.text, passwordInput.text, nicknameInput.text, selectedProfile,
                 () =>
                 {
-                    loginSceneUIManager.ShowPopup(ValidationMessageMapper.GetMessage(validationResult),
+                    loginSceneUIManager.ShowPopup(MessageMapper.GetMessage(validationResult),
                         () => loginSceneUIManager.OpenLoginPanel());
                 },
                 (errorType) =>
@@ -84,7 +84,7 @@ public class SignUpUI : MonoBehaviour
         }
 
         // --- 유효성 검사 실패 시 처리 ---
-        string message = ValidationMessageMapper.GetMessage(validationResult);
+        string message = MessageMapper.GetMessage(validationResult);
         Action onConfirmAction = null;
 
         switch (validationResult)

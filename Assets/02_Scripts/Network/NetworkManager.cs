@@ -7,6 +7,7 @@ using UnityEngine.SceneManagement;
 [RequireComponent(typeof(AuthManager))]
 [RequireComponent(typeof(StatsManager))]
 [RequireComponent(typeof(PointsManager))]
+[RequireComponent(typeof(UserDataManager))]
 public class NetworkManager : Singleton<NetworkManager>
 {
     #region Constants
@@ -24,6 +25,8 @@ public class NetworkManager : Singleton<NetworkManager>
     public AuthManager authManager { get; private set; }
     public StatsManager statsManager { get; private set; }
     public PointsManager pointsManager { get; private set; }
+
+    public UserDataManager userDataManager { get; private set; }
 
     #endregion
 
@@ -79,6 +82,7 @@ public class NetworkManager : Singleton<NetworkManager>
         authManager = GetComponent<AuthManager>();
         statsManager = GetComponent<StatsManager>();
         pointsManager = GetComponent<PointsManager>();
+        userDataManager = GetComponent<UserDataManager>();
 
         ValidateComponents();
     }

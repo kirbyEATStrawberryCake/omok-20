@@ -7,6 +7,7 @@ public class LoginUI : MonoBehaviour
 {
     private LoginSceneUIManager loginSceneUIManager;
     private AuthManager authManager;
+    private UserDataManager userDataManager;
 
     [SerializeField] [Tooltip("ID(이메일) InputField")] private TMP_InputField usernameInput;
     [SerializeField] [Tooltip("비밀번호 InputField")] private TMP_InputField passwordInput;
@@ -15,6 +16,7 @@ public class LoginUI : MonoBehaviour
     {
         loginSceneUIManager = LoginSceneUIManager.Instance;
         authManager = NetworkManager.Instance.authManager;
+        userDataManager = NetworkManager.Instance.userDataManager;
     }
 
     private void OnEnable()
@@ -38,8 +40,17 @@ public class LoginUI : MonoBehaviour
                 () =>
                 {
                     Debug.Log("<color=green>로그인 성공!</color>");
-                    // TODO: 사용자 정보 받아서 저장해두기
-                    SceneController.LoadScene(SceneType.Main);
+                    userDataManager.SetUserInfo(() =>
+                        {
+                            Debug.Log("<color=green>유저 정보 로딩 성공! 메인 씬으로 전환합니다.</color>");
+                            SceneController.LoadScene(SceneType.Main);
+                        },
+                        (errorType) =>
+                        {
+                            Debug.LogError("로그인은 성공했으나 유저 정보 로딩에 실패했습니다.");
+                            string message = "유저 정보를 불러오는 데 실패했습니다.\n다시 시도해주세요.";
+                            loginSceneUIManager.ShowPopup(message);
+                        });
                 }, (errorType) =>
                 {
                     string message = AuthMessageMapper.GetMessage(errorType);
@@ -49,7 +60,7 @@ public class LoginUI : MonoBehaviour
         }
 
         // --- 유효성 검사 실패 시 처리 ---
-        string message = ValidationMessageMapper.GetMessage(validationResult);
+        string message = MessageMapper.GetMessage(validationResult);
         Action onConfirmAction = null;
         switch (validationResult)
         {

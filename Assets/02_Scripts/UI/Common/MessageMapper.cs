@@ -1,6 +1,6 @@
 ﻿using System;
 
-public static class ValidationMessageMapper
+public static class MessageMapper
 {
     public static string GetMessage(SignInValidationResult result)
     {
