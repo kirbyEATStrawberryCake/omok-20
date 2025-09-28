@@ -22,6 +22,8 @@ public class GameTimer : MonoBehaviour
     private bool isTimerActive = false;
     private bool isGameActive = false;
 
+    private Coroutine waitForGameActiveCoroutine;
+
     public event UnityAction OnTimeUp; // 시간 초과 이벤트
 
     #region Unity Events
@@ -29,9 +31,6 @@ public class GameTimer : MonoBehaviour
     private void Start()
     {
         gamePlayManager = GamePlayManager.Instance;
-        uiManager = gamePlayManager.UIManager;
-        gameLogic = gamePlayManager.GameLogicController;
-
         // GamePlayManager 이벤트 구독
         if (gamePlayManager != null)
         {
@@ -39,6 +38,8 @@ public class GameTimer : MonoBehaviour
             gamePlayManager.OnGameEnd += OnGameEnd;
         }
 
+        uiManager = gamePlayManager.UIManager;
+        gameLogic = gamePlayManager.GameLogicController;
         if (uiManager != null)
         {
             uiManager.OnCancelSurrender += StartTimer;
@@ -53,6 +54,12 @@ public class GameTimer : MonoBehaviour
 
     private void OnDisable()
     {
+        if (waitForGameActiveCoroutine != null)
+        {
+            StopCoroutine(waitForGameActiveCoroutine);
+            waitForGameActiveCoroutine = null;
+        }
+
         // 이벤트 구독 해제
         if (gamePlayManager != null)
         {
@@ -102,7 +109,7 @@ public class GameTimer : MonoBehaviour
         StopTimer();
     }
 
-    private void OnPlayerTurnChanged(StoneType currentStone)
+    private void OnPlayerTurnChanged(StoneType currentStone, PlayerType currentTurnPlayer)
     {
         // 턴이 변경될 때마다 타이머 리셋 및 시작
         ResetTimer();
@@ -112,7 +119,10 @@ public class GameTimer : MonoBehaviour
         }
         else
         {
-            StartCoroutine(WaitForGameActiveAndStart());
+            if (waitForGameActiveCoroutine != null)
+                StopCoroutine(waitForGameActiveCoroutine);
+
+            waitForGameActiveCoroutine = StartCoroutine(WaitForGameActiveAndStart());
         }
 
         // Debug.Log($"턴 변경됨 - 현재 턴: {currentStone}, 타이머 리셋 및 시작");

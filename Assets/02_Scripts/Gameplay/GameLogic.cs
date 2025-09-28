@@ -31,7 +31,7 @@ public class GameLogic
     public PlayerType currentTurnPlayer { get; private set; } // 현재 턴인 플레이어 ID
 
     // 플레이어 변경 시 발생하는 이벤트
-    public event UnityAction<StoneType> OnPlayerTurnChanged;
+    public event UnityAction<StoneType, PlayerType> OnPlayerTurnChanged;
     public event UnityAction<GameResult> WinConditionChecked;
 
     // 이벤트 구독을 위한 초기화 메서드
@@ -154,7 +154,7 @@ public class GameLogic
         }
 
 
-        OnPlayerTurnChanged?.Invoke(currentStone);
+        OnPlayerTurnChanged?.Invoke(currentStone, currentTurnPlayer);
     }
 
     /// <summary>
@@ -169,7 +169,7 @@ public class GameLogic
         currentTurnPlayer = (currentStone == StoneType.Black) ? blackStonePlayer : whiteStonePlayer;
         Debug.Log($"현재 플레이어 {currentTurnPlayer}");
 
-        OnPlayerTurnChanged?.Invoke(currentStone); // 이벤트 발생
+        OnPlayerTurnChanged?.Invoke(currentStone, currentTurnPlayer); // 이벤트 발생
     }
 
     private void CheckWinCondition(int x, int y)

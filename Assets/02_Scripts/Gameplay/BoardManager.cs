@@ -347,7 +347,7 @@ public class BoardManager : MonoBehaviour
     /// <summary>
     /// 착수 대기 표시를 지움
     /// </summary>
-    private void HidePendingMove(StoneType stoneType)
+    private void HidePendingMove(StoneType stoneType, PlayerType playerType)
     {
         if (pendingMoveStone.activeSelf)
             pendingMoveStone.SetActive(false);

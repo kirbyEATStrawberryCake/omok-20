@@ -4,32 +4,32 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// °ÔÀÓ ´ÜÀ§·Î ½ÃÀÛ ½Ã°£ÀÌ Å° °ªÀ¸·Î ÀúÀåµÊ. ( °ÔÀÓ ¾À¿¡¼­ »ç¿ë )
-/// ÇØ´ç Å°µé¸¸ ±âº¸ ¸ñ·Ï ¸®½ºÆ®¿¡ ÀúÀåµÊ. ( ¸ŞÀÎ ¾À(±âº¸ ¸ñ·Ï È­¸é)¿¡¼­ »ç¿ë )
-/// ½ÃÀÛ½Ã°£(Å°)À» ÅëÇØ ±âº¸ ³»¿ëÀ» ºÒ·¯¿È ( ±âº¸ ¾À¿¡¼­ »ç¿ë )
+/// ê²Œì„ ë‹¨ìœ„ë¡œ ì‹œì‘ ì‹œê°„ì´ í‚¤ ê°’ìœ¼ë¡œ ì €ì¥ë¨. ( ê²Œì„ ì”¬ì—ì„œ ì‚¬ìš© )
+/// í•´ë‹¹ í‚¤ë“¤ë§Œ ê¸°ë³´ ëª©ë¡ ë¦¬ìŠ¤íŠ¸ì— ì €ì¥ë¨. ( ë©”ì¸ ì”¬(ê¸°ë³´ ëª©ë¡ í™”ë©´)ì—ì„œ ì‚¬ìš© )
+/// ì‹œì‘ì‹œê°„(í‚¤)ì„ í†µí•´ ê¸°ë³´ ë‚´ìš©ì„ ë¶ˆëŸ¬ì˜´ ( ê¸°ë³´ ì”¬ì—ì„œ ì‚¬ìš© )
 /// </summary>
 /// 
 [Serializable]
-public class MoveData // µ¹ ¿òÁ÷ÀÓ
+public class MoveData // ëŒ ì›€ì§ì„
 {
     public int stoneColor;    // 1 - "black" or 2 - "white"
-    public int x;             // ÁÂÇ¥ X
-    public int y;             // ÁÂÇ¥ Y
+    public int x;             // ì¢Œí‘œ X
+    public int y;             // ì¢Œí‘œ Y
 }
 
 [Serializable]
-public class GameRecord // ÇØ´ç °ÔÀÓÀÇ Á¤º¸
+public class GameRecord // í•´ë‹¹ ê²Œì„ì˜ ì •ë³´
 {
-    public string startTime;      // Å° °ª°ÔÀÓ ½ÃÀÛ ½Ã°£ (yyyyMMdd_HHmmss)
-    public string displayTime;    // È­¸é Ç¥½Ã¿ë (yyyy-MM-dd HH:mm:ss)
-    public string otherPlayerNickname;    // Èæ ´Ğ³×ÀÓ
-    public int otherRank;         // Èæ ±Ş¼ö
-    public int otherProfileImage; // Èæ ÇÁ·ÎÇÊ
-    public List<MoveData> moves;  // °ÔÀÓ ³» ¼ö¼ø ¸®½ºÆ®
+    public string startTime;      // í‚¤ ê°’ê²Œì„ ì‹œì‘ ì‹œê°„ (yyyyMMdd_HHmmss)
+    public string displayTime;    // í™”ë©´ í‘œì‹œìš© (yyyy-MM-dd HH:mm:ss)
+    public string otherPlayerNickname;    // í‘ ë‹‰ë„¤ì„
+    public int otherRank;         // í‘ ê¸‰ìˆ˜
+    public int otherProfileImage; // í‘ í”„ë¡œí•„
+    public List<MoveData> moves;  // ê²Œì„ ë‚´ ìˆ˜ìˆœ ë¦¬ìŠ¤íŠ¸
 }
 
 [Serializable]
-public class GiboIndex // ±âº¸ ¸ñ·Ï
+public class GiboIndex // ê¸°ë³´ ëª©ë¡
 {
     public List<string> startTimes = new List<string>();
 }
@@ -46,7 +46,7 @@ public class GiboManager : Singleton<GiboManager>
         {
             startTime = DateTime.Now.ToString("yyyyMMdd_HHmmss"),
             displayTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-            otherPlayerNickname = "ÇÃ·¹ÀÌ¾î 2",
+            otherPlayerNickname = "í”Œë ˆì´ì–´ 2",
             otherProfileImage = 2,
             otherRank = 0,
             moves = new List<MoveData>()
@@ -67,7 +67,7 @@ public class GiboManager : Singleton<GiboManager>
     }
 
 
-    #region ÀúÀå ¹× ºÒ·¯¿À±â
+    #region ì €ì¥ ë° ë¶ˆëŸ¬ì˜¤ê¸°
     public void SaveCurrentRecord()
     {
         if (curRecord == null) return;
@@ -75,14 +75,14 @@ public class GiboManager : Singleton<GiboManager>
         SaveRecord(curRecord);
     }
 
-    // »õ·Î¿î ±â·Ï ÀúÀå
+    // ìƒˆë¡œìš´ ê¸°ë¡ ì €ì¥
     public static void SaveRecord(GameRecord record)
     {
         string key = record.startTime;
         string json = JsonUtility.ToJson(record, true);
         PlayerPrefs.SetString(key, json);
 
-        // ÀÎµ¦½º ¾÷µ¥ÀÌÆ®
+        // ì¸ë±ìŠ¤ ì—…ë°ì´íŠ¸
         GiboIndex index = LoadIndex();
         if (!index.startTimes.Contains(record.startTime))
         {
@@ -91,10 +91,10 @@ public class GiboManager : Singleton<GiboManager>
         }
 
         PlayerPrefs.Save();
-        Debug.Log($"±âº¸ ÀúÀå ¿Ï·á: {record.startTime}");
+        Debug.Log($"ê¸°ë³´ ì €ì¥ ì™„ë£Œ: {record.startTime}");
     }
 
-    // Æ¯Á¤ ±â·Ï ºÒ·¯¿À±â
+    // íŠ¹ì • ê¸°ë¡ ë¶ˆëŸ¬ì˜¤ê¸°
     public static GameRecord LoadRecord(string startTime)
     {
         if (PlayerPrefs.HasKey(startTime))
@@ -105,7 +105,7 @@ public class GiboManager : Singleton<GiboManager>
         return null;
     }
 
-    // ÀüÃ¼ ±â·Ï ºÒ·¯¿À±â
+    // ì „ì²´ ê¸°ë¡ ë¶ˆëŸ¬ì˜¤ê¸°
     public static List<GameRecord> LoadAllRecords()
     {
         List<GameRecord> allRecords = new List<GameRecord>();
@@ -123,7 +123,7 @@ public class GiboManager : Singleton<GiboManager>
 
     #endregion
 
-    #region ÀÎµ¦½º °ü¸®
+    #region ì¸ë±ìŠ¤ ê´€ë¦¬
 
     public static GiboIndex LoadIndex()
     {
@@ -143,9 +143,9 @@ public class GiboManager : Singleton<GiboManager>
 
     #endregion
 
-    #region »èÁ¦
+    #region ì‚­ì œ
 
-    // Æ¯Á¤ ±â·Ï »èÁ¦
+    // íŠ¹ì • ê¸°ë¡ ì‚­ì œ
     public static void DeleteRecord(string startTime)
     {
         if (PlayerPrefs.HasKey(startTime))
@@ -157,11 +157,11 @@ public class GiboManager : Singleton<GiboManager>
             SaveIndex(index);
 
             PlayerPrefs.Save();
-            Debug.Log($"±âº¸ »èÁ¦ ¿Ï·á: {startTime}");
+            Debug.Log($"ê¸°ë³´ ì‚­ì œ ì™„ë£Œ: {startTime}");
         }
     }
 
-    // ¸ğµç ±â·Ï »èÁ¦
+    // ëª¨ë“  ê¸°ë¡ ì‚­ì œ
     public static void ClearAllRecords()
     {
         GiboIndex index = LoadIndex();
@@ -172,7 +172,7 @@ public class GiboManager : Singleton<GiboManager>
         }
         PlayerPrefs.DeleteKey(INDEX_KEY);
         PlayerPrefs.Save();
-        Debug.Log("¸ğµç ±âº¸ »èÁ¦ ¿Ï·á");
+        Debug.Log("ëª¨ë“  ê¸°ë³´ ì‚­ì œ ì™„ë£Œ");
     }
 
     protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)

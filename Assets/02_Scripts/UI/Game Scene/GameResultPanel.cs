@@ -48,6 +48,8 @@ public class GameResultPanel : MonoBehaviour
 
     private bool isInitialized;
 
+    #region Public Methodes
+
     /// <summary>
     /// 외부에서 OneButtonPanel의 메세지와 버튼 클릭 시 수행할 액션을 설정하는 메소드
     /// </summary>
@@ -71,6 +73,10 @@ public class GameResultPanel : MonoBehaviour
     {
         rematchButton.interactable = false;
     }
+
+    #endregion
+
+    #region Private Methodes
 
     private void Initialize()
     {
@@ -162,6 +168,9 @@ public class GameResultPanel : MonoBehaviour
         else if (point > 0) plusPoint.fillAmount = progress;
     }
 
+    #endregion
+
+    #region Coroutines
 
     private IEnumerator EnableButtonWithDelay()
     {
@@ -169,4 +178,6 @@ public class GameResultPanel : MonoBehaviour
         rematchButton.interactable = true;
         exitButton.interactable = true;
     }
+
+    #endregion
 }

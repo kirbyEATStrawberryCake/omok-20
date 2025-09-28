@@ -16,7 +16,7 @@ public class GameLogicController : MonoBehaviour
         gameLogic.Cleanup();
     }
 
-    public event UnityAction<StoneType> OnPlayerTurnChanged
+    public event UnityAction<StoneType, PlayerType> OnPlayerTurnChanged
     {
         add => gameLogic.OnPlayerTurnChanged += value;
         remove => gameLogic.OnPlayerTurnChanged -= value;
