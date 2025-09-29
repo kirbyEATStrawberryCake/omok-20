@@ -36,9 +36,9 @@ public class MultiplayUIHandler : MonoBehaviour
         {
             gamePlayManager.OnGameEnd += playerProfileUIController.UpdateProfileImagesOnResultInMultiplay;
             gamePlayManager.OnGameRestart += playerProfileUIController.UpdatePlayerProfileInMultiPlay;
-            if (gamePlayManager.GameLogicController != null)
+            if (gamePlayManager.GameLogic != null)
             {
-                gamePlayManager.GameLogicController.OnPlayerTurnChanged += UpdatePlayerTurnDisplay;
+                gamePlayManager.GameLogic.OnPlayerTurnChanged += UpdatePlayerTurnDisplay;
             }
         }
 
@@ -61,9 +61,9 @@ public class MultiplayUIHandler : MonoBehaviour
         {
             gamePlayManager.OnGameEnd -= playerProfileUIController.UpdateProfileImagesOnResultInMultiplay;
             gamePlayManager.OnGameRestart -= playerProfileUIController.UpdatePlayerProfileInMultiPlay;
-            if (gamePlayManager.GameLogicController != null)
+            if (gamePlayManager.GameLogic != null)
             {
-                gamePlayManager.GameLogicController.OnPlayerTurnChanged -= UpdatePlayerTurnDisplay;
+                gamePlayManager.GameLogic.OnPlayerTurnChanged -= UpdatePlayerTurnDisplay;
             }
         }
 

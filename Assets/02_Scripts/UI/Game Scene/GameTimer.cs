@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -9,78 +8,21 @@ public class GameTimer : MonoBehaviour
     [Header("Timer UI References")]
     [SerializeField] private Image timerImage;
 
-    [SerializeField] private TextMeshProUGUI timerText;
+    [SerializeField] private TMP_Text timerText;
 
     [Header("Timer Settings")]
     [SerializeField] private float turnTimeLimit = 30f; // 턴당 제한 시간 (초)
 
-    private GamePlayManager gamePlayManager;
-    private GameSceneUIManager uiManager;
-    private GameLogicController gameLogic;
-
     private float currentTime;
     private bool isTimerActive = false;
-    private bool isGameActive = false;
-
-    private Coroutine waitForGameActiveCoroutine;
 
     public event UnityAction OnTimeUp; // 시간 초과 이벤트
 
-    #region Unity Events
-
-    private void Start()
-    {
-        gamePlayManager = GamePlayManager.Instance;
-        // GamePlayManager 이벤트 구독
-        if (gamePlayManager != null)
-        {
-            gamePlayManager.OnGameStart += OnGameStart;
-            gamePlayManager.OnGameEnd += OnGameEnd;
-        }
-
-        uiManager = gamePlayManager.UIManager;
-        gameLogic = gamePlayManager.GameLogicController;
-        if (uiManager != null)
-        {
-            uiManager.OnCancelSurrender += StartTimer;
-        }
-
-        // GameLogic 이벤트 구독
-        if (gameLogic != null)
-        {
-            gameLogic.OnPlayerTurnChanged += OnPlayerTurnChanged;
-        }
-    }
-
-    private void OnDisable()
-    {
-        if (waitForGameActiveCoroutine != null)
-        {
-            StopCoroutine(waitForGameActiveCoroutine);
-            waitForGameActiveCoroutine = null;
-        }
-
-        // 이벤트 구독 해제
-        if (gamePlayManager != null)
-        {
-            gamePlayManager.OnGameStart -= OnGameStart;
-            gamePlayManager.OnGameEnd -= OnGameEnd;
-        }
-
-        if (uiManager != null)
-        {
-            uiManager.OnCancelSurrender -= StartTimer;
-        }
-
-        if (gameLogic != null)
-        {
-            gameLogic.OnPlayerTurnChanged -= OnPlayerTurnChanged;
-        }
-    }
+    #region Unity Life Cycle
 
     private void Update()
     {
-        if (!isTimerActive || !isGameActive) return;
+        if (!isTimerActive) return;
 
         currentTime -= Time.deltaTime;
 
@@ -95,51 +37,6 @@ public class GameTimer : MonoBehaviour
 
     #endregion
 
-    #region Event Handlers
-
-    private void OnGameStart()
-    {
-        isGameActive = true;
-        ResetTimer();
-    }
-
-    private void OnGameEnd(GameResult result)
-    {
-        isGameActive = false;
-        StopTimer();
-    }
-
-    private void OnPlayerTurnChanged(StoneType currentStone, PlayerType currentTurnPlayer)
-    {
-        // 턴이 변경될 때마다 타이머 리셋 및 시작
-        ResetTimer();
-        if (isGameActive)
-        {
-            StartTimer();
-        }
-        else
-        {
-            if (waitForGameActiveCoroutine != null)
-                StopCoroutine(waitForGameActiveCoroutine);
-
-            waitForGameActiveCoroutine = StartCoroutine(WaitForGameActiveAndStart());
-        }
-
-        // Debug.Log($"턴 변경됨 - 현재 턴: {currentStone}, 타이머 리셋 및 시작");
-    }
-
-    private IEnumerator WaitForGameActiveAndStart()
-    {
-        while (!isGameActive)
-        {
-            yield return null;
-        }
-
-        StartTimer();
-    }
-
-    #endregion
-
     #region Timer Control Methods
 
     /// <summary>
@@ -147,8 +44,8 @@ public class GameTimer : MonoBehaviour
     /// </summary>
     public void StartTimer()
     {
-        if (!isGameActive) return;
         isTimerActive = true;
+        ResetTimer();
     }
 
     /// <summary>
@@ -156,14 +53,21 @@ public class GameTimer : MonoBehaviour
     /// </summary>
     public void StopTimer()
     {
-        if (GameModeManager.Mode == GameMode.SinglePlayer)
+        if (GameModeManager.Mode == GameMode.SinglePlayer ||
+            ((GameModeManager.Mode == GameMode.MultiPlayer || GameModeManager.Mode == GameMode.AI) &&
+             GamePlayManager.Instance.currentGameState == GameState.GameOver))
             isTimerActive = false;
     }
 
     /// <summary>
+    /// 타이머를 멈춘 곳에서 다시 시작
+    /// </summary>
+    public void ResumeTimer() { isTimerActive = true; }
+
+    /// <summary>
     /// 타이머 리셋
     /// </summary>
-    private void ResetTimer()
+    public void ResetTimer()
     {
         currentTime = turnTimeLimit;
         UpdateTimerUI();
@@ -174,8 +78,7 @@ public class GameTimer : MonoBehaviour
     /// </summary>
     private void HandleTimeUp()
     {
-        StopTimer();
-        Debug.Log($"시간 초과! 현재 턴 플레이어: {gameLogic.GetCurrentTurnPlayer()}");
+        Debug.Log($"시간 초과!");
 
         OnTimeUp?.Invoke();
 
@@ -192,44 +95,9 @@ public class GameTimer : MonoBehaviour
     /// </summary>
     private void UpdateTimerUI()
     {
-        if (timerImage != null)
-        {
-            timerImage.fillAmount = currentTime / turnTimeLimit;
-        }
+        if (timerImage != null) { timerImage.fillAmount = currentTime / turnTimeLimit; }
 
-        if (timerText != null)
-        {
-            timerText.text = Mathf.CeilToInt(currentTime).ToString();
-        }
-    }
-
-    #endregion
-
-    #region Public Methods
-
-    /// <summary>
-    /// 현재 남은 시간 반환
-    /// </summary>
-    public float GetRemainingTime()
-    {
-        return currentTime;
-    }
-
-    /// <summary>
-    /// 타이머 활성 상태 반환
-    /// </summary>
-    public bool IsTimerActive()
-    {
-        return isTimerActive && isGameActive;
-    }
-
-    /// <summary>
-    /// 제한 시간 설정
-    /// </summary>
-    public void SetTimeLimit(float timeLimit)
-    {
-        turnTimeLimit = timeLimit;
-        ResetTimer();
+        if (timerText != null) { timerText.text = Mathf.CeilToInt(currentTime).ToString(); }
     }
 
     #endregion

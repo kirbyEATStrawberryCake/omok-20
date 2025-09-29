@@ -32,9 +32,9 @@ public class SinglePlayUIHandler : MonoBehaviour
             gamePlayManager.OnGameEnd += playerProfileUIController.UpdateProfileImagesOnResultInSinglePlay;
             gamePlayManager.OnGameRestart += playerProfileUIController.UpdatePlayerProfileInSinglePlay;
 
-            if (gamePlayManager.GameLogicController != null)
+            if (gamePlayManager.GameLogic != null)
             {
-                gamePlayManager.GameLogicController.OnPlayerTurnChanged += UpdatePlayerTurnDisplay;
+                gamePlayManager.GameLogic.OnPlayerTurnChanged += UpdatePlayerTurnDisplay;
             }
         }
     }
@@ -50,9 +50,9 @@ public class SinglePlayUIHandler : MonoBehaviour
             gamePlayManager.OnGameEnd -= OpenEndGamePanelInSinglePlay;
             gamePlayManager.OnGameEnd -= playerProfileUIController.UpdateProfileImagesOnResultInSinglePlay;
             gamePlayManager.OnGameRestart -= playerProfileUIController.UpdatePlayerProfileInSinglePlay;
-            if (gamePlayManager.GameLogicController != null)
+            if (gamePlayManager.GameLogic != null)
             {
-                gamePlayManager.GameLogicController.OnPlayerTurnChanged -= UpdatePlayerTurnDisplay;
+                gamePlayManager.GameLogic.OnPlayerTurnChanged -= UpdatePlayerTurnDisplay;
             }
         }
     }
@@ -78,7 +78,7 @@ public class SinglePlayUIHandler : MonoBehaviour
     {
         gamePopupController.OpenEndGamePanelInSinglePlay(result);
     }
-
+    
     /// <summary>
     /// 턴 표시하기
     /// </summary>

@@ -14,7 +14,8 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
     [SerializeField] private MultiplayUIHandler multiplayUIHandler;
     [Header("UI Components")]
     [SerializeField] private Button confirmMoveButton; // 착수 확정 버튼
-    [SerializeField] private Button surrenderButton; // 항복 버튼
+    [SerializeField] private Button surrenderButton;   // 항복 버튼
+    [SerializeField] private GameTimer gameTimer;
 
     public PlayerProfileUIController playerProfileUIController { get; private set; }
     public TurnIndicatorUIController turnIndicatorUIController { get; private set; }
@@ -24,8 +25,6 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
     {
         get => multiplayUIHandler;
     }
-
-    public event UnityAction OnCancelSurrender;
 
     private GamePlayManager gamePlayManager;
 
@@ -71,9 +70,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
         }
     }
 
-    protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
-    {
-    }
+    protected override void OnSceneLoad(Scene scene, LoadSceneMode mode) { }
 
     #endregion
 
@@ -89,10 +86,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
             () => gamePlayManager.Surrender(),
             () =>
             {
-                if (GameModeManager.Mode == GameMode.SinglePlayer)
-                {
-                    OnCancelSurrender?.Invoke();
-                }
+                if (GameModeManager.Mode == GameMode.SinglePlayer) { gameTimer.ResumeTimer(); }
             });
     }
 
@@ -100,10 +94,7 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
     /// 항복 버튼의 상호작용 유무를 변경
     /// </summary>
     /// <param name="enable"></param>
-    public void SurrenderButtonEnable(bool enable)
-    {
-        surrenderButton.interactable = enable;
-    }
+    public void SurrenderButtonEnable(bool enable) { surrenderButton.interactable = enable; }
 
     #endregion
 

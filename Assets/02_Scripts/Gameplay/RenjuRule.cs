@@ -1,41 +1,20 @@
-using System;
+using System.Collections.Generic;
 using UnityEngine;
+using static Constants;
 
-public class RenjuRule : MonoBehaviour
+public class RenjuRule
 {
     [Header("Renju Rule Settings")]
     public bool enableForbiddenMoves = true;    // �ݼ� ���� ����
     public bool showForbiddenPositions = false; // �ݼ� ��ġ �ð��� ǥ�� ����
 
-    // �Ŵ��� ���� (ȿ������ ����)
-    private GamePlayManager gamePlayManager;
-    private BoardManager boardManager;
-
     // 8���� ���� (�����¿�, �밢��)
-    private readonly int[,] directions = {
-        {-1, -1}, {-1, 0}, {-1, 1},  // ���� ��, ��, ������ ��
-        {0, -1},           {0, 1},    // ����,     ������
-        {1, -1},  {1, 0},  {1, 1}     // ���� �Ʒ�, �Ʒ�, ������ �Ʒ�
+    private readonly int[,] directions =
+    {
+        { -1, -1 }, { -1, 0 }, { -1, 1 }, // ���� ��, ��, ������ ��
+        { 0, -1 }, { 0, 1 },              // ����,     ������
+        { 1, -1 }, { 1, 0 }, { 1, 1 }     // ���� �Ʒ�, �Ʒ�, ������ �Ʒ�
     };
-
-    private void Start()
-    {
-        gamePlayManager = GamePlayManager.Instance;
-        boardManager = gamePlayManager?.BoardManager;
-    }
-
-    /// <summary>
-    /// ���ַ� �ʱ�ȭ
-    /// </summary>
-    public void Initialize()
-    {
-        if (boardManager == null)
-        {
-            Debug.LogError("BoardManager ������ �������� �ʾҽ��ϴ�!");
-        }
-
-        Debug.Log("���ַ��� �ʱ�ȭ�Ǿ����ϴ�.");
-    }
 
     /// <summary>
     /// ��ȿ�� ������ �˻� (���ַ� ����)
@@ -98,10 +77,7 @@ public class RenjuRule : MonoBehaviour
             int dx = directions[dir, 0];
             int dy = directions[dir, 1];
 
-            if (IsOpenThree(x, y, dx, dy, board))
-            {
-                threeCount++;
-            }
+            if (IsOpenThree(x, y, dx, dy, board)) { threeCount++; }
         }
 
         return threeCount >= 2; // 2�� �̻��� Ȱ���� ������ ���
@@ -120,10 +96,7 @@ public class RenjuRule : MonoBehaviour
             int dx = directions[dir, 0];
             int dy = directions[dir, 1];
 
-            if (IsFour(x, y, dx, dy, board))
-            {
-                fourCount++;
-            }
+            if (IsFour(x, y, dx, dy, board)) { fourCount++; }
         }
 
         return fourCount >= 2; // 2�� �̻��� 4���� ������ ���
@@ -144,10 +117,7 @@ public class RenjuRule : MonoBehaviour
             count += CountConsecutiveStones(x, y, dx, dy, StoneType.Black, board);
             count += CountConsecutiveStones(x, y, -dx, -dy, StoneType.Black, board);
 
-            if (count >= 6)
-            {
-                return true;
-            }
+            if (count >= 6) { return true; }
         }
 
         return false;
@@ -176,8 +146,8 @@ public class RenjuRule : MonoBehaviour
             int backX = x - dx * (CountConsecutiveStones(x, y, -dx, -dy, StoneType.Black, board) + 1);
             int backY = y - dy * (CountConsecutiveStones(x, y, -dx, -dy, StoneType.Black, board) + 1);
 
-            bool frontEmpty = IsValidPosition(frontX, frontY) && board[frontX, frontY] == StoneType.None;
-            bool backEmpty = IsValidPosition(backX, backY) && board[backX, backY] == StoneType.None;
+            bool frontEmpty = board[frontX, frontY] == StoneType.None;
+            bool backEmpty = board[backX, backY] == StoneType.None;
 
             return frontEmpty && backEmpty;
         }
@@ -228,21 +198,13 @@ public class RenjuRule : MonoBehaviour
     }
 
     /// <summary>
-    /// ��ȿ�� ���� ��ġ���� Ȯ��
-    /// </summary>
-    private bool IsValidPosition(int x, int y)
-    {
-        return boardManager.IsValidPosition(x, y);
-    }
-
-    /// <summary>
     /// ��� �ݼ� ��ġ ��ȯ (AI�� ��Ʈ �ý��ۿ�)
     /// </summary>
     /// <param name="board">���� ���� ����</param>
     /// <returns>�ݼ� ��ġ ����Ʈ</returns>
-    public System.Collections.Generic.List<Vector2Int> GetForbiddenPositions(StoneType[,] board)
+    public List<Vector2Int> GetForbiddenPositions(StoneType[,] board)
     {
-        var forbiddenPositions = new System.Collections.Generic.List<Vector2Int>();
+        var forbiddenPositions = new List<Vector2Int>();
 
         if (!enableForbiddenMoves) return forbiddenPositions;
 
@@ -252,10 +214,7 @@ public class RenjuRule : MonoBehaviour
             {
                 if (board[x, y] == StoneType.None)
                 {
-                    if (!IsValidMove(x, y, StoneType.Black, board))
-                    {
-                        forbiddenPositions.Add(new Vector2Int(x, y));
-                    }
+                    if (!IsValidMove(x, y, StoneType.Black, board)) { forbiddenPositions.Add(new Vector2Int(x, y)); }
                 }
             }
         }
@@ -272,4 +231,6 @@ public class RenjuRule : MonoBehaviour
         enableForbiddenMoves = enableForbidden;
         Debug.Log($"���ַ� �ݼ�: {(enableForbidden ? "Ȱ��ȭ" : "��Ȱ��ȭ")}");
     }
+
+    private bool IsValidPosition(int x, int y) { return x >= 0 && x < boardSize && y >= 0 && y < boardSize; }
 }

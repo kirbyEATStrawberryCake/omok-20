@@ -1,57 +1,55 @@
-using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
+using Random = UnityEngine.Random;
 
 public enum GameState
 {
-    Default, // 초기 상태
-    Playing, // 게임 진행 중
+    Default,  // 초기 상태
+    Playing,  // 게임 진행 중
     GameOver, // 게임 종료
-    Paused // 게임 일시정지
+    Paused    // 게임 일시정지
 }
 
-[RequireComponent(typeof(RenjuRule))]
-[RequireComponent(typeof(GameLogicController))]
+[RequireComponent(typeof(BoardInputHandler))]
+[RequireComponent(typeof(BoardManager))]
 public class GamePlayManager : Singleton<GamePlayManager>
 {
-    [SerializeField] private BoardManager boardManager;
-    [SerializeField] private GameSceneUIManager uiManager;
-    [SerializeField] private GomokuAIDebugger gomokuAIDebugger;
+    [SerializeField] private GomokuAIManager gomokuAIManager;
     [SerializeField] private GameTimer gameTimer;
-    public BoardManager BoardManager => boardManager;
-    public GameSceneUIManager UIManager => uiManager;
-    public MultiplayManager MultiplayManager => MultiplayManager.Instance;
-    public GomokuAIDebugger GomokuAIDebugger => gomokuAIDebugger;
-    public GameTimer GameTimer => gameTimer;
 
-    public RenjuRule RenjuRule { get; private set; } // 렌주룰 관리자 참조
-    public GameLogicController GameLogicController { get; private set; }
+    private MultiplayManager multiplayManager;
+    private GiboManager giboManager;
+    private BoardManager boardManager;
+    private BoardInputHandler boardInputHandler;
+    private readonly GameLogic gameLogic = new();
+    public GameLogic GameLogic => gameLogic;
 
-    [Header("Game Settings")]
-    [SerializeField] private bool isRenjuModeEnabled = true; // 렌주룰 적용 여부
-
-    public bool IsRenjuModeEnabled => isRenjuModeEnabled;
-    private bool isAITurnHandled = false; // AI 의 턴이 실행됐는지
-
-    [SerializeField] private bool showForbiddenPositions = true; // 금지 위치 표시 여부
-    public bool ShowForbiddenPositions => showForbiddenPositions;
+    private bool hasPendingMove;    // 확정 대기 중인 착수가 있는지
+    private Vector2Int pendingMove; // 확정 대기 중인 착수 위치
 
     public GameState currentGameState { get; private set; } = GameState.Default; // 현재 게임 상태
+
+    #region 이벤트
 
     public event UnityAction OnGameStart;
     public event UnityAction OnGameRestart;
     public event UnityAction OnSurrender;
     public event UnityAction<GameResult> OnGameEnd;
 
-    #region 유니티 이벤트
+    #endregion
+
+    #region Unity Life Cycle
 
     protected override void Awake()
     {
         base.Awake();
-        GameLogicController = GetComponent<GameLogicController>();
-        RenjuRule = GetComponent<RenjuRule>();
+        multiplayManager = MultiplayManager.Instance;
+        giboManager = GiboManager.Instance;
+        boardManager = GetComponent<BoardManager>();
+        boardInputHandler = GetComponent<BoardInputHandler>();
 #if UNITY_EDITOR
         if (gameObject.scene.name == EditorSceneLoader.StartupSceneName)
         {
@@ -62,36 +60,41 @@ public class GamePlayManager : Singleton<GamePlayManager>
 #endif
     }
 
-    private void Start()
+    private void OnEnable()
     {
-        if (GameLogicController != null)
+        if (gameLogic != null)
         {
-            GameLogicController.Initialize(this);
-            GameLogicController.WinConditionChecked += EndGame;
-            OnGameStart += GameLogicController.RandomizePlayerStones;
-            OnGameRestart += GameLogicController.ResetGame;
+            gameLogic.WinConditionChecked += EndGame;
+            gameLogic.UpdateForbiddenPositions += HandleUpdateForbiddenPosition;
+            gameLogic.OnPlayerTurnChanged += HandlePlayerTurnChanged;
         }
+
+        if (boardInputHandler != null)
+        {
+            boardInputHandler.OnBoardHovered += HandleBoardHover;
+            boardInputHandler.OnBoardClicked += HandleBoardClick;
+        }
+
+        if (gameTimer != null) { gameTimer.OnTimeUp += HandleTimeUp; }
 
         if (MultiplayManager.Instance != null && GameModeManager.Mode == GameMode.MultiPlayer)
         {
             MultiplayManager.Instance.MatchCallback += StartGame;
         }
+    }
 
+    private void Start()
+    {
         currentGameState = GameState.Default;
 
-        if (GameModeManager.Mode == GameMode.SinglePlayer || GameModeManager.Mode == GameMode.AI)
-        {
-            StartGame();
-        }
+        if (GameModeManager.Mode == GameMode.SinglePlayer || GameModeManager.Mode == GameMode.AI) { StartGame(); }
         // 멀티플레이는 MultiplayManager에서 담당
     }
 
     private void Update()
     {
         if (currentGameState != GameState.Playing) return;
-
-        if (GameModeManager.Mode != GameMode.SinglePlayer && GameModeManager.Mode != GameMode.AI)
-            return;
+        if (GameModeManager.Mode != GameMode.AI) return;
 
         // 현재 턴이 AI인지 확인
         if (IsCurrentTurnAI())
@@ -102,51 +105,26 @@ public class GamePlayManager : Singleton<GamePlayManager>
                 isAITurnHandled = true;
             }
         }
-        else
-        {
-            isAITurnHandled = false;
-        }
+        else { isAITurnHandled = false; }
     }
 
-    private bool IsCurrentTurnAI()
-    {
-        if (GameModeManager.Mode == GameMode.AI)
-        {
-            return GameLogicController.GetCurrentTurnPlayer() == PlayerType.AI;
-        }
-
-        return false;
-    }
-
-    private void HandleAITurn()
-    {
-        if (!IsInvoking("ExecuteAITurn"))
-        {
-            Invoke("ExecuteAITurn", 1f);
-        }
-    }
-
-    private void ExecuteAITurn()
-    {
-        var watch = new System.Diagnostics.Stopwatch();
-        watch.Start();
-
-        Vector2Int aiMove = gomokuAIDebugger.GetNextMoveFromAI();
-        boardManager.HandleBoardClick(aiMove.x, aiMove.y);
-        boardManager.PlaceStone();
-
-        watch.Stop();
-        Debug.Log("AI 착수 시간: " + watch.ElapsedMilliseconds + "ms");
-    }
 
     private void OnDisable()
     {
-        if (GameLogicController != null)
+        if (gameLogic != null)
         {
-            GameLogicController.WinConditionChecked -= EndGame;
-            OnGameStart += GameLogicController.RandomizePlayerStones;
-            OnGameRestart += GameLogicController.ResetGame;
+            gameLogic.WinConditionChecked -= EndGame;
+            gameLogic.UpdateForbiddenPositions -= HandleUpdateForbiddenPosition;
+            gameLogic.OnPlayerTurnChanged -= HandlePlayerTurnChanged;
         }
+
+        if (boardInputHandler != null)
+        {
+            boardInputHandler.OnBoardHovered -= HandleBoardHover;
+            boardInputHandler.OnBoardClicked -= HandleBoardClick;
+        }
+
+        if (gameTimer != null) { gameTimer.OnTimeUp -= HandleTimeUp; }
 
         if (MultiplayManager.Instance != null && GameModeManager.Mode == GameMode.MultiPlayer)
         {
@@ -154,42 +132,35 @@ public class GamePlayManager : Singleton<GamePlayManager>
         }
     }
 
-    #endregion
-
-    #region OnSceneLoad
-
-    protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
-    {
-    }
+    protected override void OnSceneLoad(Scene scene, LoadSceneMode mode) { }
 
     #endregion
 
-    private void StartGame()
-    {
-        if (currentGameState != GameState.Default) return;
+    #region Public Methods
 
-        currentGameState = GameState.Playing;
-        OnGameStart?.Invoke();
+    // 착수 버튼 클릭 시 호출
+    public void OnGoStoneButtonClicked()
+    {
+        if (!IsMyTurn()) return;
+        if (!hasPendingMove) return;
+
+        boardManager.PlaceStoneVisual(pendingMove.x, pendingMove.y, gameLogic.currentStone);
+        gameLogic.PlaceStone(pendingMove.x, pendingMove.y);
+        if (GameModeManager.Mode == GameMode.MultiPlayer)
+            MultiplayManager.Instance.GoStone(pendingMove.x, pendingMove.y);
+        hasPendingMove = false;
+        SoundManager.PlaySFX();
+
+        MoveData move = new MoveData
+            { x = pendingMove.x, y = pendingMove.y, stoneColor = gameLogic.currentStone == StoneType.Black ? 1 : 2 };
+        giboManager.AddMove(move);
     }
 
-    private void StartGame(MultiplayControllerState state)
+    public void PlaceOpponentStone(int x, int y)
     {
-        if (state == MultiplayControllerState.MatchFound)
-            StartGame();
-        else if (state == MultiplayControllerState.MatchFailed)
-            StartAIGame();
-    }
-
-    private void StartAIGame()
-    {
-        if (currentGameState != GameState.Default) return;
-
-        if (MultiplayManager.Instance != null)
-        {
-            MultiplayManager.Instance.MatchCallback -= StartGame;
-        }
-
-        StartGame();
+        boardManager.PlaceStoneVisual(x, y, gameLogic.currentStone);
+        gameLogic.PlaceStone(x, y);
+        SoundManager.PlaySFX();
     }
 
     /// <summary>
@@ -202,60 +173,98 @@ public class GamePlayManager : Singleton<GamePlayManager>
         // 항복한 플레이어의 상대가 승리
         if (GameModeManager.Mode == GameMode.SinglePlayer)
         {
-            PlayerType currentTurnPlayer = GameLogicController.GetCurrentTurnPlayer();
-            GameResult result = (currentTurnPlayer == PlayerType.Player1)
-                ? GameResult.Player2Win
-                : GameResult.Player1Win;
+            PlayerType winner = (gameLogic.currentTurnPlayer == PlayerType.Player1)
+                ? PlayerType.Player2
+                : PlayerType.Player1;
 
-            Debug.Log($"{currentTurnPlayer}가 항복했습니다");
-            EndGame(result);
+            Debug.Log($"{gameLogic.currentTurnPlayer}가 항복했습니다");
+            EndGame(winner);
         }
         else if (GameModeManager.Mode == GameMode.MultiPlayer || GameModeManager.Mode == GameMode.AI)
         {
             Debug.Log("항복했습니다");
             OnSurrender?.Invoke();
-            EndGame(GameResult.Defeat);
+            EndGame(PlayerType.Opponent);
+        }
+    }
+
+    #endregion
+
+    #region 게임 흐름 관리
+
+    /// <summary>
+    /// 게임 시작
+    /// </summary>
+    private void StartGame()
+    {
+        if (currentGameState != GameState.Default) return;
+
+        boardManager.InitializeBoard();
+        SelectRandomBlackStonePlayer();
+        gameLogic.StartFirstTurn();
+        gameLogic.InitializeBoard();
+        gameTimer.StartTimer();
+        currentGameState = GameState.Playing;
+        OnGameStart?.Invoke();
+    }
+
+    /// <summary>
+    /// 게임 시작 (멀티플레이용)
+    /// </summary>
+    private void StartGame(MultiplayControllerState state)
+    {
+        if (state == MultiplayControllerState.MatchFound)
+            StartGame();
+        else if (state == MultiplayControllerState.MatchFailed)
+        {
+            if (MultiplayManager.Instance != null) { MultiplayManager.Instance.MatchCallback -= StartGame; }
+
+            // TODO : AI 시작 트리거
+            StartGame();
         }
     }
 
     /// <summary>
-    /// 게임 종료 처리
+    /// 게임 종료
     /// </summary>
-    public void EndGame(GameResult result)
+    public void EndGame(PlayerType winner)
     {
         if (currentGameState != GameState.Playing) return;
 
+        GameResult result = GameResult.None;
+
         string message = "게임 종료 ";
-        switch (result)
+        switch (winner)
         {
-            case GameResult.None:
-                message += "None";
-                break;
-            case GameResult.Player1Win:
+            case PlayerType.Player1:
                 message += "Player1Win";
+                result = GameResult.Player1Win;
                 break;
-            case GameResult.Player2Win:
+            case PlayerType.Player2:
                 message += "Player2Win";
+                result = GameResult.Player2Win;
                 break;
-            case GameResult.Victory:
+            case PlayerType.Me:
                 message += "Victory";
+                result = GameResult.Victory;
                 break;
-            case GameResult.Defeat:
+            case PlayerType.Opponent:
+            case PlayerType.AI:
                 message += "Defeat";
-                break;
-            case GameResult.Draw:
-                message += "Draw";
-                break;
-            case GameResult.Disconnect:
-                message += "Disconnect";
+                result = GameResult.Defeat;
                 break;
         }
 
         Debug.Log(message);
         currentGameState = GameState.GameOver;
-        OnGameEnd?.Invoke(result);
+        gameTimer.StopTimer();
+        if (result != GameResult.None)
+            OnGameEnd?.Invoke(result);
     }
 
+    /// <summary>
+    /// 게임 재시작
+    /// </summary>
     public void RestartGame()
     {
         if (currentGameState != GameState.GameOver) return;
@@ -265,66 +274,163 @@ public class GamePlayManager : Singleton<GamePlayManager>
         StartGame();
     }
 
+    #endregion
 
-    /*private void Update()
+    #region 이벤트 핸들러
+
+    /// <summary>
+    /// 보드 위에 마우스가 올라가 있을 때 처리를 담당하는 메소드
+    /// </summary>
+    private void HandleBoardHover(Vector2Int pos)
     {
-        // 게임 중이 아니면 무시
         if (currentGameState != GameState.Playing) return;
+        if (GameModeManager.Mode == GameMode.MultiPlayer &&
+            gameLogic.currentTurnPlayer == PlayerType.Opponent) return;
+        if (GameModeManager.Mode == GameMode.AI &&
+            gameLogic.currentTurnPlayer == PlayerType.AI) return;
 
-        // ���� ���� �÷��̾ AI���� Ȯ��
-        if (IsCurrentTurnAI()) // AI 차례
+        if (gameLogic.CanPlaceStone(pos.x, pos.y)) { boardManager.UpdateSelectedMarker(pos.x, pos.y); }
+    }
+
+    /// <summary>
+    /// 마우스를 클릭 했을 때 처리를 담당하는 메소드
+    /// </summary>
+    private void HandleBoardClick(Vector2Int pos)
+    {
+        if (!IsMyTurn()) return;
+
+        if (gameLogic.CanPlaceStone(pos.x, pos.y))
         {
-            if (!isAITurnHandled)// AI 턴을 처리하지 않았으면
+            hasPendingMove = true;
+            pendingMove = pos;
+            boardManager.ShowPendingMove(pos.x, pos.y, gameLogic.currentStone);
+        }
+    }
+
+    /// <summary>
+    /// 금지 마크가 업데이트 되었을때 처리를 담당하는 메소드
+    /// </summary>
+    private void HandleUpdateForbiddenPosition(List<Vector2Int> pos) { boardManager.UpdateForbiddenMarker(pos); }
+
+    /// <summary>
+    /// 주어진 시간이 다 지났을 때 처리를 담당하는 메소드
+    /// </summary>
+    private void HandleTimeUp() { gameLogic.SwitchPlayer(); }
+
+    /// <summary>
+    /// 턴 변경 시 처리를 담당하는 메소드
+    /// </summary>
+    private void HandlePlayerTurnChanged(StoneType stone, PlayerType player)
+    {
+        boardManager.HideAllMarkers();
+        gameTimer.ResetTimer();
+    }
+
+    #endregion
+
+    #region Private Methods
+
+    /// <summary>
+    /// 내 턴인지 확인하는 메소드
+    /// </summary>
+    private bool IsMyTurn()
+    {
+        if (currentGameState != GameState.Playing) return false;
+        if (GameModeManager.Mode == GameMode.MultiPlayer &&
+            gameLogic.currentTurnPlayer == PlayerType.Opponent) return false;
+        if (GameModeManager.Mode == GameMode.AI &&
+            gameLogic.currentTurnPlayer == PlayerType.AI) return false;
+
+        return true;
+    }
+
+    /// <summary>
+    /// 시작 시 흑돌 플레이어를 랜덤하게 선택하는 메소드
+    /// </summary>
+    private void SelectRandomBlackStonePlayer()
+    {
+        if (GameModeManager.Mode == GameMode.MultiPlayer)
+        {
+            // 멀티플레이: 서버에서 받은 정보 사용
+            bool amIFirstPlayer = multiplayManager.multiplayController.amIFirstPlayer;
+
+            if (amIFirstPlayer)
             {
-                // AI 턴 처리
-                HandleAITurn();
-                isAITurnHandled = true; // 체크
+                gameLogic.AssignPlayers(PlayerType.Me, PlayerType.Opponent); // 내가 흑돌 (선공), 상대가 백돌
+                Debug.Log("멀티플레이: 내가 선공 (흑돌)");
+            }
+            else
+            {
+                gameLogic.AssignPlayers(PlayerType.Opponent, PlayerType.Me); // 상대가 흑돌 (선공), 내가 백돌
+                Debug.Log("멀티플레이: 내가 후공 (백돌)");
             }
         }
-        else // 플레이어 차례
+        else if (GameModeManager.Mode == GameMode.AI)
         {
-            // ���콺 �Է� ó�� (BoardManager�� update ���� ó��)
-            isAITurnHandled = false; // AI 턴 처리 체크해제
+            Debug.Log("AI 전환 모드: 플레이어 vs AI");
+
+            if (Random.Range(0, 2) == 0)
+            {
+                gameLogic.AssignPlayers(PlayerType.Me, PlayerType.AI);
+                Debug.Log("AI플레이: Player1이 선공 (흑돌)");
+            }
+            else
+            {
+                gameLogic.AssignPlayers(PlayerType.AI, PlayerType.Me);
+                Debug.Log("AI플레이: AI가 선공 (흑돌)");
+            }
+        }
+        else
+        {
+            // 싱글플레이 (로컬): 랜덤 방식
+            if (Random.Range(0, 2) == 0)
+            {
+                gameLogic.AssignPlayers(PlayerType.Player1, PlayerType.Player2);
+                Debug.Log("싱글플레이: Player1이 선공 (흑돌)");
+            }
+            else
+            {
+                gameLogic.AssignPlayers(PlayerType.Player2, PlayerType.Player1);
+                Debug.Log("싱글플레이: Player2가 선공 (흑돌)");
+            }
+        }
+
+        if (GameModeManager.Mode == GameMode.AI)
+        {
+            StoneType aiStoneType = (gameLogic.currentTurnPlayer == PlayerType.AI) ? StoneType.Black : StoneType.White;
+            gomokuAIManager.InstantiateGomokuAI(aiStoneType);
         }
     }
 
-    /// <summary>
-    /// ���� ���� �÷��̾ AI���� Ȯ��
-    /// </summary>
-    public bool IsCurrentTurnAI()
+    #endregion
+
+    #region AI
+
+    private bool isAITurnHandled = false; // AI 의 턴이 실행됐는지
+
+    private bool IsCurrentTurnAI()
     {
-        // 현재 차례가 AI 인지 체크
-        return gameLogic.currentTurnPlayer == PlayerType.AI;
+        if (GameModeManager.Mode == GameMode.AI) { return gameLogic.currentTurnPlayer == PlayerType.AI; }
+
+        return false;
     }
 
-    /// <summary>
-    /// AI 착수 딜레이 주기
-    /// </summary>
     private void HandleAITurn()
     {
-        if (!IsInvoking("ExecuteAITurn"))
-        {
-            Invoke("ExecuteAITurn", 1f); // 1초의 딜레이로 AI가 생각하는 것 처럼 보이게 하기
-        }
+        if (!IsInvoking("ExecuteAITurn")) { Invoke("ExecuteAITurn", 1f); }
     }
 
-    /// <summary>
-    /// AI 의 착수를 실행
-    /// </summary>
     private void ExecuteAITurn()
     {
-        Stopwatch watch = new Stopwatch(); // Stopwatch ��ü ����
-        watch.Start(); // ���� ����
+        var watch = new System.Diagnostics.Stopwatch();
+        watch.Start();
 
-        Vector2Int aiMove = gomokuAIDebugger.GetNextMoveFromAI(); // AI�� ������ ��ġ�� ��.
+        var aiResult = gomokuAIManager.GetAIResult(gameLogic.board);
+        boardManager.PlaceStoneVisual(aiResult.bestMove.x, aiResult.bestMove.y, gameLogic.currentStone);
 
-        // AI가 선택한 위치를 클릭.
-        boardManager.HandleBoardClick(aiMove.x, aiMove.y);
+        watch.Stop();
+        Debug.Log("AI 착수 시간: " + watch.ElapsedMilliseconds + "ms");
+    }
 
-        // 실제 착수 실행
-        boardManager.PlaceStone();
-
-        watch.Stop(); // ���� ����
-        Debug.Log("�ڵ� ���� �ð�: " + watch.ElapsedMilliseconds + "ms"); // ��� �ð� ���
-    }*/
+    #endregion
 }

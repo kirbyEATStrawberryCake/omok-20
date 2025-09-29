@@ -8,8 +8,3 @@
     Draw,
     Disconnect // 멀티플레이: 상대방 나감
 }
-
-public class GameResultData
-{
-    public GameResult result;
-}

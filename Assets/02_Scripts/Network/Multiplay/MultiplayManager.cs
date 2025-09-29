@@ -20,7 +20,6 @@ public class MultiplayManager : Singleton<MultiplayManager>
 
     #region Private Fields
 
-    private BoardManager boardManager;
     private GamePlayManager gamePlayManager;
     private StatsManager statsManager;
     private string roomId;
@@ -42,25 +41,16 @@ public class MultiplayManager : Singleton<MultiplayManager>
     protected override void Awake()
     {
         base.Awake();
-        if (Instance == this)
-        {
-            DontDestroyOnLoad(gameObject);
-        }
+        if (Instance == this) { DontDestroyOnLoad(gameObject); }
     }
 
     private void Start()
     {
         statsManager = NetworkManager.Instance.statsManager;
-        if (statsManager == null)
-        {
-            Debug.LogError("[MultiplayManager] statsManager 인스턴스를 찾을 수 없습니다.");
-        }
+        if (statsManager == null) { Debug.LogError("[MultiplayManager] statsManager 인스턴스를 찾을 수 없습니다."); }
     }
 
-    private void OnDisable()
-    {
-        UnsubscribeFromGamePlayManagerEvents();
-    }
+    private void OnDisable() { UnsubscribeFromGamePlayManagerEvents(); }
 
     protected override void OnDestroy()
     {
@@ -74,10 +64,7 @@ public class MultiplayManager : Singleton<MultiplayManager>
         if (scene.buildIndex != (int)SceneType.Game) return;
         if (GameModeManager.Mode == GameMode.SinglePlayer) return;
 
-        if (multiplayController == null)
-        {
-            InitializeMultiplayController();
-        }
+        if (multiplayController == null) { InitializeMultiplayController(); }
 
         StartCoroutine(DelayedGameSceneInitialization());
     }
@@ -127,7 +114,6 @@ public class MultiplayManager : Singleton<MultiplayManager>
             yield break;
         }
 
-        boardManager = gamePlayManager.BoardManager; // 참조 업데이트
         SubscribeToGamePlayManagerEvents();
 
         if (roomId != null)
@@ -135,10 +121,7 @@ public class MultiplayManager : Singleton<MultiplayManager>
             MatchCallback?.Invoke(MultiplayControllerState.MatchFound);
             Debug.Log($"<color=cyan>[MultiplayManager] 기존 매칭 복원 - 방 ID: {roomId}</color>");
         }
-        else
-        {
-            StartCoroutine(WaitForConnectionAndRequestMatch());
-        }
+        else { StartCoroutine(WaitForConnectionAndRequestMatch()); }
     }
 
     /// <summary>
@@ -152,7 +135,7 @@ public class MultiplayManager : Singleton<MultiplayManager>
         while (elapsed < timeout)
         {
             gamePlayManager = GamePlayManager.Instance;
-            if (gamePlayManager != null && gamePlayManager.GameLogicController != null)
+            if (gamePlayManager)
             {
                 Debug.Log("<color=green>[MultiplayManager] GamePlayManager 준비 완료</color>");
                 yield break;
@@ -183,10 +166,7 @@ public class MultiplayManager : Singleton<MultiplayManager>
 
             Debug.Log("<color=green>[MultiplayManager] GamePlayManager 이벤트 구독 완료</color>");
         }
-        catch (System.Exception ex)
-        {
-            Debug.LogError($"<color=red>[MultiplayManager] 이벤트 구독 실패: {ex.Message}</color>");
-        }
+        catch (Exception ex) { Debug.LogError($"<color=red>[MultiplayManager] 이벤트 구독 실패: {ex.Message}</color>"); }
     }
 
     /// <summary>
@@ -200,12 +180,9 @@ public class MultiplayManager : Singleton<MultiplayManager>
         {
             gamePlayManager.OnGameEnd -= HandleGameEnd;
 
-            if (multiplayController != null)
-            {
-                gamePlayManager.OnSurrender -= multiplayController.Surrender;
-            }
+            if (multiplayController != null) { gamePlayManager.OnSurrender -= multiplayController.Surrender; }
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
             Debug.LogWarning($"<color=yellow>[MultiplayManager] 이벤트 구독 해제 중 오류 (무시): {ex.Message}</color>");
         }
@@ -238,10 +215,7 @@ public class MultiplayManager : Singleton<MultiplayManager>
     /// <summary>
     /// 매칭 완료시 서버에서 보낸 상대방 정보를 저장하는 메소드
     /// </summary>
-    public void SetOpponentData(MatchData data)
-    {
-        MatchData = data;
-    }
+    public void SetOpponentData(MatchData data) { MatchData = data; }
 
     /// <summary>
     /// 착수 정보를 서버로 보냄
@@ -337,7 +311,7 @@ public class MultiplayManager : Singleton<MultiplayManager>
     private void HandleOpponentSurrender()
     {
         Debug.Log("<color=cyan>[MultiplayManager] 상대방이 항복했습니다.</color>");
-        gamePlayManager?.EndGame(GameResult.Victory);
+        gamePlayManager?.EndGame(PlayerType.Me);
     }
 
     private void HandleOpponentLeft()
@@ -376,10 +350,7 @@ public class MultiplayManager : Singleton<MultiplayManager>
             yield break;
         }
 
-        while (!multiplayController.isConnected)
-        {
-            yield return new WaitForSeconds(0.1f);
-        }
+        while (!multiplayController.isConnected) { yield return new WaitForSeconds(0.1f); }
 
         Debug.Log("<color=green>[MultiplayManager] 소켓 연결 완료. 매칭 요청 시작.</color>");
         multiplayController.RequestMatch();
@@ -391,20 +362,7 @@ public class MultiplayManager : Singleton<MultiplayManager>
     private void HandleOpponentMove(int x, int y)
     {
         Debug.Log($"<color=yellow>[MultiplayManager] 상대방 착수: ({x}, {y})</color>");
-        // boardManager가 null인 경우 다시 찾아서 설정
-        if (boardManager == null)
-        {
-            gamePlayManager = GamePlayManager.Instance;
-            boardManager = gamePlayManager?.BoardManager;
-        }
-
-        if (boardManager == null)
-        {
-            Debug.LogError("<color=red>[MultiplayManager] BoardManager를 찾을 수 없습니다!</color>");
-            return;
-        }
-
-        boardManager.PlaceOpponentStone(x, y);
+        gamePlayManager.PlaceOpponentStone(x, y);
     }
 
     /// <summary>
@@ -431,9 +389,9 @@ public class MultiplayManager : Singleton<MultiplayManager>
         string errorMessage = errorType switch
         {
             StatsResponseType.INVALID_GAME_RESULT => "[MultiplayManager] 게임 결과가 올바르지 않습니다.",
-            StatsResponseType.CANNOT_FOUND_USER => "[MultiplayManager] 유저를 찾지 못했습니다.",
-            StatsResponseType.NOT_LOGGED_IN => "[MultiplayManager] 로그인 상태가 아닙니다.",
-            _ => "[MultiplayManager] 알 수 없는 오류가 발생했습니다."
+            StatsResponseType.CANNOT_FOUND_USER   => "[MultiplayManager] 유저를 찾지 못했습니다.",
+            StatsResponseType.NOT_LOGGED_IN       => "[MultiplayManager] 로그인 상태가 아닙니다.",
+            _                                     => "[MultiplayManager] 알 수 없는 오류가 발생했습니다."
         };
 
         Debug.LogError($"<color=red>[MultiplayManager] 게임 결과 등록 실패: {errorMessage}</color>");
