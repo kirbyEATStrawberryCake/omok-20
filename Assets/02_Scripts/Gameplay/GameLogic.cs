@@ -80,6 +80,7 @@ public class GameLogic
     {
         // 논리적 보드에 저장
         board[x, y] = currentStone;
+        
         // 렌주룰에 따른 착수 금지 위치 업데이트
         UpdateForbiddenPositions?.Invoke(renjuRule.GetForbiddenPositions(board));
 

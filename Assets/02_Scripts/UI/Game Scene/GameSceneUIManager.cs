@@ -47,27 +47,12 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
             multiplayUIHandler.gameObject.SetActive(true);
 
         gamePlayManager = GamePlayManager.Instance;
-
-        // giboManager = GiboManager.Instance;
-        // giboManager.StartNewRecord(); // 새 기보 데이터 생성
-
-        if (gamePlayManager != null)
-        {
-            // gamePlayManager.OnGameEnd += SaveGibo;
-            // gamePlayManager.OnGameRestart += StartGibo;
-        }
     }
 
     private void OnDisable()
     {
         singlePlayUIHandler.gameObject.SetActive(false);
         multiplayUIHandler.gameObject.SetActive(false);
-
-        if (gamePlayManager != null)
-        {
-            // gamePlayManager.OnGameEnd -= SaveGibo;
-            // gamePlayManager.OnGameRestart -= StartGibo;
-        }
     }
 
     protected override void OnSceneLoad(Scene scene, LoadSceneMode mode) { }
@@ -97,43 +82,4 @@ public class GameSceneUIManager : Singleton<GameSceneUIManager>
     public void SurrenderButtonEnable(bool enable) { surrenderButton.interactable = enable; }
 
     #endregion
-
-    // TODO: 기보 처리하기
-    // 게임 종료 시, 기보 저장 함수 호출
-    // private void SaveGibo(GameResult result)
-    // {
-    //     giboManager.SaveCurrentRecord();
-    // }
-    //
-    // // 재대국 시, 기보 생성 함수 호출
-    // private void StartGibo()
-    // {
-    //     giboManager.StartNewRecord();
-    // }
-
-    // private IEnumerator DelayedEventSubscription()
-    // {
-    //     // UI 요소들이 초기화될 때까지 기다림
-    //     yield return new WaitForEndOfFrame();
-    //     yield return new WaitForSeconds(0.1f);
-    //
-    //     if (multiplayManager != null)
-    //     {
-    //         Debug.Log("지연된 멀티플레이 이벤트 재구독 시작");
-    //
-    //         // 기존 구독 해제
-    //         multiplayManager.MatchCallback -= HandleMatchUI;
-    //         multiplayManager.MatchResultCallback -= OpenEndGamePanelInMultiplay;
-    //         multiplayManager.RematchCallback -= HandleRematchUI;
-    //         multiplayManager.ErrorCallback -= OnError;
-    //
-    //         // 이벤트 재구독
-    //         multiplayManager.MatchCallback += HandleMatchUI;
-    //         multiplayManager.MatchResultCallback += OpenEndGamePanelInMultiplay;
-    //         multiplayManager.RematchCallback += HandleRematchUI;
-    //         multiplayManager.ErrorCallback += OnError;
-    //
-    //         Debug.Log("지연된 멀티플레이 이벤트 재구독 완료");
-    //     }
-    // }
 }

@@ -10,10 +10,7 @@ public class GomokuAIManager : MonoBehaviour
     [SerializeField] bool isDebug = true;
 
     private GomokuAI gomokuAI;
-    private BoardManager boardManager; // 디버깅 시각화를 위해 참조
-
-
-    private void Start() { boardManager = FindObjectOfType<BoardManager>(); }
+    [SerializeField] private BoardManager boardManager; // 디버깅 시각화를 위해 참조
 
     public void InstantiateGomokuAI(StoneType aiStone)
     {

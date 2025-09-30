@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using static Constants;
 
 /// <summary>
@@ -8,24 +9,24 @@ using static Constants;
 public class BoardManager : MonoBehaviour
 {
     [Header("Sprites")]
-    [SerializeField] private Sprite blackStoneSprite; // 흑돌 스프라이트
-    [SerializeField] private Sprite whiteStoneSprite; // 백돌 스프라이트
+    [SerializeField] protected Sprite blackStoneSprite; // 흑돌 스프라이트
+    [SerializeField] protected Sprite whiteStoneSprite; // 백돌 스프라이트
 
     [Header("Maker Object")]
-    [SerializeField] private GameObject selectedMarker;   // 현재 선택된 위치 마커
-    [SerializeField] private GameObject lastMoveMarker;   // 마지막 수 마커
-    [SerializeField] private GameObject pendingMoveStone; // 착수 대기 마커
+    [SerializeField] [CanBeNull] private GameObject selectedMarker;   // 현재 선택된 위치 마커
+    [SerializeField] protected GameObject lastMoveMarker;             // 마지막 수 마커
+    [SerializeField] [CanBeNull] private GameObject pendingMoveStone; // 착수 대기 마커
 
     [Header("Marker Settings")]
-    [SerializeField] private GameObject stonePrefab_White;
-    [SerializeField] private GameObject stonePrefab_Black;
-    [SerializeField] private Transform stoneParent; // 돌을 생성할 부모 오브젝트
+    [SerializeField] protected GameObject stonePrefab_White;
+    [SerializeField] protected GameObject stonePrefab_Black;
+    [SerializeField] protected Transform stoneParent; // 돌을 생성할 부모 오브젝트
     [Space(10)]
-    [SerializeField] private GameObject forbiddenMarkerPrefab; // 금지 마크 프리팹
-    [SerializeField] private Transform forbiddenMarkerParent;  // 금지 마크를 생성할 부모 오브젝트
+    [SerializeField] protected GameObject forbiddenMarkerPrefab; // 금지 마크 프리팹
+    [SerializeField] protected Transform forbiddenMarkerParent;  // 금지 마크를 생성할 부모 오브젝트
 
-    private List<GameObject> stoneObjects = new();     // 돌 오브젝트 배열
-    private List<GameObject> forbiddenMarkers = new(); // 금지 위치 마커들
+    protected List<GameObject> stoneObjects = new();     // 돌 오브젝트 배열
+    protected List<GameObject> forbiddenMarkers = new(); // 금지 위치 마커들
 
     private SpriteRenderer pendingMoveStoneRenderer; // 착수 대기 마커 렌더러
 
@@ -52,7 +53,7 @@ public class BoardManager : MonoBehaviour
     /// <summary>
     /// 시각적 오목판 정리
     /// </summary>
-    private void ClearBoard()
+    protected void ClearBoard()
     {
         foreach (var stone in stoneObjects)
         {
@@ -63,9 +64,18 @@ public class BoardManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 마커들 제거
+    /// 선택된 위치 마커와 착수 대기 표시 숨기기
     /// </summary>
-    public void HideAllMarkers(GameResult result = GameResult.None)
+    public void HideSelectedMakerAndPendingStone()
+    {
+        selectedMarker?.SetActive(false);   // 선택된 위치 마커 숨기기
+        pendingMoveStone?.SetActive(false); // 착수 대기 표시 숨기기
+    }
+
+    /// <summary>
+    /// 모든 마커들 제거
+    /// </summary>
+    protected void HideAllMarkers()
     {
         selectedMarker?.SetActive(false);   // 선택된 위치 마커 숨기기
         lastMoveMarker?.SetActive(false);   // 마지막 수 마커 숨기기
@@ -153,7 +163,7 @@ public class BoardManager : MonoBehaviour
     /// <summary>
     /// 마지막 수 마커 업데이트
     /// </summary>
-    private void UpdateLastMoveMarker(int x, int y)
+    protected void UpdateLastMoveMarker(int x, int y)
     {
         lastMoveMarker.transform.position = BoardToWorldPosition(x, y);
         lastMoveMarker.SetActive(true);

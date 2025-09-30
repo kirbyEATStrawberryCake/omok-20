@@ -21,9 +21,9 @@ public class GamePlayManager : Singleton<GamePlayManager>
     [SerializeField] private GameTimer gameTimer;
 
     private MultiplayManager multiplayManager;
-    private GiboManager giboManager;
     private BoardManager boardManager;
     private BoardInputHandler boardInputHandler;
+    private readonly GiboManager giboManager = new();
     private readonly GameLogic gameLogic = new();
     public GameLogic GameLogic => gameLogic;
 
@@ -47,7 +47,6 @@ public class GamePlayManager : Singleton<GamePlayManager>
     {
         base.Awake();
         multiplayManager = MultiplayManager.Instance;
-        giboManager = GiboManager.Instance;
         boardManager = GetComponent<BoardManager>();
         boardInputHandler = GetComponent<BoardInputHandler>();
 #if UNITY_EDITOR
@@ -138,27 +137,30 @@ public class GamePlayManager : Singleton<GamePlayManager>
 
     #region Public Methods
 
-    // 착수 버튼 클릭 시 호출
+    /// <summary>
+    /// 착수 버튼 클릭시 호출할 메소드
+    /// </summary>
     public void OnGoStoneButtonClicked()
     {
         if (!IsMyTurn()) return;
         if (!hasPendingMove) return;
 
         boardManager.PlaceStoneVisual(pendingMove.x, pendingMove.y, gameLogic.currentStone);
+        AddMoveToGibo(pendingMove.x, pendingMove.y);
         gameLogic.PlaceStone(pendingMove.x, pendingMove.y);
         if (GameModeManager.Mode == GameMode.MultiPlayer)
             MultiplayManager.Instance.GoStone(pendingMove.x, pendingMove.y);
         hasPendingMove = false;
         SoundManager.PlaySFX();
-
-        MoveData move = new MoveData
-            { x = pendingMove.x, y = pendingMove.y, stoneColor = gameLogic.currentStone == StoneType.Black ? 1 : 2 };
-        giboManager.AddMove(move);
     }
 
+    /// <summary>
+    /// 멀티플레이 시 상대방이 착수 했을 때 서버에서 호출하는 메소드
+    /// </summary>
     public void PlaceOpponentStone(int x, int y)
     {
         boardManager.PlaceStoneVisual(x, y, gameLogic.currentStone);
+        AddMoveToGibo(x, y);
         gameLogic.PlaceStone(x, y);
         SoundManager.PlaySFX();
     }
@@ -203,6 +205,7 @@ public class GamePlayManager : Singleton<GamePlayManager>
         SelectRandomBlackStonePlayer();
         gameLogic.StartFirstTurn();
         gameLogic.InitializeBoard();
+        giboManager.StartNewRecord();
         gameTimer.StartTimer();
         currentGameState = GameState.Playing;
         OnGameStart?.Invoke();
@@ -257,6 +260,7 @@ public class GamePlayManager : Singleton<GamePlayManager>
 
         Debug.Log(message);
         currentGameState = GameState.GameOver;
+        giboManager.SaveCurrentRecord();
         gameTimer.StopTimer();
         if (result != GameResult.None)
             OnGameEnd?.Invoke(result);
@@ -322,7 +326,7 @@ public class GamePlayManager : Singleton<GamePlayManager>
     /// </summary>
     private void HandlePlayerTurnChanged(StoneType stone, PlayerType player)
     {
-        boardManager.HideAllMarkers();
+        boardManager.HideSelectedMakerAndPendingStone();
         gameTimer.ResetTimer();
     }
 
@@ -427,9 +431,23 @@ public class GamePlayManager : Singleton<GamePlayManager>
 
         var aiResult = gomokuAIManager.GetAIResult(gameLogic.board);
         boardManager.PlaceStoneVisual(aiResult.bestMove.x, aiResult.bestMove.y, gameLogic.currentStone);
+        AddMoveToGibo(aiResult.bestMove.x, aiResult.bestMove.y);
+        gameLogic.PlaceStone(aiResult.bestMove.x, aiResult.bestMove.y);
+        SoundManager.PlaySFX();
 
         watch.Stop();
         Debug.Log("AI 착수 시간: " + watch.ElapsedMilliseconds + "ms");
+    }
+
+    #endregion
+
+    #region 기보
+
+    private void AddMoveToGibo(int _x, int _y)
+    {
+        MoveData move = new MoveData
+            { x = _x, y = _y, stoneColor = gameLogic.currentStone == StoneType.Black ? 1 : 2 };
+        giboManager.AddMove(move);
     }
 
     #endregion

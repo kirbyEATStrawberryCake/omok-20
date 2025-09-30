@@ -71,7 +71,7 @@ public class GomokuAI
 
         // 3. 후보 생성
         candidateMoves = GetCandidateMoves(virtualBoard, collectRadius);
-        Debug.Log($"AI: 착수 후보 위치 {candidateMoves.Count}개를 생성합니다.");
+        // Debug.Log($"AI: 착수 후보 위치 {candidateMoves.Count}개를 생성합니다.");
 
         // 4. 보드가 완전히 비어있으면 중앙 반환
         if (candidateMoves.Count == 0)
@@ -106,7 +106,7 @@ public class GomokuAI
                 bestMove = move;
             }
 
-            Debug.Log($"AI: 탐색중인 수: ({move.x}, {move.y}), 예측 점수: {score}");
+            // Debug.Log($"AI: 탐색중인 수: ({move.x}, {move.y}), 예측 점수: {score}");
         }
 
         return new AIResult { bestMove = bestMove, candidateMovesWithScores = candidateInfos };

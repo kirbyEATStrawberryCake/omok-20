@@ -1,64 +1,35 @@
-using System;
 using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-public class GiboUIManager : Singleton<GiboUIManager>
+public class GiboUIManager : MonoBehaviour
 {
-    [SerializeField] private GiboBoardManager giboBoardManager;
-
     [SerializeField] private GameObject FirstButton;
     [SerializeField] private GameObject BeforeButton;
     [SerializeField] private GameObject AfterButton;
     [SerializeField] private GameObject LastButton;
 
     [Header("화면 UI 설정")]
-    [SerializeField] private GameObject gibo;
-    [SerializeField] private GameObject popUpGiboExit;
     [SerializeField] private Image leftProfile_Image;
-    [SerializeField] private TextMeshProUGUI leftProfile_Grade;
+    [SerializeField] private TMP_Text leftProfile_Grade;
     [SerializeField] private Image rightProfile_Image;
-    [SerializeField] private TextMeshProUGUI rightProfile_Grade;
+    [SerializeField] private TMP_Text rightProfile_Grade;
 
     [Header("프로필 이미지")]
     [SerializeField] private Sprite panda;
     [SerializeField] private Sprite red_panda;
 
-    protected override void Awake()
+    private void Start()
     {
-        base.Awake();
-    }
-
-    protected override void OnSceneLoad(Scene scene, LoadSceneMode mode)
-    {
-        gibo.SetActive(true);
         FirstButton.GetComponent<Button>().interactable = false;
         BeforeButton.GetComponent<Button>().interactable = false;
-        popUpGiboExit.SetActive(false);
-
-    }
-    private void OnEnable()
-    {
-        giboBoardManager.OnButtonChanged += UpdateButtonDisplay;
-        giboBoardManager.OnProfileImage += UpdateProfileImage;
-
-    }
-
-    private void OnDisable()
-    {
-
-        giboBoardManager.OnButtonChanged -= UpdateButtonDisplay;
-        giboBoardManager.OnProfileImage -= UpdateProfileImage;
-
     }
 
     /// <summary>
     /// currentIndex가 -1 : 처음
     /// currentIndex가 -2 : 마지막
     /// </summary>
-    /// <param name="currentIndex"></param>
-    private void UpdateButtonDisplay(int currentIndex) 
+    public void UpdateButtonDisplay(int currentIndex)
     {
         // 기본값: 전부 활성화
         FirstButton.GetComponent<Button>().interactable = true;
@@ -83,18 +54,17 @@ public class GiboUIManager : Singleton<GiboUIManager>
     /// <summary>
     /// 현재 프로필 UI 업데이트
     /// </summary>
-    /// <param name="curRecord"></param>
-    private void UpdateProfileImage(GameRecord curRecord) 
+    public void UpdateProfileImage(GameRecord curRecord)
     {
         // 자기거 띄우기
         var userInfo = NetworkManager.Instance.userDataManager.UserInfo;
         leftProfile_Image.sprite = userInfo.profileImage == 1 ? panda : red_panda;
-        leftProfile_Grade.text = curRecord.otherRank == 0 ? $"{userInfo.nickname}": $"{userInfo.grade}급 {userInfo.nickname}";
+        leftProfile_Grade.text = curRecord.otherRank == 0 ? $"{userInfo.nickname}" : $"{userInfo.grade}급 {userInfo.nickname}";
         // 상대방 정보 띄우기
-        rightProfile_Image.sprite = curRecord.otherProfileImage == 1 ? panda :
-                             (curRecord.otherProfileImage == 2 ? red_panda : null);
-        rightProfile_Grade.text = curRecord.otherRank == 0 ? $"{curRecord.otherPlayerNickname}": $"{curRecord.otherRank}급 {curRecord.otherPlayerNickname}";
-
+        rightProfile_Image.sprite =
+            curRecord.otherProfileImage == 1 ? panda : (curRecord.otherProfileImage == 2 ? red_panda : null);
+        rightProfile_Grade.text = curRecord.otherRank == 0
+            ? $"{curRecord.otherPlayerNickname}"
+            : $"{curRecord.otherRank}급 {curRecord.otherPlayerNickname}";
     }
-
 }

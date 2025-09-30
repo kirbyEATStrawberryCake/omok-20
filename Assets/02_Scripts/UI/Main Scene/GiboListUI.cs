@@ -11,6 +11,7 @@ public class GiboListUI : MonoBehaviour
     [SerializeField] private GameObject listItemPrefab; // 버튼 프리팹
 
     private readonly List<GameObject> spawnedItems = new();
+    private readonly GiboManager giboManager = new();
 
     private GameRecord currentRecord;
 
@@ -29,7 +30,7 @@ public class GiboListUI : MonoBehaviour
         spawnedItems.Clear();
 
         // PlayerPrefs에서 기보 인덱스 로드
-        GiboIndex giboIndex = GiboManager.LoadIndex();
+        GiboIndex giboIndex = giboManager.LoadIndex();
         if (giboIndex == null || giboIndex.startTimes.Count == 0)
         {
             Debug.Log("저장된 기보가 없습니다.");
@@ -39,7 +40,7 @@ public class GiboListUI : MonoBehaviour
         // 기보 키(startTime) 순회하며 버튼 생성
         foreach (string startTime in giboIndex.startTimes)
         {
-            GameRecord record = GiboManager.LoadRecord(startTime);
+            GameRecord record = giboManager.LoadRecord(startTime);
             if (record == null) continue;
 
             GameObject item = Instantiate(listItemPrefab, contentParent);
@@ -67,7 +68,7 @@ public class GiboListUI : MonoBehaviour
         Debug.Log($"선택된 기보 ID: {gameId}");
         SelectedGiboGameId.selectedGameId = gameId;
 
-        // 기보 재생 씬으로 이동 (씬 이름 수정 필요)
+        // 기보 재생 씬으로 이동
         SceneController.LoadScene(SceneType.Gibo);
     }
 }
