@@ -9,6 +9,7 @@
 - 25.09.10 ~ 25.09.21
 
 ## 사용한 협업 툴
+- [서버 Github](https://github.com/ReDvGaMe/omok-server-20)
 - [Figma](https://www.figma.com/design/psX8HtU66rIbb0ZO5YONFp/Omok-20?node-id=112-2&t=FzBD7VAVAx7KFoKn-0)
 - [Jira](https://entozforme.atlassian.net/wiki/spaces/2/overview?homepageId=3604720)
   
@@ -25,7 +26,7 @@
 - Node.js
 
 ## 주요 기능 
-[더 자세한 내용](https://entozforme.atlassian.net/wiki/spaces/2/pages/3539226)
+[오목게임_세부기능.pdf](https://github.com/user-attachments/files/22614269/_.pdf)
 - 급수 시스템
 - 멀티 플레이
 - AI 플레이
