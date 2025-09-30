@@ -7,6 +7,10 @@
 
 ## 개발 기간
 - 25.09.10 ~ 25.09.21
+
+## 사용한 협업 툴
+- [Figma](https://www.figma.com/design/psX8HtU66rIbb0ZO5YONFp/Omok-20?node-id=112-2&t=FzBD7VAVAx7KFoKn-0)
+- [Jira](https://entozforme.atlassian.net/wiki/spaces/2/overview?homepageId=3604720)
   
 ### 멤버 구성
 - 강희영 : 메인 화면 UI, 게임 화면 UI, 기보 로직 및 씬 개발, UI 시스템 구조 설계
@@ -20,4 +24,12 @@
 - 유니티 : 6000.2.3f1
 - Node.js
 
-## 주요 기능
+## 주요 기능 
+[더 자세한 내용](https://entozforme.atlassian.net/wiki/spaces/2/pages/3539226)
+- 급수 시스템
+- 멀티 플레이
+- AI 플레이
+- 게임 플레이 (렌주룰에 의한 게임 로직)
+- 랭킹 시스템
+- 기보 시스템
+- 로그인/회원가입 기능
